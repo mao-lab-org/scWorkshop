@@ -32,17 +32,29 @@ git --version
 
 ## 2. Get the workshop repository
 
-Put it on a **short path** to avoid Windows' 260-character path limit:
+Put it on a **short path** to avoid Windows' 260-character path limit.
+Git is not needed. Paste this into the R console (RStudio or RGui):
 
-```powershell
-mkdir C:\workshop
-cd C:\workshop
-git clone https://github.com/mao-lab-org/scWorkshop.git scWorkshop
+```r
+root <- "C:/workshop"
+dir.create(root, showWarnings = FALSE)
+zip <- file.path(tempdir(), "scWorkshop.zip")
+download.file("https://github.com/mao-lab-org/scWorkshop/archive/refs/heads/main.zip",
+              zip, mode = "wb")
+unzip(zip, exdir = root)
+src <- file.path(root, "scWorkshop-main"); dst <- file.path(root, "scWorkshop")
+dir.create(dst, showWarnings = FALSE)
+file.copy(list.files(src, full.names = TRUE, all.files = TRUE, no.. = TRUE),
+          dst, recursive = TRUE, overwrite = TRUE)
+unlink(src, recursive = TRUE)
 ```
 
-(Without Git: download
-<https://github.com/mao-lab-org/scWorkshop/archive/refs/heads/main.zip>
-and extract it to `C:\workshop\scWorkshop`.)
+**To pick up later changes**, re-run the same block. It overwrites the code
+files and leaves `data/` and `results/` alone. (It does not delete files
+that were removed from the repository.)
+
+If Git is installed, `git clone https://github.com/mao-lab-org/scWorkshop.git`
+into `C:\workshop` does the same thing.
 
 Double-click `C:\workshop\scWorkshop\scWorkshop.Rproj` to open it in
 RStudio. All commands below are typed in the RStudio **Console**. They assume
