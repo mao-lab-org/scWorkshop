@@ -20,8 +20,9 @@ cat(sprintf("%-14s %s\n", "Bioconductor:", as.character(BiocManager::version()))
 cat(sprintf("%-14s %d\n", "CPU cores:", parallel::detectCores()))
 
 ## ---- packages --------------------------------------------------------------
-pkgs <- c("Seurat", "SingleCellExperiment", "scran", "scuttle", "scater",
+pkgs <- c("Seurat", "SeuratObject", "SingleCellExperiment", "scran", "scuttle", "scater",
           "ComplexHeatmap", "slingshot", "destiny", "PhiSpace", "NeighbourNet",
+          "DelayedMatrixStats", "mclust", "uwot",
           "ggplot2", "dplyr", "tidyr", "tibble", "patchwork", "RColorBrewer",
           "rmarkdown", "knitr")
 cat("\nPackages:\n")

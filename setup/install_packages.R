@@ -50,7 +50,10 @@ bioc_pkgs <- c(
     "scuttle", "scran", "scater",           # normalisation, SNN graph, UMAP
     "ComplexHeatmap",                       # Module 5 heatmap
     "slingshot",                            # Module 6 principal curves
-    "destiny"                               # Module 6 diffusion pseudotime
+    "destiny",                              # Module 6 diffusion pseudotime
+    # Optional ("Suggests") dependencies that slingshot / scater / scran
+    # load at run time; not pulled in automatically by install().
+    "DelayedMatrixStats", "mclust"
 )
 
 needed <- setdiff(c(cran_pkgs, bioc_pkgs), rownames(installed.packages()))
