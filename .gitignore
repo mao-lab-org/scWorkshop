@@ -1,0 +1,17 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+
+# large data — fetched by setup/download_data.R
+data/
+results/
+downloads/
+
+# rendered vignettes
+vignettes/*.html
+vignettes/*_files/
+vignettes/*_cache/
+results_fresh/
+dry_run/
