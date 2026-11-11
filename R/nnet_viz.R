@@ -176,32 +176,10 @@ nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = "600px")
     sub <- sprintf(paste0("Edges with confidence > %.2f. Hover for details; ",
                           "click a gene to highlight its partners."), info$cutoff)
 
-    # legend
     mods <- sort(unique(stats::na.omit(nd$module[nd$role == "TF"])))
-    leg_nodes <- rbind(
-        data.frame(label = c("TF (colour = module)", "target"),
-                   shape = c("diamond", "dot"), color = "#FFFFFF", size = 12),
-        if (any(nd$role == "receptor"))
-            data.frame(label = "receptor", shape = "triangle", color = "#FFFFFF", size = 12),
-        data.frame(label = paste("TF module", mods), shape = "dot",
-                   color = col_of(mods), size = 10),
-        data.frame(label = "no edge above cutoff", shape = "dot",
-                   color = "#F2F2F2", size = 10)
-    )
-    # vis.js nested options: use only dotted names (color.background, not a
-    # plain `color` column next to color.border), or rendering fails.
-    names(leg_nodes)[names(leg_nodes) == "color"] <- "color.background"
-    leg_nodes$borderWidth  <- 1
-    leg_nodes$font.size    <- 16
-    leg_nodes$color.border <- "#555555"
-    leg_edges <- data.frame(
-        label  = c("co-expression", "+ prior: activation", "+ prior: inhibition"),
-        color  = "#555555", width = 2, font.align = "top", font.size = 16
-    )
-    leg_edges$arrows.to.enabled <- c(FALSE, TRUE, TRUE)
-    leg_edges$arrows.to.type    <- c("arrow", "arrow", "bar")
+    legend <- .nnet_legend(mods, col_of, receptors = any(nd$role == "receptor"))
 
-    visNetwork::visNetwork(nodes, edges, main = title, submain = sub,
+    w <- visNetwork::visNetwork(nodes, edges, main = title, submain = sub,
                            height = height, width = "100%") |>
         visNetwork::visPhysics(enabled = FALSE) |>
         visNetwork::visEdges(smooth = FALSE, selectionWidth = 2,
@@ -215,8 +193,65 @@ nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = "600px")
             selectedBy = list(variable = "group", main = "Select a role")
         ) |>
         visNetwork::visInteraction(hover = TRUE, tooltipDelay = 80,
-                                   navigationButtons = TRUE, dragNodes = TRUE) |>
-        visNetwork::visLegend(useGroups = FALSE, addNodes = leg_nodes,
-                              addEdges = leg_edges, width = 0.22,
-                              position = "right", zoom = FALSE)
+                                   navigationButtons = TRUE, dragNodes = TRUE)
+    # keep the requested height (no fill-the-window) so the legend sits below
+    w$sizingPolicy$browser$fill <- FALSE
+    w$sizingPolicy$viewer$fill  <- FALSE
+    htmlwidgets::appendContent(w, legend)
+}
+
+# Legend as plain HTML below the widget. visLegend() draws on a canvas that
+# is zoomed out to fit all entries, which shrank its text to ~8px; HTML text
+# stays at a fixed, readable size.
+.nnet_legend <- function(mods, col_of, receptors = FALSE, font_px = 15) {
+    svg <- function(body, w = 20) {
+        sprintf(paste0('<svg width="%d" height="20" viewBox="0 0 %d 20" ',
+                       'style="vertical-align:middle;">%s</svg>'), w, w, body)
+    }
+    node_svg <- function(shape, fill, stroke = "#333333") {
+        body <- switch(shape,
+            diamond  = '<polygon points="10,2 18,10 10,18 2,10"',
+            dot      = '<circle cx="10" cy="10" r="7"',
+            triangle = '<polygon points="10,2 18,17 2,17"')
+        svg(sprintf('%s fill="%s" stroke="%s" stroke-width="1.5"/>', body, fill, stroke))
+    }
+    edge_svg <- function(end = c("none", "arrow", "bar"), width = 3) {
+        end <- match.arg(end)
+        line <- sprintf('<line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="%s"/>', width)
+        tip <- switch(end,
+            none  = "",
+            arrow = '<polygon points="38,10 29,5 29,15" fill="#555555"/>',
+            bar   = '<line x1="37" y1="3" x2="37" y2="17" stroke="#555555" stroke-width="3"/>')
+        svg(paste0(line, tip), w = 40)
+    }
+    item <- function(icon, label) {
+        sprintf(paste0('<span style="display:inline-block;margin:0 16px 6px 0;',
+                       'white-space:nowrap;">%s<span style="vertical-align:middle;',
+                       'margin-left:6px;">%s</span></span>'), icon, label)
+    }
+    row <- function(title, items) {
+        # plain text flow (inline-block items), not flexbox: wraps the same
+        # way in RStudio's viewer, knitted HTML and standalone pages
+        sprintf(paste0('<div style="display:block;width:100%%;">',
+                       '<span style="display:inline-block;font-weight:bold;',
+                       'margin:0 12px 6px 0;vertical-align:middle;">%s</span>%s</div>'),
+                title, paste(items, collapse = " "))
+    }
+    genes <- c(
+        item(node_svg("diamond", "#FFFFFF"), "TF"),
+        item(node_svg("dot", "#FFFFFF"), "target gene"),
+        if (receptors) item(node_svg("triangle", "#FFFFFF"), "receptor"),
+        vapply(mods, function(m) item(node_svg("diamond", col_of(m)),
+                                      paste("TF module", m)), character(1)),
+        item(node_svg("dot", "#F2F2F2", "#BDBDBD"), "no edge above cutoff")
+    )
+    edges <- c(
+        item(edge_svg("none"), "co-expression (width = weight)"),
+        item(edge_svg("arrow"), "+ prior knowledge: activation"),
+        item(edge_svg("bar"), "+ prior knowledge: inhibition")
+    )
+    htmltools::HTML(sprintf(
+        paste0('<div style="font-family:Arial,Helvetica,sans-serif;font-size:%dpx;',
+               'color:#222222;padding:8px 4px 4px;">%s%s</div>'),
+        font_px, row("Genes", genes), row("Edges", edges)))
 }
