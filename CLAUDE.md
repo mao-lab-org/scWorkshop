@@ -102,8 +102,16 @@ Rscript -e 'Sys.setenv(SCW_RESULTS = normalizePath("results")); rmarkdown::rende
   
   This is fragile by design and will break if NeighbourNet's plot structure changes.
 - `nnet_vis(tabs)` draws the tables with visNetwork and adds an HTML legend
-  (`.nnet_legend()`) with `htmlwidgets::appendContent`. It sets
-  `sizingPolicy$*$fill <- FALSE` so the legend sits below the network.
+  (`.nnet_legend()`) with `htmlwidgets::appendContent`.
+- **Widget height:** leave `height = NULL` so htmlwidgets picks a height for each
+  context through the sizing policy:
+  - browser and RStudio Viewer: `calc(100vh - 200px)`, the window minus room for the
+    legend;
+  - knitr (knitted HTML and RStudio's inline chunk output): a fixed 550 px.
+  
+  Don't use htmlwidgets' fill mode, which pushes the legend off screen. Don't use one
+  fixed height either: on a large screen the network then fills only the top part of
+  the window.
 - **vis.js data-frame columns:** use dotted nested names only. A plain `color` or
   `arrows` column next to `color.border` or `arrows.to.type` stops the widget rendering.
   To debug, render with `htmlwidgets::saveWidget()` and read the browser console.

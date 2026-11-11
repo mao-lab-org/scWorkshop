@@ -102,8 +102,10 @@ nnet_tables <- function(seu, i, meta.network = TRUE, cutoff = NULL, ...) {
 #' @param tabs Output of nnet_tables().
 #' @param show_isolated Keep genes with no edge above the cutoff (greyed out).
 #' @param title Plot title; default says which network is shown.
-#' @param height Widget height.
-nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = "600px") {
+#' @param height Widget height. Default: the window height minus room for
+#'   the legend in a browser or the RStudio Viewer, and 550 px in knitted
+#'   documents and RStudio's inline chunk output.
+nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = NULL) {
     nd <- tabs$nodes; ed <- tabs$edges; info <- tabs$info
     if (!show_isolated) nd <- nd[nd$degree > 0, ]
 
@@ -194,9 +196,18 @@ nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = "600px")
         ) |>
         visNetwork::visInteraction(hover = TRUE, tooltipDelay = 80,
                                    navigationButtons = TRUE, dragNodes = TRUE)
-    # keep the requested height (no fill-the-window) so the legend sits below
+    # Height by context (when `height` is NULL): browser and RStudio Viewer
+    # get the window minus room for the legend (not htmlwidgets' fill mode,
+    # which pushes the legend off screen); knitr contexts (knitted HTML and
+    # RStudio's inline chunk output) get a fixed height, since a
+    # window-relative one would follow the inline output frame.
+    window_height <- "calc(100vh - 200px)"
     w$sizingPolicy$browser$fill <- FALSE
     w$sizingPolicy$viewer$fill  <- FALSE
+    w$sizingPolicy$browser$defaultHeight <- window_height
+    w$sizingPolicy$viewer$defaultHeight  <- window_height
+    w$sizingPolicy$knitr$figure <- FALSE
+    w$sizingPolicy$knitr$defaultHeight <- "550px"
     htmlwidgets::appendContent(w, legend)
 }
 

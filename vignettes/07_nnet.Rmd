@@ -547,8 +547,8 @@ meta_tabs <- lapply(1:2, function(i) {
                 radius = c(0.4, 0.7, 0.85, 1))
 })
 
-nnet_vis(meta_tabs[[1]], height = "550px")
-nnet_vis(meta_tabs[[2]], height = "550px")
+nnet_vis(meta_tabs[[1]])
+nnet_vis(meta_tabs[[2]])
 ```
 
 The tables are ordinary data frames, so you can sort, filter or save them:
