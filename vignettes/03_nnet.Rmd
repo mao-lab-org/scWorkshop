@@ -124,8 +124,8 @@ library(RColorBrewer)
 ```
 
 Module 2 saved the cardiomyocyte subset with expression, Φ-Space scores,
-UMAP coordinates, six pseudotime estimates, and the trajectory-free
-`pt_phi_score`.
+UMAP coordinates, the slingshot and DPT pseudotimes, and the
+trajectory-free `pt_phi_score`.
 
 ```{r load-module6}
 cm <- readRDS(file.path(results_dir, "06_cm_pseudotime.rds"))

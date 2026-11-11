@@ -148,8 +148,13 @@ Still to do:
   needs the user's check. Facts from the paper come from its abstract (PMID 33682422).
   BiocAsia participants have not done the original morning session, so no module may
   assume it.
-- Trim Module 2: run the Φ-Space pseudotime, one slingshot run and one DPT run live; make
-  the 2×2 sensitivity analysis optional.
+- Module 2 is trimmed: the main path has the Φ-Space score, one slingshot run and one DPT run
+  (all on Φ-Space), compared with each other and with donor stage, then the
+  clustering-sensitivity figure. PCA runs and the method × embedding comparison are in
+  "Going Further (Optional)" after the handoff save, so they never change
+  `06_cm_pseudotime.rds`. Findings the text relies on: all pseudotimes put foetal first but
+  don't separate young from adult; the slingshot runs differ in lineage count (6–7
+  unsupervised vs 2–3 Φ-Space cell types) yet agree with stage about equally (ρ ≈ 0.73).
 - Add short exercises with folded solutions to Modules 1 and 2 (Module 3 has some).
 - Make slides by adapting the old `afternoon_30min_xaringan.Rmd` from the original repo.
   Follow the slide conventions referenced in the user's global CLAUDE.md. Add "run the
