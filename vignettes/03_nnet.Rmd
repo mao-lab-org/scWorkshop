@@ -529,9 +529,10 @@ How to read the view:
 
 - **Diamonds are TFs** (filled with their TF-module colour); **circles are
   target genes**. Colour always means TF module.
-- **Edge width** is the co-expression weight. A plain line means
-  co-expression only; an arrow or a T-bar means prior knowledge also records
-  activation or inhibition.
+- **Edge width** is the co-expression weight. A **dashed** line means
+  co-expression only: the edge is undirected, because prior knowledge has no
+  link between the two genes. A solid line with an arrow or a T-bar means
+  prior knowledge also records activation or inhibition.
 - **Grey genes** have no edge above the cutoff in this meta-network.
 - **Hover** a gene or an edge for its numbers. **Click** a gene, or pick it
   in the *Select a gene* menu, to highlight its partners. Scroll to zoom.

@@ -139,9 +139,11 @@ is **built locally and only published by CI**:
 - **vis.js data-frame columns:** use dotted nested names only. A plain `color` or
   `arrows` column next to `color.border` or `arrows.to.type` stops the widget rendering.
   To debug, render with `htmlwidgets::saveWidget()` and read the browser console.
-- **Design rules:** colour means TF module only (targets are neutral white); edges are
-  plain lines unless prior knowledge supports them (arrow or T-bar); genes with no edge
-  above the cutoff are greyed out; layout is fixed so meta-networks compare directly.
+- **Design rules:** colour means TF module only (targets are neutral white); edges
+  without prior knowledge are dashed (undirected), as in NeighbourNet's static plot,
+  with dash length scaled to edge width; prior-supported edges are solid with an arrow
+  or T-bar; genes with no edge above the cutoff are greyed out; layout is fixed so
+  meta-networks compare directly.
 - **Not yet tested** on cell-specific networks (`meta.network = FALSE`) or on data where
   receptor/pathway layers appear.
 - **After the workshop,** the plan is to move it into NeighbourNet together with a

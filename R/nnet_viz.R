@@ -164,10 +164,17 @@ nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = NULL) {
             ifelse(is.na(ed$confidence), "",
                    paste0("<br>confidence: ", sprintf("%.2f", ed$confidence))),
             "<br>prior knowledge: ",
-            c(none = "none (co-expression only)", activation = "activation",
+            c(none = "none (undirected, co-expression only)", activation = "activation",
               inhibition = "inhibition")[ed$prior]),
         stringsAsFactors = FALSE
     )
+    # As in NeighbourNet's plots: edges without prior knowledge are
+    # undirected and dashed (dash length scales with width, or thick edges
+    # look solid); prior-supported edges are solid with an arrow or a bar.
+    edges$dashes <- lapply(seq_len(nrow(ed)), function(k) {
+        if (ed$prior[k] != "none") return(FALSE)
+        c(max(6, 2.5 * edges$width[k]), max(5, 2 * edges$width[k]))
+    })
     edges$arrows.to.enabled <- ed$prior != "none"
     edges$arrows.to.type    <- ifelse(ed$prior == "inhibition", "bar", "arrow")
 
@@ -226,9 +233,10 @@ nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = NULL) {
             triangle = '<polygon points="10,2 18,17 2,17"')
         svg(sprintf('%s fill="%s" stroke="%s" stroke-width="1.5"/>', body, fill, stroke))
     }
-    edge_svg <- function(end = c("none", "arrow", "bar"), width = 3) {
+    edge_svg <- function(end = c("none", "arrow", "bar"), width = 3, dashed = FALSE) {
         end <- match.arg(end)
-        line <- sprintf('<line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="%s"/>', width)
+        line <- sprintf('<line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="%s"%s/>',
+                        width, if (dashed) ' stroke-dasharray="5,4"' else "")
         tip <- switch(end,
             none  = "",
             arrow = '<polygon points="38,10 29,5 29,15" fill="#555555"/>',
@@ -257,9 +265,11 @@ nnet_vis <- function(tabs, show_isolated = TRUE, title = NULL, height = NULL) {
         item(node_svg("dot", "#F2F2F2", "#BDBDBD"), "no edge above cutoff")
     )
     edges <- c(
-        item(edge_svg("none"), "co-expression (width = weight)"),
+        item(edge_svg("none", dashed = TRUE),
+             "co-expression only (undirected, not in prior knowledge)"),
         item(edge_svg("arrow"), "+ prior knowledge: activation"),
-        item(edge_svg("bar"), "+ prior knowledge: inhibition")
+        item(edge_svg("bar"), "+ prior knowledge: inhibition"),
+        item("", "(width = weight)")
     )
     htmltools::HTML(sprintf(
         paste0('<div style="font-family:Arial,Helvetica,sans-serif;font-size:%dpx;',
