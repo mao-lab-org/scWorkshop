@@ -22,7 +22,7 @@ cat(sprintf("%-14s %d\n", "CPU cores:", parallel::detectCores()))
 ## ---- packages --------------------------------------------------------------
 pkgs <- c("Seurat", "SeuratObject", "SingleCellExperiment", "scran", "scuttle", "scater",
           "ComplexHeatmap", "slingshot", "destiny", "PhiSpace", "NeighbourNet",
-          "DelayedMatrixStats", "mclust", "uwot",
+          "DelayedMatrixStats", "mclust", "uwot", "visNetwork", "ggiraph",
           "ggplot2", "dplyr", "tidyr", "tibble", "patchwork", "RColorBrewer",
           "rmarkdown", "knitr")
 cat("\nPackages:\n")

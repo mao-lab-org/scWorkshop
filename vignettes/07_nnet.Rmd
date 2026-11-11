@@ -513,6 +513,60 @@ TFs and receptor context suggest plausible upstream biology. Follow-up
 experiments or perturbation data would be needed before calling any edge
 causal regulation.
 
+## Explore the Meta-networks Interactively
+
+The static plots pack a lot into small glyphs. Below, the same two
+meta-networks are drawn as interactive networks with exactly the same
+genes, edges, cutoff and layout. The helper functions live in
+`R/nnet_viz.R`:
+
+- `nnet_tables()` returns the network as two tables: `nodes` (gene, role,
+  TF module, strongest edge confidence) and `edges` (TF, target, weight,
+  confidence, prior-knowledge support).
+- `nnet_vis()` draws those tables with **visNetwork**.
+
+How to read the view:
+
+- **Diamonds are TFs** (filled with their TF-module colour); **circles are
+  target genes**. Colour always means TF module.
+- **Edge width** is the co-expression weight. A plain line means
+  co-expression only; an arrow or a T-bar means prior knowledge also records
+  activation or inhibition.
+- **Grey genes** have no edge above the cutoff in this meta-network.
+- **Hover** a gene or an edge for its numbers. **Click** a gene, or pick it
+  in the *Select a gene* menu, to highlight its partners. Scroll to zoom.
+
+Gene positions are identical in both views, so you can compare them
+directly.
+
+```{r interactive-meta-networks}
+source("../R/nnet_viz.R")
+
+meta_tabs <- lapply(1:2, function(i) {
+    nnet_tables(seu, i = i, meta.network = TRUE,
+                radius = c(0.4, 0.7, 0.85, 1))
+})
+
+nnet_vis(meta_tabs[[1]], height = "550px")
+nnet_vis(meta_tabs[[2]], height = "550px")
+```
+
+The tables are ordinary data frames, so you can sort, filter or save them:
+
+```{r interactive-tables}
+meta_tabs[[1]]$edges
+```
+
+**Try it.**
+
+1. In meta-network 1, which target gene is the hub? Which TF modules feed
+   into it?
+2. Hover over ZBTB20 in meta-network 1. It has no edge on the plot, yet its
+   strongest edge confidence is high. What does that tell you about which
+   TFs were selected for drawing?
+3. Compare the two meta-networks. Do they use different TF modules for
+   different target genes?
+
 ## Representative Cell-specific Networks
 
 A meta-network is an aggregate over many cell-specific networks. To make

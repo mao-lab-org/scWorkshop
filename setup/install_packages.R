@@ -42,7 +42,9 @@ cran_pkgs <- c(
     # PhiSpace imports from CRAN
     "kerndwd", "umap", "FNN", "ggpubr", "irlba", "plyr", "magrittr", "withr",
     # NeighbourNet imports from CRAN
-    "RANN", "progress", "RSpectra", "ggraph", "reshape2", "scatterpie"
+    "RANN", "progress", "RSpectra", "ggraph", "reshape2", "scatterpie",
+    # interactive network views (Module 7)
+    "visNetwork", "ggiraph", "htmlwidgets"
 )
 bioc_pkgs <- c(
     "SingleCellExperiment", "SummarizedExperiment", "SpatialExperiment",
