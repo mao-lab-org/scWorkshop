@@ -36,6 +36,10 @@ Participants use cloned copies of one Windows Server VM: R 4.6.1, Bioconductor 3
   participants.
 - The workshop helper `R/nnet_viz.R` is deliberately a sourced script, not a package,
   for this reason.
+- The repo-download snippet only adds and overwrites files. After the renumbering, the
+  VM still had the old `vignettes/05_*.Rmd`, `06_*.Rmd`, `07_*.Rmd`; they must be deleted
+  on the VM before cloning (command in the user's notes from 11 Nov; check with the user
+  whether that is done). Whether the organisers have cloned the VM yet is unknown: ask.
 
 ## Commands
 
@@ -148,7 +152,8 @@ is **built locally and only published by CI**:
   receptor/pathway layers appear.
 - **After the workshop,** the plan is to move it into NeighbourNet together with a
   refactor of `visualise.network()` (compute tables, then draw). Don't make NeighbourNet
-  depend on a separate viz package; that would be a circular dependency.
+  depend on a separate viz package; that would be a circular dependency. This is now
+  NeighbourNet PR #2 (see below); keep the two renderers' conventions in sync.
 
 ## Open work on the materials
 
@@ -163,12 +168,28 @@ Proposed 180-minute timetable:
 | 2:00–2:50 | Module 3 |
 | 2:50–3:00 | Wrap-up |
 
-Still to do:
+### Status (end of 11 Nov 2026)
+
+Done: modules renumbered 1–3; Introduction (`00_introduction.Rmd`) written; Module 2
+trimmed; Module 3 has an interactive network section with 3 exercises; website live; all
+four files pass `dry_run.R` (cached and `--fresh`).
+
+**Next, led by the user:** their own manual edits and review of the vignettes, then
+slides. Their edits take precedence: before changing a vignette, check `git diff` /
+`git log` for their recent changes and don't overwrite them. After any vignette change,
+run `Rscript setup/dry_run.R`, then `Rscript setup/build_site.R`, and commit `docs/` with
+the change.
+
+Notes for that work:
 - The Introduction's general background on cardiomyocyte maturation (marked with a
   `TODO(Jiadong)` comment in `00_introduction.Rmd`) is not from Sim et al. 2021 and
   needs the user's check. Facts from the paper come from its abstract (PMID 33682422).
+  The Gao et al. 2026 reference entry still lacks a DOI and author list.
   BiocAsia participants have not done the original morning session, so no module may
   assume it.
+- Text must describe what the rendered output actually shows. Two claims inherited from
+  the original workshop were wrong and have been rewritten (Module 2). Check numbers in
+  the rendered HTML before writing about them.
 - Module 2 is trimmed: the main path has the Φ-Space score, one slingshot run and one DPT run
   (all on Φ-Space), compared with each other and with donor stage, then the
   clustering-sensitivity figure. PCA runs and the method × embedding comparison are in
@@ -176,13 +197,47 @@ Still to do:
   `06_cm_pseudotime.rds`. Findings the text relies on: all pseudotimes put foetal first but
   don't separate young from adult; the slingshot runs differ in lineage count (6–7
   unsupervised vs 2–3 Φ-Space cell types) yet agree with stage about equally (ρ ≈ 0.73).
-- Add short exercises with folded solutions to Modules 1 and 2 (Module 3 has some).
-- Make slides by adapting the old `afternoon_30min_xaringan.Rmd` from the original repo.
-  Follow the slide conventions referenced in the user's global CLAUDE.md. Add "run the
-  repo-download snippet" as the first instruction on the opening slide.
-- Small fixes: move `pt_phi_score` from Module 2 into Module 1; fix the
-  "We keep 20 PCs the default" typo in Module 2.
+- **Slides:** adapt the old `afternoon_30min_xaringan.Rmd` from the original repo
+  (`~/Documents/GitHub/single_cell_workshop/`). Follow the slide conventions referenced in
+  the user's global CLAUDE.md (read that SKILL.md first). Renumber to Modules 1–3, add an
+  Introduction section, and make "run the repo-download snippet" the first instruction on
+  the opening slide. Before reusing the old slides' claims about results, check them
+  against the current rendered modules.
+- Deferred (user's call): exercises with folded solutions for Modules 1 and 2; moving
+  `pt_phi_score` from Module 2 into Module 1 (Module 3 reads it from Module 2's handoff
+  file, so moving it means saving it in Module 1's handoff too).
 - Rehearse and fit the timing.
+- Later: switching the site to a Quarto website with "freeze" (nicer site, smaller
+  diffs) was discussed and postponed until after the workshop.
+
+## NeighbourNet pull request (separate repo)
+
+[meiosis97/NeighbourNet#2](https://github.com/meiosis97/NeighbourNet/pull/2) adds
+`visualise.network(..., interactive = TRUE)`. It is open, waiting for Yidi's review.
+
+- Local clone: `~/Documents/GitHub/NeighbourNet`, branch `interactive-visualise`;
+  remotes `origin` = the user's fork (`jiadongm/NeighbourNet`), `upstream` =
+  `meiosis97/NeighbourNet`. The user pushes; Claude cannot.
+- `dev/` in that clone is excluded through `.git/info/exclude` and holds:
+  - the regression data (`fixtures/`, ~6 GB);
+  - `capture.R` / `compare.R`: static-output baseline vs `6a8de81`, 13 configurations, must
+    stay identical;
+  - `render_interactive.R`, `stress.R`;
+  - `rlib/`: an isolated R library with roxygen2 7.3.3, testthat, pkgload, rcmdcheck and
+    the branch's build. Use `R_LIBS=$PWD/dev/rlib`; reinstall with
+    `R CMD INSTALL --no-test-load -l dev/rlib .`;
+  - `pr/`: PR description and comment drafts.
+- Tests: `R_LIBS=$PWD/dev/rlib Rscript -e 'testthat::test_local(".")'` (9 tests, ~11 s).
+- Changes made in review: edges without prior knowledge are dashed (Yidi's request; dash
+  length scales with width), and widget height follows the window in browser/Viewer.
+  `R/nnet_viz.R` in this repo mirrors both.
+- Problems already in the package, listed in the PR rather than fixed: no `License`, ggplot2/RColorBrewer/
+  SeuratObject not in Imports, examples use an undefined `seurat.obj`, `.Rbuildignore`
+  is itself gitignored (so the package bundles `misc/` and 45 MB of data),
+  `receptor.activity = "dist"` errors (indexes by gene name; rows are `g1.<gene>`),
+  igraph deprecation warnings.
+- The workshop VM pins NeighbourNet at `6a8de81`; keep using `R/nnet_viz.R` for the
+  workshop. After the PR is merged, Module 3 can switch to `interactive = TRUE`.
 
 ## Git
 
