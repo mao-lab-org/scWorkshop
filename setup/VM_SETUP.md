@@ -115,8 +115,8 @@ identical, and the same meta-network was selected. So the caches are kept.
 Open the HTML files in `dry_run/` and skim the figures.
 
 Then walk through the participant path once by hand: open
-`vignettes/01_phispace_annotation.Rmd` and run the chunks one by one with
-*Run → Run All Chunks Above* or Ctrl+Shift+Enter. Repeat for 02 and 03.
+`vignettes/00_introduction.Rmd` and run the chunks one by one with
+*Run → Run All Chunks Above* or Ctrl+Shift+Enter. Repeat for 01, 02 and 03.
 
 ## 7. Clean up before handing the VM back
 

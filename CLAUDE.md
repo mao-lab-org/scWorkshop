@@ -14,6 +14,7 @@ snRNA-seq (foetal / young / adult), with the Gao et al. 2026 left-ventricle atla
 
 | Module | File | Methods |
 |---|---|---|
+| Intro | `vignettes/00_introduction.Rmd` | Sim et al. 2021, why continuous states, data tour (Seurat only) |
 | 1 | `vignettes/01_phispace_annotation.Rmd` | PhiSpace soft annotation (cell type + age group) |
 | 2 | `vignettes/02_pseudotime.Rmd` | slingshot, destiny DPT on PCA vs Φ-Space embeddings |
 | 3 | `vignettes/03_nnet.Rmd` | NeighbourNet cell-specific co-expression networks |
@@ -142,11 +143,11 @@ Proposed 180-minute timetable:
 | 2:50–3:00 | Wrap-up |
 
 Still to do:
-- Write an Introduction (`vignettes/00_introduction.Rmd`): Sim et al. 2021 (PMID 33682422;
-  54,140 nuclei from 9 donors: 3 foetal 19–20 wk, 3 young 4–14 y, 3 adult 35–42 y;
-  progesterone receptor drives sex-dependent cardiomyocyte maturation), why continuous
-  cell states, the data and reference used, how the session runs. BiocAsia participants
-  have not done the original morning session, so no module may assume it.
+- The Introduction's general background on cardiomyocyte maturation (marked with a
+  `TODO(Jiadong)` comment in `00_introduction.Rmd`) is not from Sim et al. 2021 and
+  needs the user's check. Facts from the paper come from its abstract (PMID 33682422).
+  BiocAsia participants have not done the original morning session, so no module may
+  assume it.
 - Trim Module 2: run the Φ-Space pseudotime, one slingshot run and one DPT run live; make
   the 2×2 sensitivity analysis optional.
 - Add short exercises with folded solutions to Modules 1 and 2 (Module 3 has some).

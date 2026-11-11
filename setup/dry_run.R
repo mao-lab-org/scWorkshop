@@ -27,7 +27,8 @@ res_dir <- normalizePath(res_dir)
 out_dir <- normalizePath("dry_run")
 Sys.setenv(SCW_RESULTS = res_dir)
 
-modules <- c("vignettes/01_phispace_annotation.Rmd",
+modules <- c("vignettes/00_introduction.Rmd",
+             "vignettes/01_phispace_annotation.Rmd",
              "vignettes/02_pseudotime.Rmd",
              "vignettes/03_nnet.Rmd")
 

@@ -5,6 +5,7 @@ Phipson Lab [single-cell workshop](https://phipsonlab.github.io/single_cell_work
 
 | Module | Topic | Packages |
 |---|---|---|
+| – | Introduction: the data and the biological question | Seurat |
 | 1 | Continuous phenotyping with Φ-Space | PhiSpace |
 | 2 | Pseudotime trajectory analysis | slingshot, destiny |
 | 3 | Cell-specific co-expression networks | NeighbourNet |

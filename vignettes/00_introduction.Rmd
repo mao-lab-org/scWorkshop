@@ -1,0 +1,306 @@
+---
+title: "Introduction: Continuous Cell States in the Maturing Human Heart"
+author: "Single Cell Workshop"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
+vignette: >
+  %\VignetteIndexEntry{Introduction: Continuous Cell States in the Maturing Human Heart}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+# Only the two input files are needed here. If they are missing, the prose
+# still renders but the code chunks are skipped.
+data_ok <- all(file.exists(
+    "../data/afternoon_mvp.rds",
+    "../data/reference_gao2026.rds"
+))
+
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center",
+    fig.width = 9,
+    fig.height = 4,
+    eval = data_ok
+)
+```
+
+```{asis, echo = !data_ok}
+> **Note.** This module's code chunks are not evaluated because
+> `data/afternoon_mvp.rds` and/or `data/reference_gao2026.rds` are not
+> present. Run `setup/download_data.R` from the repository root and re-render.
+```
+
+## Welcome
+
+Single-cell RNA-seq analyses usually sort cells into clusters and give each
+cluster one label. That works well for distinct cell types, but many questions
+are about **cells in transition**: cells that are differentiating, maturing,
+responding to a stimulus, or drifting towards disease. In this workshop we
+treat such cell states as **continuous**, and we ask three questions of the
+same data, one per module:
+
+| Module | Question | Method |
+|---|---|---|
+| 1 | How much does each cell resemble each reference cell type and developmental stage? | Φ-Space (soft annotation) |
+| 2 | Where is each cell along the maturation process? | Pseudotime (slingshot, diffusion pseudotime) |
+| 3 | How do relationships between genes change as cells mature? | Cell-specific co-expression networks (NeighbourNet) |
+
+Each module builds on the previous one:
+
+- **Module 1** scores every nucleus against a reference atlas.
+- **Module 2** uses those scores to order the cardiomyocytes from foetal-like to adult-like.
+- **Module 3** asks which gene networks change along that ordering.
+
+The data throughout is snRNA-seq of the developing human heart.
+
+### Timetable
+
+| Time | Session |
+|---|---|
+| 0:00–0:15 | Introduction (this page) |
+| 0:15–1:05 | Module 1: Continuous phenotyping with Φ-Space |
+| 1:05–1:15 | Break |
+| 1:15–2:00 | Module 2: Pseudotime trajectory analysis |
+| 2:00–2:50 | Module 3: Cell-specific co-expression networks |
+| 2:50–3:00 | Wrap-up and questions |
+
+## The Biological Question
+
+### How does the human heart mature after birth?
+
+The heart keeps maturing long after it starts beating. Much is known about how
+the embryonic heart forms, but much less about the signals that turn the
+foetal heart into the adult one. The heart's muscle cells, the
+**cardiomyocytes**, change in many ways along the way:
+
+<!-- TODO(Jiadong): general background, not from Sim et al. 2021 - please check. -->
+
+- **They stop dividing.** Foetal cardiomyocytes proliferate; after birth most of
+  them stop dividing and grow in size instead.
+- **Their energy source changes.** Foetal cardiomyocytes rely largely on
+  glycolysis; mature ones burn mostly fatty acids in their mitochondria.
+- **Their contractile machinery matures.** Sarcomere proteins switch to adult
+  forms. For example, the foetal troponin I (*TNNI1*) is replaced by cardiac
+  troponin I (*TNNI3*).
+
+None of these happens at a single moment. Maturation is a **continuum**, and
+cardiomyocytes from donors of similar age can sit at different points along it.
+
+### The study: Sim et al. (2021)
+
+This workshop uses data from
+
+> Sim CB, Phipson B, Ziemann M, et al. **Sex-specific control of human heart
+> maturation by the progesterone receptor.** *Circulation* 2021;143(16):1614–1628.
+> [doi:10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921)
+
+The authors profiled the human heart from foetal stages to adulthood:
+
+- **Single-nucleus RNA-seq** of 54,140 nuclei from 9 donors: 3 foetal
+  (19–20 weeks), 3 young (4–14 years) and 3 adult (35–42 years). Nuclei rather
+  than whole cells are sequenced because adult cardiomyocytes are too large to
+  capture intact.
+- **Bulk RNA-seq and ATAC-seq** on purified cardiomyocyte nuclei from 21 donors,
+  to confirm the transcriptional changes and map chromatin accessibility.
+- **Functional tests** of the sex hormones implicated in maturation, in
+  stem-cell-derived human heart organoids and in mice.
+
+Their main finding: the **progesterone receptor** (gene *PGR*) drives
+sex-dependent programs of cardiomyocyte maturation, affecting both metabolism
+and contractile properties.
+
+### Why continuous cell states?
+
+The study compared three groups of donors: foetal, young and adult. But the
+maturation it describes happens gradually *within* cells, and a donor's age
+group is only a coarse proxy for where a given nucleus is along that process.
+This workshop asks what we can learn by treating maturation as continuous:
+
+- **Module 1:** instead of a single label, each nucleus gets a score for every
+  reference cell type and age group. A nucleus can be partly foetal-like and
+  partly adult-like.
+- **Module 2:** pseudotime orders cardiomyocytes along maturation. We check
+  this ordering against the donors' ages, which the methods never see.
+- **Module 3:** cell-specific networks show which transcription factors
+  co-vary with maturation-associated genes, cell by cell.
+
+## The Data We Use
+
+To keep the workshop fast, we use a prepared subset of the Sim et al. data
+together with a published reference atlas.
+
+### Query: the Sim et al. heart nuclei (`afternoon_mvp.rds`)
+
+The original nuclei were processed as follows:
+
+1. **Quality control:** keep nuclei with at least 500 detected genes, 2,500–40,000
+   UMIs and at most 20% mitochondrial reads.
+2. **Gene filtering:** remove mitochondrial and ribosomal genes, genes without an
+   Entrez ID, and genes on the X and Y chromosomes. The last step means sex
+   cannot be inferred from expression here; we use the donors' recorded sex
+   instead.
+3. **Down-sampling** to 10,000 nuclei, keeping each sample's share of the total.
+
+No clustering or cell type annotation has been done: in Module 1, Φ-Space
+annotates the nuclei.
+
+### Reference: a developmental atlas of the human left ventricle (`reference_gao2026.rds`)
+
+Φ-Space needs an annotated reference. We use a subset of the Gao et al. (2026,
+*Genome Biology*) integrated snRNA-seq atlas of the human left ventricle, which
+spans foetal stages to old age. The subset keeps non-diseased donors only, with
+the large cell types down-sampled. Module 1 explains why this reference suits
+our question.
+
+## A First Look at the Data
+
+```{r load-libraries}
+library(Seurat)
+library(SingleCellExperiment)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+```{r load-data}
+seu <- readRDS("../data/afternoon_mvp.rds")
+reference <- readRDS("../data/reference_gao2026.rds")
+seu
+```
+
+The query is a `Seurat` object holding raw counts and one row of metadata per
+nucleus:
+
+```{r metadata}
+head(seu@meta.data[, c("sample", "group", "sex", "nCount_RNA", "nFeature_RNA")])
+```
+
+### Samples, stages and sex
+
+```{r samples}
+table(sample = seu$sample, stage = seu$group)
+table(stage = seu$group, sex = seu$sex)
+```
+
+The three stages are not balanced: foetal samples contribute over half of the
+nuclei. Keep this in mind when comparing stages.
+
+### Signs of maturation in the raw data
+
+Before any modelling, we can already see maturation in a few well-known genes.
+We look at nuclei with clear *TTN* expression (titin, a large sarcomere gene).
+This is only a rough way to pick out cardiomyocytes; Module 1 annotates cell
+types properly. For each stage, we count the percentage of these nuclei in
+which each gene is detected.
+
+```{r maturation-genes, fig.height=3.8}
+genes <- c(TNNI1 = "foetal troponin I",
+           TNNI3 = "cardiac troponin I",
+           MKI67 = "cell division",
+           NPPA  = "natriuretic peptide A",
+           PGR   = "progesterone receptor")
+
+counts <- GetAssayData(seu, layer = "counts")
+cm_like <- counts["TTN", ] > 2
+stages <- c("fetal", "young", "adult")
+stage <- factor(seu$group[cm_like], levels = stages)
+
+pct <- sapply(stages, function(s) {
+    100 * Matrix::rowMeans(counts[names(genes), cm_like][, stage == s] > 0)
+})
+
+pct_df <- as.data.frame(pct) |>
+    tibble::rownames_to_column("gene") |>
+    pivot_longer(-gene, names_to = "stage", values_to = "percent") |>
+    mutate(stage = factor(stage, levels = stages),
+           gene = factor(gene, levels = names(genes),
+                         labels = paste0(names(genes), "\n(", genes, ")")))
+
+ggplot(pct_df, aes(stage, percent, fill = stage)) +
+    geom_col() +
+    facet_wrap(~ gene, nrow = 1) +
+    scale_fill_brewer(palette = "Set1") +
+    labs(x = NULL, y = "% of TTN+ nuclei with the gene detected") +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "none")
+```
+
+Three things stand out:
+
+- **Foetal markers fade.** *TNNI1* is detected in most foetal nuclei but in few
+  young or adult ones. *TNNI3* stays common at all stages, so the switch shows
+  up mainly as the loss of the foetal form. *NPPA* also declines.
+- **Division stops.** *MKI67*, a marker of dividing cells, becomes rarer with
+  age.
+- **The progesterone receptor rises.** *PGR*, the gene at the centre of the
+  paper, is detected in a growing share of nuclei from foetal to adult.
+
+These are averages over age groups. The rest of the workshop asks how such
+changes are distributed **across individual nuclei**, and whether nuclei
+within the same age group differ in how mature they are.
+
+### The reference
+
+```{r reference}
+reference
+table(reference$age_group)
+sort(table(reference$final_cell_type), decreasing = TRUE)
+```
+
+The reference's age groups (`fetal`, `young`, `middle`, `old`) are not the
+same as our query's stages (`fetal`, `young`, `adult`). That's fine: Φ-Space
+will score every query nucleus against all four reference age groups.
+
+## How This Session Runs
+
+- Each module is an R Markdown file in `vignettes/`. Open it in RStudio and run
+  the chunks in order (**Ctrl/Cmd + Shift + Enter** runs the current chunk).
+- Some steps take minutes. Their results are saved in `results/`, and the
+  modules load them instead of recomputing, so every chunk should finish in
+  seconds. The code that would recompute them is still shown, so you can see
+  what each step does.
+- The modules hand results to each other through these saved files. You can
+  start any module even if you did not finish the previous one.
+
+## Learning Outcomes
+
+By the end of the workshop you should be able to:
+
+- explain when a continuous view of cell state is more informative than discrete
+  cluster labels;
+- annotate cells with continuous phenotype scores from a reference atlas
+  (Φ-Space), and turn them into labels when needed;
+- infer and compare pseudotime orderings, and check them against known biology;
+- build cell-specific co-expression networks and summarise them into
+  meta-networks, without mistaking co-expression for regulation.
+
+## References
+
+- Sim CB, et al. Sex-specific control of human heart maturation by the progesterone
+  receptor. *Circulation* 2021;143(16):1614–1628.
+  [doi:10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921)
+- Mao J, Deng Y, Lê Cao K-A. Φ-Space: continuous phenotyping of single-cell
+  multi-omics data. *Genome Biology* 2025.
+  [doi:10.1186/s13059-025-03755-8](https://doi.org/10.1186/s13059-025-03755-8)
+- Gao et al. Integrative snRNA-seq atlas of the human left ventricle across the
+  lifespan. *Genome Biology* 2026.
+- Deng Y, Mao J, Choi J, Lê Cao K-A. Scalable cell-specific coexpression networks for
+  granular regulatory pattern discovery with NeighbourNet. *Genome Research* 2026.
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```
