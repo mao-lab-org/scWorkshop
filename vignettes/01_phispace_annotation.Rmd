@@ -143,7 +143,7 @@ A Φ-Space annotation is only as good as the reference it is built on. For the S
 - **annotates cell types at a useful granularity** — at least the major heart lineages (cardiomyocyte, fibroblast, endothelial, pericyte, immune, epicardial, neuronal);
 - **is publicly available** and free of major disease confounders.
 
-We use the **Gao et al. 2026** (*Genome Biology*) integrative snRNA-seq atlas of the human left ventricle. It combines 299 donors from eight published studies, spans 8 post-conceptional weeks through ≥60 years, and provides harmonised cell type and age-group annotations. We have pre-filtered it to non-diseased donors and balanced the major cell types by down-sampling; the HPC processing recipe is documented in [`references/HPC_reference_processing.md`](../references/HPC_reference_processing.md).
+We use the **Gao et al. 2026** (*Genome Biology*) integrative snRNA-seq atlas of the human left ventricle. It combines 299 donors from eight published studies, spans 8 post-conceptional weeks through ≥60 years, and provides harmonised cell type and age-group annotations. We have pre-filtered it to non-diseased donors and balanced the major cell types by down-sampling; the processing recipe is documented in the original workshop's [`references/HPC_reference_processing.md`](https://github.com/phipsonlab/single_cell_workshop/blob/main/references/HPC_reference_processing.md).
 
 Two columns from the reference drive everything that follows:
 

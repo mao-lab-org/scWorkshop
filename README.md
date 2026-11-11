@@ -3,6 +3,9 @@
 BiocAsia 2026 workshop (3 h). It is adapted from the afternoon session of the
 Phipson Lab [single-cell workshop](https://phipsonlab.github.io/single_cell_workshop/).
 
+**Website:** <https://mao-lab-org.github.io/scWorkshop/>, with the rendered
+Introduction and modules.
+
 | Module | Topic | Packages |
 |---|---|---|
 | – | Introduction: the data and the biological question | Seurat |
@@ -25,3 +28,16 @@ source("setup/check_setup.R")        # verify
 ```
 
 To set up the workshop VM, follow [setup/VM_SETUP.md](setup/VM_SETUP.md).
+
+## Updating the website
+
+The modules need the workshop data, so the site is built locally and only
+published by GitHub Actions:
+
+```bash
+Rscript setup/build_site.R    # renders the home page and modules into docs/ (~1.5 min)
+git add docs && git commit -m "Rebuild site" && git push
+```
+
+Pushing changes to `docs/` triggers `.github/workflows/pages.yml`, which
+publishes the folder to GitHub Pages.

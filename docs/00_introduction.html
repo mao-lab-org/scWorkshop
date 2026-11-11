@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Single Cell Workshop" />
+
+<meta name="date" content="2026-11-11" />
+
+<title>Introduction: Continuous Cell States in the Maturing Human Heart</title>
+
+<script src="libs/header-attrs-2.31/header-attrs.js"></script>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="libs/navigation-1.1/tabsets.js"></script>
+<script src="libs/navigation-1.1/codefolding.js"></script>
+<link href="libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+<!-- Navigation bar added to every page by setup/build_site.R -->
+<nav id="site-navbar" class="navbar navbar-default" style="margin-bottom: 20px; border-radius: 0;">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="index.html">Continuous Cell States</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a href="00_introduction.html">Introduction</a></li>
+      <li><a href="01_phispace_annotation.html">1. &Phi;-Space</a></li>
+      <li><a href="02_pseudotime.html">2. Pseudotime</a></li>
+      <li><a href="03_nnet.html">3. Co-expression networks</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li><a href="https://github.com/mao-lab-org/scWorkshop">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+<script>
+  // R Markdown places included HTML inside the content column (next to the
+  // floating table of contents). Move the bar to the top of the page so it
+  // spans the full width, and highlight the current page.
+  document.addEventListener("DOMContentLoaded", function () {
+    var nav = document.getElementById("site-navbar");
+    document.body.insertBefore(nav, document.body.firstChild);
+    var page = window.location.pathname.split("/").pop() || "index.html";
+    nav.querySelectorAll(".navbar-nav a").forEach(function (a) {
+      if (a.getAttribute("href") === page) a.parentElement.classList.add("active");
+    });
+  });
+</script>
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Introduction: Continuous Cell States in the
+Maturing Human Heart</h1>
+<h4 class="author">Single Cell Workshop</h4>
+<h4 class="date">2026-11-11</h4>
+
+</div>
+
+
+<div id="welcome" class="section level2" number="1">
+<h2><span class="header-section-number">1</span> Welcome</h2>
+<p>Single-cell RNA-seq analyses usually sort cells into clusters and
+give each cluster one label. That works well for distinct cell types,
+but many questions are about <strong>cells in transition</strong>: cells
+that are differentiating, maturing, responding to a stimulus, or
+drifting towards disease. In this workshop we treat such cell states as
+<strong>continuous</strong>, and we ask three questions of the same
+data, one per module:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Module</th>
+<th>Question</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>How much does each cell resemble each reference cell type and
+developmental stage?</td>
+<td>Φ-Space (soft annotation)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Where is each cell along the maturation process?</td>
+<td>Pseudotime (slingshot, diffusion pseudotime)</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>How do relationships between genes change as cells mature?</td>
+<td>Cell-specific co-expression networks (NeighbourNet)</td>
+</tr>
+</tbody>
+</table>
+<p>Each module builds on the previous one:</p>
+<ul>
+<li><strong>Module 1</strong> scores every nucleus against a reference
+atlas.</li>
+<li><strong>Module 2</strong> uses those scores to order the
+cardiomyocytes from foetal-like to adult-like.</li>
+<li><strong>Module 3</strong> asks which gene networks change along that
+ordering.</li>
+</ul>
+<p>The data throughout is snRNA-seq of the developing human heart.</p>
+<div id="timetable" class="section level3" number="1.1">
+<h3><span class="header-section-number">1.1</span> Timetable</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Time</th>
+<th>Session</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0:00–0:15</td>
+<td>Introduction (this page)</td>
+</tr>
+<tr class="even">
+<td>0:15–1:05</td>
+<td>Module 1: Continuous phenotyping with Φ-Space</td>
+</tr>
+<tr class="odd">
+<td>1:05–1:15</td>
+<td>Break</td>
+</tr>
+<tr class="even">
+<td>1:15–2:00</td>
+<td>Module 2: Pseudotime trajectory analysis</td>
+</tr>
+<tr class="odd">
+<td>2:00–2:50</td>
+<td>Module 3: Cell-specific co-expression networks</td>
+</tr>
+<tr class="even">
+<td>2:50–3:00</td>
+<td>Wrap-up and questions</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="the-biological-question" class="section level2" number="2">
+<h2><span class="header-section-number">2</span> The Biological
+Question</h2>
+<div id="how-does-the-human-heart-mature-after-birth"
+class="section level3" number="2.1">
+<h3><span class="header-section-number">2.1</span> How does the human
+heart mature after birth?</h3>
+<p>The heart keeps maturing long after it starts beating. Much is known
+about how the embryonic heart forms, but much less about the signals
+that turn the foetal heart into the adult one. The heart’s muscle cells,
+the <strong>cardiomyocytes</strong>, change in many ways along the
+way:</p>
+<!-- TODO(Jiadong): general background, not from Sim et al. 2021 - please check. -->
+<ul>
+<li><strong>They stop dividing.</strong> Foetal cardiomyocytes
+proliferate; after birth most of them stop dividing and grow in size
+instead.</li>
+<li><strong>Their energy source changes.</strong> Foetal cardiomyocytes
+rely largely on glycolysis; mature ones burn mostly fatty acids in their
+mitochondria.</li>
+<li><strong>Their contractile machinery matures.</strong> Sarcomere
+proteins switch to adult forms. For example, the foetal troponin I
+(<em>TNNI1</em>) is replaced by cardiac troponin I
+(<em>TNNI3</em>).</li>
+</ul>
+<p>None of these happens at a single moment. Maturation is a
+<strong>continuum</strong>, and cardiomyocytes from donors of similar
+age can sit at different points along it.</p>
+</div>
+<div id="the-study-sim-et-al.-2021" class="section level3" number="2.2">
+<h3><span class="header-section-number">2.2</span> The study: Sim et
+al. (2021)</h3>
+<p>This workshop uses data from</p>
+<blockquote>
+<p>Sim CB, Phipson B, Ziemann M, et al. <strong>Sex-specific control of
+human heart maturation by the progesterone receptor.</strong>
+<em>Circulation</em> 2021;143(16):1614–1628. <a
+href="https://doi.org/10.1161/CIRCULATIONAHA.120.051921">doi:10.1161/CIRCULATIONAHA.120.051921</a></p>
+</blockquote>
+<p>The authors profiled the human heart from foetal stages to
+adulthood:</p>
+<ul>
+<li><strong>Single-nucleus RNA-seq</strong> of 54,140 nuclei from 9
+donors: 3 foetal (19–20 weeks), 3 young (4–14 years) and 3 adult (35–42
+years). Nuclei rather than whole cells are sequenced because adult
+cardiomyocytes are too large to capture intact.</li>
+<li><strong>Bulk RNA-seq and ATAC-seq</strong> on purified cardiomyocyte
+nuclei from 21 donors, to confirm the transcriptional changes and map
+chromatin accessibility.</li>
+<li><strong>Functional tests</strong> of the sex hormones implicated in
+maturation, in stem-cell-derived human heart organoids and in mice.</li>
+</ul>
+<p>Their main finding: the <strong>progesterone receptor</strong> (gene
+<em>PGR</em>) drives sex-dependent programs of cardiomyocyte maturation,
+affecting both metabolism and contractile properties.</p>
+</div>
+<div id="why-continuous-cell-states" class="section level3"
+number="2.3">
+<h3><span class="header-section-number">2.3</span> Why continuous cell
+states?</h3>
+<p>The study compared three groups of donors: foetal, young and adult.
+But the maturation it describes happens gradually <em>within</em> cells,
+and a donor’s age group is only a coarse proxy for where a given nucleus
+is along that process. This workshop asks what we can learn by treating
+maturation as continuous:</p>
+<ul>
+<li><strong>Module 1:</strong> instead of a single label, each nucleus
+gets a score for every reference cell type and age group. A nucleus can
+be partly foetal-like and partly adult-like.</li>
+<li><strong>Module 2:</strong> pseudotime orders cardiomyocytes along
+maturation. We check this ordering against the donors’ ages, which the
+methods never see.</li>
+<li><strong>Module 3:</strong> cell-specific networks show which
+transcription factors co-vary with maturation-associated genes, cell by
+cell.</li>
+</ul>
+</div>
+</div>
+<div id="the-data-we-use" class="section level2" number="3">
+<h2><span class="header-section-number">3</span> The Data We Use</h2>
+<p>To keep the workshop fast, we use a prepared subset of the Sim et
+al. data together with a published reference atlas.</p>
+<div id="query-the-sim-et-al.-heart-nuclei-afternoon_mvp.rds"
+class="section level3" number="3.1">
+<h3><span class="header-section-number">3.1</span> Query: the Sim et
+al. heart nuclei (<code>afternoon_mvp.rds</code>)</h3>
+<p>The original nuclei were processed as follows:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Quality control:</strong> keep nuclei with at least 500
+detected genes, 2,500–40,000 UMIs and at most 20% mitochondrial
+reads.</li>
+<li><strong>Gene filtering:</strong> remove mitochondrial and ribosomal
+genes, genes without an Entrez ID, and genes on the X and Y chromosomes.
+The last step means sex cannot be inferred from expression here; we use
+the donors’ recorded sex instead.</li>
+<li><strong>Down-sampling</strong> to 10,000 nuclei, keeping each
+sample’s share of the total.</li>
+</ol>
+<p>No clustering or cell type annotation has been done: in Module 1,
+Φ-Space annotates the nuclei.</p>
+</div>
+<div
+id="reference-a-developmental-atlas-of-the-human-left-ventricle-reference_gao2026.rds"
+class="section level3" number="3.2">
+<h3><span class="header-section-number">3.2</span> Reference: a
+developmental atlas of the human left ventricle
+(<code>reference_gao2026.rds</code>)</h3>
+<p>Φ-Space needs an annotated reference. We use a subset of the Gao et
+al. (2026, <em>Genome Biology</em>) integrated snRNA-seq atlas of the
+human left ventricle, which spans foetal stages to old age. The subset
+keeps non-diseased donors only, with the large cell types down-sampled.
+Module 1 explains why this reference suits our question.</p>
+</div>
+</div>
+<div id="a-first-look-at-the-data" class="section level2" number="4">
+<h2><span class="header-section-number">4</span> A First Look at the
+Data</h2>
+<pre class="r"><code>library(Seurat)
+library(SingleCellExperiment)
+library(ggplot2)
+library(dplyr)
+library(tidyr)</code></pre>
+<pre class="r"><code>seu &lt;- readRDS(&quot;../data/afternoon_mvp.rds&quot;)
+reference &lt;- readRDS(&quot;../data/reference_gao2026.rds&quot;)
+seu</code></pre>
+<pre><code>## An object of class Seurat 
+## 18953 features across 10000 samples within 1 assay 
+## Active assay: RNA (18953 features, 0 variable features)
+##  1 layer present: counts</code></pre>
+<p>The query is a <code>Seurat</code> object holding raw counts and one
+row of metadata per nucleus:</p>
+<pre class="r"><code>head(seu@meta.data[, c(&quot;sample&quot;, &quot;group&quot;, &quot;sex&quot;, &quot;nCount_RNA&quot;, &quot;nFeature_RNA&quot;)])</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["sample"],"name":[1],"type":["chr"],"align":["left"]},{"label":["group"],"name":[2],"type":["chr"],"align":["left"]},{"label":["sex"],"name":[3],"type":["chr"],"align":["left"]},{"label":["nCount_RNA"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["nFeature_RNA"],"name":[5],"type":["int"],"align":["right"]}],"data":[{"1":"f1","2":"fetal","3":"m","4":"7748","5":"2973","_rn_":"AAACCCAAGTTTCGAC_f1"},{"1":"f1","2":"fetal","3":"m","4":"8640","5":"3167","_rn_":"AAACCCACAAATGAGT_f1"},{"1":"f1","2":"fetal","3":"m","4":"11325","5":"3547","_rn_":"AAACGAACAAACTCTG_f1"},{"1":"f1","2":"fetal","3":"m","4":"5882","5":"2823","_rn_":"AAACGAACAGCGGTTC_f1"},{"1":"f1","2":"fetal","3":"m","4":"10129","5":"3639","_rn_":"AAACGAATCCGATAAC_f1"},{"1":"f1","2":"fetal","3":"m","4":"12744","5":"4274","_rn_":"AAAGAACGTCATACCA_f1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div id="samples-stages-and-sex" class="section level3" number="4.1">
+<h3><span class="header-section-number">4.1</span> Samples, stages and
+sex</h3>
+<pre class="r"><code>table(sample = seu$sample, stage = seu$group)</code></pre>
+<pre><code>##       stage
+## sample adult fetal young
+##     a1   843     0     0
+##     a2   550     0     0
+##     a3   259     0     0
+##     f1     0  1677     0
+##     f2     0  2192     0
+##     f3     0  1580     0
+##     y1     0     0   908
+##     y2     0     0   990
+##     y3     0     0  1001</code></pre>
+<pre class="r"><code>table(stage = seu$group, sex = seu$sex)</code></pre>
+<pre><code>##        sex
+## stage      f    m
+##   adult  843  809
+##   fetal 1580 3869
+##   young  990 1909</code></pre>
+<p>The three stages are not balanced: foetal samples contribute over
+half of the nuclei. Keep this in mind when comparing stages.</p>
+</div>
+<div id="signs-of-maturation-in-the-raw-data" class="section level3"
+number="4.2">
+<h3><span class="header-section-number">4.2</span> Signs of maturation
+in the raw data</h3>
+<p>Before any modelling, we can already see maturation in a few
+well-known genes. We look at nuclei with clear <em>TTN</em> expression
+(titin, a large sarcomere gene). This is only a rough way to pick out
+cardiomyocytes; Module 1 annotates cell types properly. For each stage,
+we count the percentage of these nuclei in which each gene is
+detected.</p>
+<pre class="r"><code>genes &lt;- c(TNNI1 = &quot;foetal troponin I&quot;,
+           TNNI3 = &quot;cardiac troponin I&quot;,
+           MKI67 = &quot;cell division&quot;,
+           NPPA  = &quot;natriuretic peptide A&quot;,
+           PGR   = &quot;progesterone receptor&quot;)
+
+counts &lt;- GetAssayData(seu, layer = &quot;counts&quot;)
+cm_like &lt;- counts[&quot;TTN&quot;, ] &gt; 2
+stages &lt;- c(&quot;fetal&quot;, &quot;young&quot;, &quot;adult&quot;)
+stage &lt;- factor(seu$group[cm_like], levels = stages)
+
+pct &lt;- sapply(stages, function(s) {
+    100 * Matrix::rowMeans(counts[names(genes), cm_like][, stage == s] &gt; 0)
+})
+
+pct_df &lt;- as.data.frame(pct) |&gt;
+    tibble::rownames_to_column(&quot;gene&quot;) |&gt;
+    pivot_longer(-gene, names_to = &quot;stage&quot;, values_to = &quot;percent&quot;) |&gt;
+    mutate(stage = factor(stage, levels = stages),
+           gene = factor(gene, levels = names(genes),
+                         labels = paste0(names(genes), &quot;\n(&quot;, genes, &quot;)&quot;)))
+
+ggplot(pct_df, aes(stage, percent, fill = stage)) +
+    geom_col() +
+    facet_wrap(~ gene, nrow = 1) +
+    scale_fill_brewer(palette = &quot;Set1&quot;) +
+    labs(x = NULL, y = &quot;% of TTN+ nuclei with the gene detected&quot;) +
+    theme_bw(base_size = 12) +
+    theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="00_introduction_files/figure-html/maturation-genes-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
+<p>Three things stand out:</p>
+<ul>
+<li><strong>Foetal markers fade.</strong> <em>TNNI1</em> is detected in
+most foetal nuclei but in few young or adult ones. <em>TNNI3</em> stays
+common at all stages, so the switch shows up mainly as the loss of the
+foetal form. <em>NPPA</em> also declines.</li>
+<li><strong>Division stops.</strong> <em>MKI67</em>, a marker of
+dividing cells, becomes rarer with age.</li>
+<li><strong>The progesterone receptor rises.</strong> <em>PGR</em>, the
+gene at the centre of the paper, is detected in a growing share of
+nuclei from foetal to adult.</li>
+</ul>
+<p>These are averages over age groups. The rest of the workshop asks how
+such changes are distributed <strong>across individual nuclei</strong>,
+and whether nuclei within the same age group differ in how mature they
+are.</p>
+</div>
+<div id="the-reference" class="section level3" number="4.3">
+<h3><span class="header-section-number">4.3</span> The reference</h3>
+<pre class="r"><code>reference</code></pre>
+<pre><code>## class: SingleCellExperiment 
+## dim: 16115 6096 
+## metadata(0):
+## assays(1): logcounts
+## rownames(16115): FAM87B LINC00115 ... MT-ND6 MT-CYB
+## rowData names(2): gene_id gene_name
+## colnames(6096): ENCSR176WWW:TAAGCTGGTGATGGCT
+##   TWCM-13-96:GGGCATCAGCTCCCAG ... ENCSR008CVR:AATTTGCCAGCGCTTG
+##   ENCSR203YOV:CTCACAACAGCTAATT
+## colData names(22): barcode age ... leiden1.5 cell_type_plus_subcluster
+## reducedDimNames(0):
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
+<pre class="r"><code>table(reference$age_group)</code></pre>
+<pre><code>## 
+##  fetal middle    old  young 
+##    140   2865   2038   1053</code></pre>
+<pre class="r"><code>sort(table(reference$final_cell_type), decreasing = TRUE)</code></pre>
+<pre><code>## 
+## Cardiomyocyte    Fibroblast      Pericyte       Myeloid   Endothelial 
+##          1899          1327           717           678           563 
+##      Lymphoid   Endocardial          vSMC     Adipocyte    Epicardial 
+##           176           119           117           100           100 
+##           LEC          Mast      Neuronal 
+##           100           100           100</code></pre>
+<p>The reference’s age groups (<code>fetal</code>, <code>young</code>,
+<code>middle</code>, <code>old</code>) are not the same as our query’s
+stages (<code>fetal</code>, <code>young</code>, <code>adult</code>).
+That’s fine: Φ-Space will score every query nucleus against all four
+reference age groups.</p>
+</div>
+</div>
+<div id="how-this-session-runs" class="section level2" number="5">
+<h2><span class="header-section-number">5</span> How This Session
+Runs</h2>
+<ul>
+<li>Each module is an R Markdown file in <code>vignettes/</code>. Open
+it in RStudio and run the chunks in order (<strong>Ctrl/Cmd + Shift +
+Enter</strong> runs the current chunk).</li>
+<li>Some steps take minutes. Their results are saved in
+<code>results/</code>, and the modules load them instead of recomputing,
+so every chunk should finish in seconds. The code that would recompute
+them is still shown, so you can see what each step does.</li>
+<li>The modules hand results to each other through these saved files.
+You can start any module even if you did not finish the previous
+one.</li>
+</ul>
+</div>
+<div id="learning-outcomes" class="section level2" number="6">
+<h2><span class="header-section-number">6</span> Learning Outcomes</h2>
+<p>By the end of the workshop you should be able to:</p>
+<ul>
+<li>explain when a continuous view of cell state is more informative
+than discrete cluster labels;</li>
+<li>annotate cells with continuous phenotype scores from a reference
+atlas (Φ-Space), and turn them into labels when needed;</li>
+<li>infer and compare pseudotime orderings, and check them against known
+biology;</li>
+<li>build cell-specific co-expression networks and summarise them into
+meta-networks, without mistaking co-expression for regulation.</li>
+</ul>
+</div>
+<div id="references" class="section level2" number="7">
+<h2><span class="header-section-number">7</span> References</h2>
+<ul>
+<li>Sim CB, et al. Sex-specific control of human heart maturation by the
+progesterone receptor. <em>Circulation</em> 2021;143(16):1614–1628. <a
+href="https://doi.org/10.1161/CIRCULATIONAHA.120.051921">doi:10.1161/CIRCULATIONAHA.120.051921</a></li>
+<li>Mao J, Deng Y, Lê Cao K-A. Φ-Space: continuous phenotyping of
+single-cell multi-omics data. <em>Genome Biology</em> 2025. <a
+href="https://doi.org/10.1186/s13059-025-03755-8">doi:10.1186/s13059-025-03755-8</a></li>
+<li>Gao et al. Integrative snRNA-seq atlas of the human left ventricle
+across the lifespan. <em>Genome Biology</em> 2026.</li>
+<li>Deng Y, Mao J, Choi J, Lê Cao K-A. Scalable cell-specific
+coexpression networks for granular regulatory pattern discovery with
+NeighbourNet. <em>Genome Research</em> 2026.</li>
+</ul>
+</div>
+<div id="session-info" class="section level2" number="8">
+<h2><span class="header-section-number">8</span> Session Info</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 4.6.0 (2026-04-24)
+## Platform: aarch64-apple-darwin23
+## Running under: macOS Tahoe 26.6.2
+## 
+## Matrix products: default
+## BLAS:   /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRblas.0.dylib 
+## LAPACK: /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+## 
+## locale:
+## [1] en_AU/en_AU/en_AU/C/en_AU/en_AU
+## 
+## time zone: Australia/Melbourne
+## tzcode source: internal
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] tidyr_1.3.2                 dplyr_1.2.1                
+##  [3] ggplot2_4.0.3               SingleCellExperiment_1.34.0
+##  [5] SummarizedExperiment_1.42.0 Biobase_2.72.0             
+##  [7] GenomicRanges_1.64.0        Seqinfo_1.2.0              
+##  [9] IRanges_2.46.0              S4Vectors_0.50.1           
+## [11] BiocGenerics_0.58.1         generics_0.1.4             
+## [13] MatrixGenerics_1.24.0       matrixStats_1.5.0          
+## [15] Seurat_5.5.1                SeuratObject_5.4.0         
+## [17] sp_2.2-1                   
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.5        
+##   [4] spatstat.utils_3.2-3   farver_2.1.2           rmarkdown_2.31        
+##   [7] vctrs_0.7.3            ROCR_1.0-12            spatstat.explore_3.8-1
+##  [10] htmltools_0.5.9        S4Arrays_1.12.0        SparseArray_1.12.2    
+##  [13] sass_0.4.10            sctransform_0.4.3      parallelly_1.48.0     
+##  [16] KernSmooth_2.23-26     bslib_0.11.0           htmlwidgets_1.6.4     
+##  [19] ica_1.0-3              plyr_1.8.9             plotly_4.12.0         
+##  [22] zoo_1.8-15             cachem_1.1.0           igraph_2.3.3          
+##  [25] mime_0.13              lifecycle_1.0.5        pkgconfig_2.0.3       
+##  [28] Matrix_1.7-5           R6_2.6.1               fastmap_1.2.0         
+##  [31] fitdistrplus_1.2-6     future_1.70.0          shiny_1.14.0          
+##  [34] digest_0.6.39          patchwork_1.3.2        tensor_1.5.1          
+##  [37] RSpectra_0.16-2        irlba_2.3.7            labeling_0.4.3        
+##  [40] progressr_1.0.0        spatstat.sparse_3.2-0  httr_1.4.8            
+##  [43] polyclip_1.10-7        abind_1.4-8            compiler_4.6.0        
+##  [46] withr_3.0.3            S7_0.2.2               fastDummies_1.7.6     
+##  [49] MASS_7.3-65            DelayedArray_0.38.2    tools_4.6.0           
+##  [52] lmtest_0.9-40          otel_0.2.0             httpuv_1.6.17         
+##  [55] future.apply_1.20.2    goftest_1.2-3          glue_1.8.1            
+##  [58] nlme_3.1-169           promises_1.5.0         grid_4.6.0            
+##  [61] Rtsne_0.17             cluster_2.1.8.2        reshape2_1.4.5        
+##  [64] gtable_0.3.6           spatstat.data_3.1-9    data.table_1.18.4     
+##  [67] XVector_0.52.0         spatstat.geom_3.8-1    RcppAnnoy_0.0.23      
+##  [70] ggrepel_0.9.8          RANN_2.6.2             pillar_1.11.1         
+##  [73] stringr_1.6.0          spam_2.11-4            RcppHNSW_0.7.0        
+##  [76] later_1.4.8            splines_4.6.0          lattice_0.22-9        
+##  [79] survival_3.8-9         deldir_2.0-4           tidyselect_1.2.1      
+##  [82] miniUI_0.1.2           pbapply_1.7-4          knitr_1.51            
+##  [85] gridExtra_2.3.1        scattermore_1.2        xfun_0.59             
+##  [88] stringi_1.8.7          lazyeval_0.2.3         yaml_2.3.12           
+##  [91] evaluate_1.0.5         codetools_0.2-20       tibble_3.3.1          
+##  [94] cli_3.6.6              uwot_0.2.4             xtable_1.8-8          
+##  [97] reticulate_1.46.0      jquerylib_0.1.4        Rcpp_1.1.2            
+## [100] globals_0.19.1         spatstat.random_3.5-0  png_0.1-9             
+## [103] spatstat.univar_3.2-0  parallel_4.6.0         dotCall64_1.2         
+## [106] listenv_1.0.0          viridisLite_0.4.3      scales_1.4.0          
+## [109] ggridges_0.5.7         purrr_1.2.2            rlang_1.3.0           
+## [112] cowplot_1.2.0</code></pre>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

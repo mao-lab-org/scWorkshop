@@ -1,0 +1,74 @@
+---
+title: "Modelling Continuous Cell States Using scRNA-seq Data"
+subtitle: "BiocAsia 2026 workshop"
+output:
+  html_document:
+    theme: flatly
+    toc: false
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Single-cell RNA-seq analyses usually sort cells into clusters and give each
+cluster one label. Many questions, though, are about **cells in transition**:
+cells that are differentiating, maturing or responding to a stimulus. This
+3-hour workshop treats such cell states as **continuous**, using snRNA-seq of
+the maturing human heart.
+
+## Materials
+
+| | Topic | Methods |
+|---|---|---|
+| [Introduction](00_introduction.html) | The data and the biological question | Seurat |
+| [Module 1](01_phispace_annotation.html) | Continuous phenotyping: how much does each cell resemble each reference cell type and stage? | Φ-Space |
+| [Module 2](02_pseudotime.html) | Pseudotime: where is each cell along maturation? | slingshot, destiny |
+| [Module 3](03_nnet.html) | Cell-specific co-expression networks: how do gene relationships change? | NeighbourNet |
+
+### Timetable
+
+| Time | Session |
+|---|---|
+| 0:00–0:15 | Introduction |
+| 0:15–1:05 | Module 1: Continuous phenotyping with Φ-Space |
+| 1:05–1:15 | Break |
+| 1:15–2:00 | Module 2: Pseudotime trajectory analysis |
+| 2:00–2:50 | Module 3: Cell-specific co-expression networks |
+| 2:50–3:00 | Wrap-up and questions |
+
+## Data
+
+snRNA-seq of the human heart at foetal, young and adult stages:
+
+> Sim CB, et al. Sex-specific control of human heart maturation by the
+> progesterone receptor. *Circulation* 2021;143(16):1614–1628.
+> [doi:10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921)
+
+The Φ-Space reference is a subset of the Gao et al. (2026, *Genome Biology*)
+snRNA-seq atlas of the human left ventricle.
+
+## Running the materials yourself
+
+The pages on this site were rendered from the workshop's saved results. To
+run the code, you need R 4.6 (Bioconductor 3.23), the
+[workshop repository](https://github.com/mao-lab-org/scWorkshop) and its data.
+From the repository root:
+
+```r
+source("setup/install_packages.R")   # R packages
+source("setup/download_data.R")      # data + saved results from Zenodo (~2.7 GB)
+source("setup/check_setup.R")        # verify
+```
+
+Then open the files in `vignettes/` in RStudio and run the chunks in order.
+
+## Acknowledgements
+
+Adapted from the afternoon session of the Phipson Lab
+[single-cell workshop](https://phipsonlab.github.io/single_cell_workshop/).
+Data from the Porrello and Hewitt laboratories (Sim et al. 2021).
+
+<p style="color: #888; font-size: 0.9em; margin-top: 2em;">
+Site built `r format(Sys.Date(), "%d %B %Y")`.
+</p>

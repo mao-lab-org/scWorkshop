@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Modelling Continuous Cell States Using scRNA-seq Data</title>
+
+<script src="libs/header-attrs-2.31/header-attrs.js"></script>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="libs/navigation-1.1/tabsets.js"></script>
+<link href="libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+<!-- Navigation bar added to every page by setup/build_site.R -->
+<nav id="site-navbar" class="navbar navbar-default" style="margin-bottom: 20px; border-radius: 0;">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="index.html">Continuous Cell States</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a href="00_introduction.html">Introduction</a></li>
+      <li><a href="01_phispace_annotation.html">1. &Phi;-Space</a></li>
+      <li><a href="02_pseudotime.html">2. Pseudotime</a></li>
+      <li><a href="03_nnet.html">3. Co-expression networks</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li><a href="https://github.com/mao-lab-org/scWorkshop">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+<script>
+  // R Markdown places included HTML inside the content column (next to the
+  // floating table of contents). Move the bar to the top of the page so it
+  // spans the full width, and highlight the current page.
+  document.addEventListener("DOMContentLoaded", function () {
+    var nav = document.getElementById("site-navbar");
+    document.body.insertBefore(nav, document.body.firstChild);
+    var page = window.location.pathname.split("/").pop() || "index.html";
+    nav.querySelectorAll(".navbar-nav a").forEach(function (a) {
+      if (a.getAttribute("href") === page) a.parentElement.classList.add("active");
+    });
+  });
+</script>
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Modelling Continuous Cell States Using
+scRNA-seq Data</h1>
+<h3 class="subtitle">BiocAsia 2026 workshop</h3>
+
+</div>
+
+
+<p>Single-cell RNA-seq analyses usually sort cells into clusters and
+give each cluster one label. Many questions, though, are about
+<strong>cells in transition</strong>: cells that are differentiating,
+maturing or responding to a stimulus. This 3-hour workshop treats such
+cell states as <strong>continuous</strong>, using snRNA-seq of the
+maturing human heart.</p>
+<div id="materials" class="section level2">
+<h2>Materials</h2>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Topic</th>
+<th>Methods</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="00_introduction.html">Introduction</a></td>
+<td>The data and the biological question</td>
+<td>Seurat</td>
+</tr>
+<tr class="even">
+<td><a href="01_phispace_annotation.html">Module 1</a></td>
+<td>Continuous phenotyping: how much does each cell resemble each
+reference cell type and stage?</td>
+<td>Φ-Space</td>
+</tr>
+<tr class="odd">
+<td><a href="02_pseudotime.html">Module 2</a></td>
+<td>Pseudotime: where is each cell along maturation?</td>
+<td>slingshot, destiny</td>
+</tr>
+<tr class="even">
+<td><a href="03_nnet.html">Module 3</a></td>
+<td>Cell-specific co-expression networks: how do gene relationships
+change?</td>
+<td>NeighbourNet</td>
+</tr>
+</tbody>
+</table>
+<div id="timetable" class="section level3">
+<h3>Timetable</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Time</th>
+<th>Session</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0:00–0:15</td>
+<td>Introduction</td>
+</tr>
+<tr class="even">
+<td>0:15–1:05</td>
+<td>Module 1: Continuous phenotyping with Φ-Space</td>
+</tr>
+<tr class="odd">
+<td>1:05–1:15</td>
+<td>Break</td>
+</tr>
+<tr class="even">
+<td>1:15–2:00</td>
+<td>Module 2: Pseudotime trajectory analysis</td>
+</tr>
+<tr class="odd">
+<td>2:00–2:50</td>
+<td>Module 3: Cell-specific co-expression networks</td>
+</tr>
+<tr class="even">
+<td>2:50–3:00</td>
+<td>Wrap-up and questions</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>snRNA-seq of the human heart at foetal, young and adult stages:</p>
+<blockquote>
+<p>Sim CB, et al. Sex-specific control of human heart maturation by the
+progesterone receptor. <em>Circulation</em> 2021;143(16):1614–1628. <a
+href="https://doi.org/10.1161/CIRCULATIONAHA.120.051921">doi:10.1161/CIRCULATIONAHA.120.051921</a></p>
+</blockquote>
+<p>The Φ-Space reference is a subset of the Gao et al. (2026, <em>Genome
+Biology</em>) snRNA-seq atlas of the human left ventricle.</p>
+</div>
+<div id="running-the-materials-yourself" class="section level2">
+<h2>Running the materials yourself</h2>
+<p>The pages on this site were rendered from the workshop’s saved
+results. To run the code, you need R 4.6 (Bioconductor 3.23), the <a
+href="https://github.com/mao-lab-org/scWorkshop">workshop repository</a>
+and its data. From the repository root:</p>
+<pre class="r"><code>source(&quot;setup/install_packages.R&quot;)   # R packages
+source(&quot;setup/download_data.R&quot;)      # data + saved results from Zenodo (~2.7 GB)
+source(&quot;setup/check_setup.R&quot;)        # verify</code></pre>
+<p>Then open the files in <code>vignettes/</code> in RStudio and run the
+chunks in order.</p>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>Adapted from the afternoon session of the Phipson Lab <a
+href="https://phipsonlab.github.io/single_cell_workshop/">single-cell
+workshop</a>. Data from the Porrello and Hewitt laboratories (Sim et
+al. 2021).</p>
+<p style="color: #888; font-size: 0.9em; margin-top: 2em;">
+Site built 11 November 2026.
+</p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -43,8 +43,9 @@ Run from the repository root. `data/` and `results/` must be present; they are g
 
 ```bash
 Rscript setup/check_setup.R          # package versions, data files, ~5 s smoke test of every method
-Rscript setup/dry_run.R              # render 05→06→07 using the caches in results/ (~1.5 min)
+Rscript setup/dry_run.R              # render Intro + Modules 1-3 using the caches in results/ (~1.5 min)
 Rscript setup/dry_run.R --fresh      # recompute everything into results_fresh/ (~8 min, ~10 GB RAM)
+Rscript setup/build_site.R           # build the website into docs/ from the caches (~1.5 min)
 ```
 
 Render a single module, writing the HTML outside `vignettes/`:
@@ -54,6 +55,24 @@ Rscript -e 'Sys.setenv(SCW_RESULTS = normalizePath("results")); rmarkdown::rende
 ```
 
 `dry_run/`, `results_fresh/` and `downloads/` are gitignored scratch output.
+
+## Website (GitHub Pages)
+
+<https://mao-lab-org.github.io/scWorkshop/>. GitHub's runners have no data, so the site
+is **built locally and only published by CI**:
+
+- `setup/build_site.R` renders `site/index.Rmd` (home page) and the four vignettes into
+  `docs/` with `self_contained = FALSE`, so figures are separate files and the JavaScript
+  libraries are shared in `docs/libs`. It wipes `docs/` first, and stops if any page
+  rendered without running its code.
+- `site/navbar.html` is injected into every page via `includes(before_body = ...)`. A
+  small script moves it to the top of `<body>`, because R Markdown places included HTML
+  inside the content column next to the floating TOC.
+- There is deliberately no `_site.yml` in `vignettes/`: it would make RStudio's Knit
+  button build the whole site.
+- `.github/workflows/pages.yml` uploads `docs/` on pushes that change it (no R in CI).
+  Pages source must be set to "GitHub Actions" in the repo settings.
+- After editing a vignette, rebuild the site, commit `docs/` with the change, and push.
 
 ## How the modules fit together
 

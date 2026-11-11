@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Single Cell Workshop" />
+
+<meta name="date" content="2026-11-11" />
+
+<title>Module 1: Continuous Phenotyping with Φ-Space</title>
+
+<script src="libs/header-attrs-2.31/header-attrs.js"></script>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="libs/navigation-1.1/tabsets.js"></script>
+<script src="libs/navigation-1.1/codefolding.js"></script>
+<link href="libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+<!-- Navigation bar added to every page by setup/build_site.R -->
+<nav id="site-navbar" class="navbar navbar-default" style="margin-bottom: 20px; border-radius: 0;">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="index.html">Continuous Cell States</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a href="00_introduction.html">Introduction</a></li>
+      <li><a href="01_phispace_annotation.html">1. &Phi;-Space</a></li>
+      <li><a href="02_pseudotime.html">2. Pseudotime</a></li>
+      <li><a href="03_nnet.html">3. Co-expression networks</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li><a href="https://github.com/mao-lab-org/scWorkshop">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+<script>
+  // R Markdown places included HTML inside the content column (next to the
+  // floating table of contents). Move the bar to the top of the page so it
+  // spans the full width, and highlight the current page.
+  document.addEventListener("DOMContentLoaded", function () {
+    var nav = document.getElementById("site-navbar");
+    document.body.insertBefore(nav, document.body.firstChild);
+    var page = window.location.pathname.split("/").pop() || "index.html";
+    nav.querySelectorAll(".navbar-nav a").forEach(function (a) {
+      if (a.getAttribute("href") === page) a.parentElement.classList.add("active");
+    });
+  });
+</script>
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Module 1: Continuous Phenotyping with
+Φ-Space</h1>
+<h4 class="author">Single Cell Workshop</h4>
+<h4 class="date">2026-11-11</h4>
+
+</div>
+
+
+<div id="introduction" class="section level2" number="1">
+<h2><span class="header-section-number">1</span> Introduction</h2>
+<p>The standard clustering-based cell type annotation annotates cell
+clusters by looking up their <strong>marker genes</strong> and assigning
+each cluster a single discrete label. That approach is intuitive and
+directly interpretable, but it rests on two assumptions that are not
+always true for the heart maturation dataset we are analysing:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Cells belong to one cell type.</strong> A cluster is given a
+single label, and every cell inside it inherits that label.</li>
+<li><strong>Cell identity is discrete.</strong> Cells are either
+cardiomyocytes or they are not; there is no notion of a cell that is
+<em>partly</em> a fetal cardiomyocyte and <em>partly</em> an adult
+one.</li>
+</ol>
+<p>For a mature tissue with well-separated cell types, these assumptions
+are reasonable. But our dataset spans foetal, young and adult heart
+samples, so many cells — especially cardiomyocytes — are in the middle
+of a maturation continuum. A discrete label forces each cell into one
+bin and throws away the very gradient we want to study in Module 2
+(pseudotime) and Module 3 (cell-specific co-expression networks).</p>
+<p>In this module we use <strong>Φ-Space</strong> (<a
+href="https://doi.org/10.1186/s13059-025-03755-8">Mao, Deng &amp; Lê
+Cao, 2025, <em>Genome Biology</em></a>) to re-annotate the heart data
+with <em>continuous</em> phenotype scores instead of hard labels.</p>
+<div id="from-hard-labels-to-soft-scores" class="section level3"
+number="1.1">
+<h3><span class="header-section-number">1.1</span> From hard labels to
+soft scores</h3>
+<p>The core idea of Φ-Space is simple: instead of asking <em>“which cell
+type is this cell?”</em>, ask <em>“how much does this cell resemble each
+reference phenotype?”</em>. For every query cell and every phenotype in
+the reference atlas, Φ-Space returns a real-valued score. A cell that
+sits halfway between “foetal cardiomyocyte” and “adult cardiomyocyte”
+will score positively on both; a cell committed firmly to one identity
+will score high on one and low on the other.</p>
+<p>Under the hood, Φ-Space fits a <strong>partial least squares
+(PLS)</strong> regression from gene expression in the reference onto a
+dummy matrix of phenotype labels. The fitted model is then applied to
+the query, producing one score per cell per phenotype. This matrix of
+scores, the <strong>phenotype space embedding</strong>, is stored as a
+<code>reducedDim</code> and becomes the substrate for every downstream
+analysis: visualisation, clustering, marker selection, and trajectory
+inference.</p>
+</div>
+<div id="why-φ-space-is-a-good-fit-for-this-dataset"
+class="section level3" number="1.2">
+<h3><span class="header-section-number">1.2</span> Why Φ-Space is a good
+fit for this dataset</h3>
+<p>Five features of Φ-Space line up unusually well with the Sim et
+al. heart data:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Continuous biology deserves continuous annotation.</strong>
+Cardiomyocyte maturation is gradual. Φ-Space preserves the gradient;
+hard classification collapses it.</li>
+<li><strong>Multiple phenotype layers at once.</strong> We can score
+each cell simultaneously against cell type <em>and</em> developmental
+stage. Most tools predict one label at a time.</li>
+<li><strong>Bulk references are allowed.</strong> There is no single
+cross-age snRNA-seq atlas of the human heart that covers fetal through
+adult equally well. Φ-Space also accepts bulk RNA-seq references, which
+opens up developmental bulk time-course atlases as viable options.</li>
+<li><strong>No extra batch correction between reference and
+query.</strong> PLS inherently removes unwanted variation. You do not
+need to run Harmony <em>between</em> query and reference — only to match
+normalisation.</li>
+<li><strong>The embedding feeds directly into Modules 2 and 3.</strong>
+Because scores are stored in <code>reducedDim</code>, they can be used
+as input for slingshot (pseudotime) and NeighbourNet target-gene
+selection without any extra wrangling.</li>
+</ol>
+</div>
+<div id="learning-objectives" class="section level3" number="1.3">
+<h3><span class="header-section-number">1.3</span> Learning
+objectives</h3>
+<p>By the end of this module you will be able to:</p>
+<ul>
+<li>Explain the difference between hard and soft classification for cell
+type annotation, and identify situations where each is appropriate.</li>
+<li>Prepare an annotated reference dataset and a query dataset for
+Φ-Space, including matched normalisation and gene name
+harmonisation.</li>
+<li>Run <code>PhiSpace()</code> to obtain a continuous phenotype space
+embedding for the query cells.</li>
+<li>Visualise and interpret the phenotype space embedding through
+heatmaps and a PCA biplot.</li>
+<li>Derive discrete labels from continuous scores when needed, and
+understand what is gained and lost in that step.</li>
+<li>Export the phenotype space embedding in a form that Modules 2 and 3
+can consume.</li>
+</ul>
+</div>
+</div>
+<div id="load-libraries-and-data" class="section level2" number="2">
+<h2><span class="header-section-number">2</span> Load Libraries and
+Data</h2>
+<pre class="r"><code>library(PhiSpace)
+library(SingleCellExperiment)
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(patchwork)
+library(ComplexHeatmap)</code></pre>
+<p>We need two data objects:</p>
+<ul>
+<li>a <strong>query</strong> — the human heart snRNA-seq data of Sim et
+al. (2021), already quality-controlled and down-sampled to ~10,000
+nuclei, with raw counts and sample / stage / sex metadata.</li>
+<li>a <strong>reference</strong> — an annotated left-ventricle atlas
+covering the full developmental axis (see the next section for
+details).</li>
+</ul>
+<pre class="r"><code>seu &lt;- readRDS(&quot;../data/afternoon_mvp.rds&quot;)
+reference &lt;- readRDS(&quot;../data/reference_gao2026.rds&quot;)
+
+cat(&quot;Query (Seurat):\n&quot;)</code></pre>
+<pre><code>## Query (Seurat):</code></pre>
+<pre class="r"><code>cat(&quot;  - cells:&quot;, ncol(seu), &quot;\n&quot;)</code></pre>
+<pre><code>##   - cells: 10000</code></pre>
+<pre class="r"><code>cat(&quot;  - genes:&quot;, nrow(seu), &quot;\n&quot;)</code></pre>
+<pre><code>##   - genes: 18953</code></pre>
+<pre class="r"><code>cat(&quot;  - metadata:&quot;, paste(colnames(seu@meta.data), collapse = &quot;, &quot;), &quot;\n\n&quot;)</code></pre>
+<pre><code>##   - metadata: orig.ident, nCount_RNA, nFeature_RNA, sample, group, sex, percent.mt, percent.ribo</code></pre>
+<pre class="r"><code>cat(&quot;Reference (SingleCellExperiment):\n&quot;)</code></pre>
+<pre><code>## Reference (SingleCellExperiment):</code></pre>
+<pre class="r"><code>cat(&quot;  - cells:&quot;, ncol(reference), &quot;\n&quot;)</code></pre>
+<pre><code>##   - cells: 6096</code></pre>
+<pre class="r"><code>cat(&quot;  - genes:&quot;, nrow(reference), &quot;\n&quot;)</code></pre>
+<pre><code>##   - genes: 16115</code></pre>
+<pre class="r"><code>cat(&quot;  - assays:&quot;, paste(assayNames(reference), collapse = &quot;, &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>##   - assays: logcounts</code></pre>
+<pre class="r"><code>cat(&quot;  - cell types:&quot;, length(unique(reference$final_cell_type)), &quot;\n&quot;)</code></pre>
+<pre><code>##   - cell types: 13</code></pre>
+<pre class="r"><code>cat(&quot;  - age groups:&quot;, paste(unique(reference$age_group), collapse = &quot;, &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>##   - age groups: young, middle, old, fetal</code></pre>
+<p>Φ-Space works with <code>SingleCellExperiment</code> (SCE) objects,
+so we convert the query from Seurat to SCE. The raw counts travel across
+as the <code>counts</code> assay; the cell-level metadata travels across
+as <code>colData</code>.</p>
+<pre class="r"><code>query &lt;- as.SingleCellExperiment(seu)
+assayNames(query)</code></pre>
+<pre><code>## [1] &quot;counts&quot;</code></pre>
+<pre class="r"><code>head(colData(query)[, c(&quot;sample&quot;, &quot;group&quot;, &quot;sex&quot;)])</code></pre>
+<pre><code>## DataFrame with 6 rows and 3 columns
+##                          sample       group         sex
+##                     &lt;character&gt; &lt;character&gt; &lt;character&gt;
+## AAACCCAAGTTTCGAC_f1          f1       fetal           m
+## AAACCCACAAATGAGT_f1          f1       fetal           m
+## AAACGAACAAACTCTG_f1          f1       fetal           m
+## AAACGAACAGCGGTTC_f1          f1       fetal           m
+## AAACGAATCCGATAAC_f1          f1       fetal           m
+## AAAGAACGTCATACCA_f1          f1       fetal           m</code></pre>
+<p>We will also set up a cache folder for intermediate results.
+Computations that take more than a few seconds are cached to
+<code>../results/</code> so that re-rendering this vignette is fast, and
+so that workshop participants can download the pre-computed caches
+directly if they prefer.</p>
+<pre class="r"><code>results_dir &lt;- Sys.getenv(&quot;SCW_RESULTS&quot;, &quot;../results&quot;)
+dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)</code></pre>
+</div>
+<div id="choosing-a-reference-dataset" class="section level2"
+number="3">
+<h2><span class="header-section-number">3</span> Choosing a Reference
+Dataset</h2>
+<p>A Φ-Space annotation is only as good as the reference it is built on.
+For the Sim et al. heart data we need a reference that:</p>
+<ul>
+<li><strong>covers the full developmental axis</strong> — foetal,
+paediatric and adult heart, so that every query cell has something
+biologically sensible to score against;</li>
+<li><strong>annotates cell types at a useful granularity</strong> — at
+least the major heart lineages (cardiomyocyte, fibroblast, endothelial,
+pericyte, immune, epicardial, neuronal);</li>
+<li><strong>is publicly available</strong> and free of major disease
+confounders.</li>
+</ul>
+<p>We use the <strong>Gao et al. 2026</strong> (<em>Genome Biology</em>)
+integrative snRNA-seq atlas of the human left ventricle. It combines 299
+donors from eight published studies, spans 8 post-conceptional weeks
+through ≥60 years, and provides harmonised cell type and age-group
+annotations. We have pre-filtered it to non-diseased donors and balanced
+the major cell types by down-sampling; the processing recipe is
+documented in the original workshop’s <a
+href="https://github.com/phipsonlab/single_cell_workshop/blob/main/references/HPC_reference_processing.md"><code>references/HPC_reference_processing.md</code></a>.</p>
+<p>Two columns from the reference drive everything that follows:</p>
+<pre class="r"><code>table(reference$final_cell_type)</code></pre>
+<pre><code>## 
+##     Adipocyte Cardiomyocyte   Endocardial   Endothelial    Epicardial 
+##           100          1899           119           563           100 
+##    Fibroblast           LEC      Lymphoid          Mast       Myeloid 
+##          1327           100           176           100           678 
+##      Neuronal      Pericyte          vSMC 
+##           100           717           117</code></pre>
+<pre class="r"><code>table(reference$age_group)</code></pre>
+<pre><code>## 
+##  fetal middle    old  young 
+##    140   2865   2038   1053</code></pre>
+<p>Notice the reference’s <code>age_group</code> is
+<code>fetal / young / middle / old</code>, while our query’s
+<code>group</code> is <code>fetal / young / adult</code>. That is fine —
+Φ-Space will score each query cell against all four reference age
+groups, and we will use those four scores as a fine-grained read-out of
+where on the maturation axis each cell sits.</p>
+<div
+id="zooming-in-splitting-cardiomyocyte-and-fibroblast-into-subtypes"
+class="section level3" number="3.1">
+<h3><span class="header-section-number">3.1</span> Zooming in: splitting
+cardiomyocyte and fibroblast into subtypes</h3>
+<p>Looking at <code>final_cell_type</code> above,
+<strong>Cardiomyocyte</strong> (~1,900 cells) and
+<strong>Fibroblast</strong> (~1,300 cells) dominate the reference. They
+are also the two lineages we care about most biologically:
+cardiomyocytes carry the foetal→adult maturation signal we will trace in
+Module 2, and fibroblasts reshape the extracellular matrix across
+development. The Gao 2026 authors further annotated these two lineages
+into biologically meaningful subclusters
+(e.g. <code>Fetal_enriched_metabolic</code>, <code>Stressed</code>,
+<code>Interstitial</code>, <code>Perivascular</code> …) — stored in the
+<code>cell_type_plus_subcluster</code> column as
+<code>CellType:Subtype</code> strings.</p>
+<p>We therefore build a <strong>fine cell-type column</strong> that
+keeps every non-CM, non-Fibroblast cell on its broad label, and replaces
+the CM / Fibroblast labels with the Gao subclusters. Two things happen
+at once:</p>
+<ol style="list-style-type: decimal">
+<li><strong>We zoom in on the cells we care about.</strong> When a small
+number of cell types carry most of the biological signal, it is worth
+asking Φ-Space to resolve them more finely. Every CM subcluster becomes
+its own phenotype column in the score matrix, so we can tell a
+<code>Fetal_enriched_metabolic</code> CM from a <code>Stressed</code> CM
+rather than collapsing both into “Cardiomyocyte”.</li>
+<li><strong>The reference becomes more balanced.</strong> Splitting the
+two giant classes into ~8 + ~7 smaller classes brings their per-class
+counts closer to the rarer lineages (Pericyte, Myeloid, Endothelial, …).
+PLS over-fits the majority class when the reference is unbalanced, and
+this split softens that skew for free.</li>
+</ol>
+<pre class="r"><code>ct &lt;- reference$final_cell_type
+sub &lt;- reference$cell_type_plus_subcluster
+# Replace only the two populous lineages with their subclusters;
+# leave the rest on their broad label.
+reference$cell_type_fine &lt;- ifelse(
+    ct %in% c(&quot;Cardiomyocyte&quot;, &quot;Fibroblast&quot;),
+    sub,
+    ct
+)
+
+sort(table(reference$cell_type_fine), decreasing = TRUE)</code></pre>
+<pre><code>## 
+##                                Pericyte                                 Myeloid 
+##                                     717                                     678 
+##                     Cardiomyocyte:Other                  Fibroblast:ND_enriched 
+##                                     605                                     567 
+##                             Endothelial                 Cardiomyocyte:Metabolic 
+##                                     563                                     406 
+##  Cardiomyocyte:Fetal_enriched_metabolic                 Fibroblast:Interstitial 
+##                                     332                                     229 
+##             Fibroblast:DCM_HCM_enriched                  Cardiomyocyte:Stressed 
+##                                     205                                     180 
+##                                Lymphoid Cardiomyocyte:Fetal_enriched_conduction 
+##                                     176                                     174 
+##          Cardiomyocyte:DCM_HCM_enriched                             Endocardial 
+##                                     156                                     119 
+##                                    vSMC                Fibroblast:Anti_fibrotic 
+##                                     117                                     116 
+##                 Fibroblast:Perivascular                               Adipocyte 
+##                                     114                                     100 
+##                              Epicardial                                     LEC 
+##                                     100                                     100 
+##                                    Mast                                Neuronal 
+##                                     100                                     100 
+##                    Fibroblast:Activated              Cardiomyocyte:Inflammatory 
+##                                      90                                      42 
+##                 Fibroblast:Inflammatory                 Cardiomyocyte:Senescent 
+##                                       6                                       4</code></pre>
+<p>Note the alternative we did <strong>not</strong> take:
+<strong>balanced subsampling</strong>. Instead of splitting the majority
+classes, you could down-sample them with
+<code>PhiSpace::subsample(..., key = "final_cell_type", minCellNum = ...)</code>
+so every cell type contributes a comparable number of reference cells.
+That is the right move when you are happy with the broad-class
+annotation and simply want fairer PLS training; here we chose to split
+instead because the CM / Fibroblast subclusters are interesting in their
+own right. The two approaches can also be combined — split first, then
+subsample within each fine label.</p>
+</div>
+<div id="a-note-on-very-rare-phenotypes" class="section level3"
+number="3.2">
+<h3><span class="header-section-number">3.2</span> A note on very rare
+phenotypes</h3>
+<p>Even after splitting, some fine labels are tiny
+(e.g. <code>Cardiomyocyte:Senescent</code> ≈ 4 cells,
+<code>Fibroblast:Inflammatory</code> ≈ 6 cells). Training PLS with a
+phenotype represented by a handful of cells is a bad bargain: the column
+it produces in the score matrix is mostly noise, and it still consumes a
+component in the PLS fit.</p>
+<p><code>PhiSpace()</code> exposes a <code>cellTypeThreshold</code>
+argument for exactly this case — set it to, say, <code>20</code>, and
+any phenotype level with fewer than 20 reference cells is dropped before
+model fitting. We use it below to prune the long tail of the subtype
+split while keeping every lineage that is biologically
+well-represented.</p>
+</div>
+</div>
+<div id="preparing-reference-and-query" class="section level2"
+number="4">
+<h2><span class="header-section-number">4</span> Preparing Reference and
+Query</h2>
+<p>Three preparation steps are required before we can run Φ-Space:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Match normalisation.</strong> Φ-Space does not do batch
+correction between reference and query; it relies on both being on the
+same numerical scale.</li>
+<li><strong>Match gene names.</strong> PLS can only use genes present in
+both datasets.</li>
+<li><strong>Quality control.</strong> Remove all-zero genes from the
+query, which would otherwise carry no signal but still consume model
+capacity.</li>
+</ol>
+<div id="match-normalisation-with-scran" class="section level3"
+number="4.1">
+<h3><span class="header-section-number">4.1</span> Match normalisation
+with scran</h3>
+<p>The reference is stored with a <code>logcounts</code> assay; the
+query carries raw <code>counts</code>. To put both on the same numerical
+scale we apply <strong>scran normalisation</strong> to the query as
+well, via PhiSpace’s <code>scranTransf()</code> wrapper.
+<code>scranTransf()</code> computes pool-based size factors with
+<code>scran::computeSumFactors()</code> and then calls
+<code>scuttle::logNormCounts()</code>, storing the result in a
+<code>logcounts</code> assay — the same assay name and the same
+normalisation family the reference already uses.</p>
+<pre class="r"><code>ref_cache   &lt;- file.path(results_dir, &quot;05_reference_scran.rds&quot;)
+query_cache &lt;- file.path(results_dir, &quot;05_query_scran.rds&quot;)
+
+if (file.exists(ref_cache)) {
+    reference &lt;- readRDS(ref_cache)
+    message(&quot;Loaded cached scran-normalised reference from &quot;, ref_cache)
+} else {
+    # Reference logcounts is already scran-normalised from the HPC prep
+    # script — nothing to recompute, just cache for reproducibility.
+    saveRDS(reference, ref_cache)
+}
+
+if (file.exists(query_cache)) {
+    query &lt;- readRDS(query_cache)
+    message(&quot;Loaded cached scran-normalised query from &quot;, query_cache)
+} else {
+    query &lt;- scranTransf(query)
+    saveRDS(query, query_cache)
+}
+
+assayNames(reference)</code></pre>
+<pre><code>## [1] &quot;logcounts&quot;</code></pre>
+<pre class="r"><code>assayNames(query)</code></pre>
+<pre><code>## [1] &quot;counts&quot;    &quot;logcounts&quot;</code></pre>
+<p>Both objects now carry a <code>logcounts</code> assay, and that is
+what Φ-Space will use below (<code>refAssay = "logcounts"</code>).</p>
+</div>
+<div id="keep-common-genes-and-remove-zero-expression-genes"
+class="section level3" number="4.2">
+<h3><span class="header-section-number">4.2</span> Keep common genes and
+remove zero-expression genes</h3>
+<pre class="r"><code>common &lt;- intersect(rownames(reference), rownames(query))
+cat(&quot;Reference genes:&quot;, nrow(reference), &quot;\n&quot;)</code></pre>
+<pre><code>## Reference genes: 16115</code></pre>
+<pre class="r"><code>cat(&quot;Query genes:    &quot;, nrow(query), &quot;\n&quot;)</code></pre>
+<pre><code>## Query genes:     18953</code></pre>
+<pre class="r"><code>cat(&quot;Common:         &quot;, length(common), &quot;\n&quot;)</code></pre>
+<pre><code>## Common:          15100</code></pre>
+<pre class="r"><code>reference &lt;- reference[common, ]
+query     &lt;- query[common, ]
+query     &lt;- zeroFeatQC(query)
+dim(query)</code></pre>
+<pre><code>## [1] 15094 10000</code></pre>
+<p>The gene-symbol overlap is above ten thousand, which is plenty for
+PLS.</p>
+</div>
+</div>
+<div id="running-φ-space" class="section level2" number="5">
+<h2><span class="header-section-number">5</span> Running Φ-Space</h2>
+<p>We now fit the PLS model on the reference and project the query into
+the phenotype space. We ask for two phenotype layers at once:</p>
+<ul>
+<li><code>cell_type_fine</code> — the split label we built above (CM /
+Fibroblast replaced by their Gao subclusters, everything else on its
+broad label).</li>
+<li><code>age_group</code> (4 levels) — where on the maturation axis
+does it sit?</li>
+</ul>
+<p>We also pass <code>cellTypeThreshold = 20</code> so that phenotype
+levels represented by fewer than 20 reference cells are dropped before
+PLS fitting — this trims the long tail of rare CM / Fibroblast
+subclusters without touching the well-populated ones.</p>
+<p>This step is the computational bottleneck of the module (even though
+it’s only around one minute on a laptop), so we cache the output.</p>
+<pre class="r"><code>phispace_cache &lt;- file.path(results_dir, &quot;05_phispace_query.rds&quot;)
+
+if (file.exists(phispace_cache)) {
+    query &lt;- readRDS(phispace_cache)
+    message(&quot;Loaded cached PhiSpace result from &quot;, phispace_cache)
+} else {
+    query &lt;- PhiSpace(
+        reference         = reference,
+        query             = query,
+        phenotypes        = c(&quot;cell_type_fine&quot;, &quot;age_group&quot;),
+        refAssay          = &quot;logcounts&quot;,
+        regMethod         = &quot;PLS&quot;,
+        center            = TRUE,
+        scale             = FALSE,
+        cellTypeThreshold = 20
+    )
+    # Keep logcounts in the cache — Module 2 needs it for PCA on the
+    # expression side of its pseudotime comparison.
+    saveRDS(query, phispace_cache)
+}</code></pre>
+<p>The phenotype-space embedding is stored as a
+<code>reducedDim</code>:</p>
+<pre class="r"><code>phi_scores &lt;- reducedDim(query, &quot;PhiSpace&quot;)
+dim(phi_scores)</code></pre>
+<pre><code>## [1] 10000    28</code></pre>
+<pre class="r"><code>colnames(phi_scores)</code></pre>
+<pre><code>##  [1] &quot;Cardiomyocyte:Other&quot;                    
+##  [2] &quot;Cardiomyocyte:Fetal_enriched_metabolic&quot; 
+##  [3] &quot;Cardiomyocyte:DCM_HCM_enriched&quot;         
+##  [4] &quot;Cardiomyocyte:Metabolic&quot;                
+##  [5] &quot;Cardiomyocyte:Stressed&quot;                 
+##  [6] &quot;Cardiomyocyte:Inflammatory&quot;             
+##  [7] &quot;Cardiomyocyte:Fetal_enriched_conduction&quot;
+##  [8] &quot;Fibroblast:Activated&quot;                   
+##  [9] &quot;Fibroblast:ND_enriched&quot;                 
+## [10] &quot;Fibroblast:Perivascular&quot;                
+## [11] &quot;Fibroblast:Anti_fibrotic&quot;               
+## [12] &quot;Fibroblast:Interstitial&quot;                
+## [13] &quot;Fibroblast:DCM_HCM_enriched&quot;            
+## [14] &quot;Pericyte&quot;                               
+## [15] &quot;Myeloid&quot;                                
+## [16] &quot;Endothelial&quot;                            
+## [17] &quot;Lymphoid&quot;                               
+## [18] &quot;Endocardial&quot;                            
+## [19] &quot;vSMC&quot;                                   
+## [20] &quot;Neuronal&quot;                               
+## [21] &quot;Adipocyte&quot;                              
+## [22] &quot;Mast&quot;                                   
+## [23] &quot;LEC&quot;                                    
+## [24] &quot;Epicardial&quot;                             
+## [25] &quot;young&quot;                                  
+## [26] &quot;middle&quot;                                 
+## [27] &quot;old&quot;                                    
+## [28] &quot;fetal&quot;</code></pre>
+<pre class="r"><code>round(phi_scores[1:4, 1:6], 3)</code></pre>
+<pre><code>##                     Cardiomyocyte:Other Cardiomyocyte:Fetal_enriched_metabolic
+## AAACCCAAGTTTCGAC_f1              -0.349                                 -0.190
+## AAACCCACAAATGAGT_f1              -0.470                                 -0.024
+## AAACGAACAAACTCTG_f1               0.136                                  0.451
+## AAACGAACAGCGGTTC_f1              -0.385                                 -0.244
+##                     Cardiomyocyte:DCM_HCM_enriched Cardiomyocyte:Metabolic
+## AAACCCAAGTTTCGAC_f1                         -0.013                  -0.007
+## AAACCCACAAATGAGT_f1                          0.055                  -0.068
+## AAACGAACAAACTCTG_f1                         -0.307                   0.251
+## AAACGAACAGCGGTTC_f1                          0.019                   0.015
+##                     Cardiomyocyte:Stressed Cardiomyocyte:Inflammatory
+## AAACCCAAGTTTCGAC_f1                  0.085                      0.133
+## AAACCCACAAATGAGT_f1                  0.136                      0.364
+## AAACGAACAAACTCTG_f1                 -0.004                     -0.037
+## AAACGAACAGCGGTTC_f1                  0.123                      0.102</code></pre>
+<p>Each row is a query cell, each column is a reference phenotype level.
+Values are column-wise normalised so that the median of each column is
+zero and the maximum absolute deviation is one — high positive values
+mean the cell resembles that phenotype, values near zero mean average,
+and negative values mean the cell is confidently <em>not</em> that
+phenotype.</p>
+<div id="on-the-number-of-components" class="section level3"
+number="5.1">
+<h3><span class="header-section-number">5.1</span> On the number of
+components</h3>
+<p>Φ-Space defaults <code>ncomp</code> to the total number of phenotype
+levels (here 17). This is a sensible starting point that we have found
+works well in practice. What we tend to observe is that, when there are
+many phenotypes (e.g. 60 cell types), setting <code>ncomp</code> to the
+default value (e.g. 60) might be too much. This is because many of these
+cell types are heavily correlated, hence we do not need as many
+components to capture all the signal. When this is the case, setting
+<code>ncomp</code> to, say, <code>30</code> , might be a better
+choice.</p>
+</div>
+</div>
+<div id="exploring-the-phenotype-space" class="section level2"
+number="6">
+<h2><span class="header-section-number">6</span> Exploring the Phenotype
+Space</h2>
+<div id="heatmap-of-scores-grouped-by-developmental-stage"
+class="section level3" number="6.1">
+<h3><span class="header-section-number">6.1</span> Heatmap of scores
+grouped by developmental stage</h3>
+<p>A good first look is a heatmap with query cells as rows (grouped by
+developmental stage) and reference phenotypes as columns. The
+expectation is clear: cells from the foetal group should score high on
+foetal-related reference phenotypes, and similarly for young and
+adult.</p>
+<pre class="r"><code>age_levels &lt;- unique(reference$age_group)
+split_phenotype &lt;- ifelse(
+    colnames(phi_scores) %in% age_levels, &quot;age group&quot;, &quot;cell type&quot;
+)
+
+ht &lt;- Heatmap(
+    phi_scores,
+    name             = &quot;Φ-Space score&quot;,
+    row_split        = query$group,
+    column_split     = split_phenotype,
+    cluster_row_slices = FALSE,
+    show_row_names   = FALSE,
+    show_row_dend    = FALSE,
+    show_column_dend = FALSE,
+    column_names_rot = 45,
+    row_title_rot    = 0
+)
+draw(ht, heatmap_legend_side = &quot;right&quot;)</code></pre>
+<p><img src="01_phispace_annotation_files/figure-html/heatmap-scores-1.png" alt="" width="960" style="display: block; margin: auto;" /></p>
+<p>Two patterns should jump out:</p>
+<ul>
+<li>Within the <code>age group</code> columns, the diagonal block
+structure tells you that Φ-Space has correctly recovered the
+developmental stage of each query cell without ever being told what
+stage it was from.</li>
+<li>Within the <code>cell type</code> columns, the dominant column for
+most cells is <code>Cardiomyocyte</code>, as expected for a heart sample
+— but a subset of cells score high on <code>Fibroblast</code>,
+<code>Endothelial</code>, <code>Myeloid</code>, etc.</li>
+</ul>
+</div>
+<div id="pca-biplot-of-the-phenotype-space" class="section level3"
+number="6.2">
+<h3><span class="header-section-number">6.2</span> PCA biplot of the
+phenotype space</h3>
+<p>The phenotype-space embedding is 17-dimensional. To get a
+two-dimensional view that still reflects the geometry of the embedding,
+we apply PCA to the score matrix. Φ-Space ships a <code>getPC()</code>
+helper that returns scores, loadings and variance-explained in one
+call.</p>
+<pre class="r"><code>pc_res &lt;- getPC(phi_scores, ncomp = 5, center = TRUE, scale = FALSE)
+round(pc_res$props * 100, 1)</code></pre>
+<pre><code>## [1] 37.6 16.4  8.9  8.1  5.6</code></pre>
+<p>PC1 and PC2 together explain a large fraction of the variance in
+phenotype space. We now plot the embedding as a <strong>biplot</strong>:
+one panel shows the query cells (the <code>scores</code>), the other
+panel shows the reference phenotypes (the <code>loadings</code>) in the
+same 2D basis. Reading the two panels together tells you <em>why</em>
+cells sit where they do — a cell in the positive-PC1 / positive-PC2
+quadrant is being pulled there by the phenotypes that load positively on
+both.</p>
+<pre class="r"><code>scores_df &lt;- as.data.frame(pc_res$scores[, 1:2])
+colnames(scores_df) &lt;- c(&quot;PC1&quot;, &quot;PC2&quot;)
+scores_df$group &lt;- query$group
+
+loadings_df &lt;- as.data.frame(pc_res$loadings[, 1:2])
+colnames(loadings_df) &lt;- c(&quot;PC1&quot;, &quot;PC2&quot;)
+loadings_df$phenotype &lt;- rownames(loadings_df)
+loadings_df$layer &lt;- ifelse(
+    loadings_df$phenotype %in% unique(reference$age_group),
+    &quot;age group&quot;, &quot;cell type&quot;
+)
+
+pc1_lab &lt;- sprintf(&quot;PC1 (%.1f%%)&quot;, pc_res$props[1] * 100)
+pc2_lab &lt;- sprintf(&quot;PC2 (%.1f%%)&quot;, pc_res$props[2] * 100)
+
+p_scores &lt;- ggplot(scores_df, aes(PC1, PC2, colour = group)) +
+    geom_point(size = 0.6, alpha = 0.7) +
+    scale_colour_brewer(palette = &quot;Set1&quot;) +
+    labs(title = &quot;Query cells&quot;, x = pc1_lab, y = pc2_lab, colour = &quot;Stage&quot;) +
+    theme_bw(base_size = 13) +
+    theme(legend.position = &quot;bottom&quot;) +
+    guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1)))
+
+p_loadings &lt;- ggplot(loadings_df, aes(PC1, PC2, colour = layer)) +
+    geom_segment(aes(x = 0, y = 0, xend = PC1, yend = PC2),
+                 arrow = arrow(length = unit(0.015, &quot;npc&quot;)), alpha = 0.5) +
+    geom_text(aes(label = phenotype), size = 3.5, vjust = -0.4) +
+    scale_colour_manual(values = c(&quot;age group&quot; = &quot;#d95f02&quot;, &quot;cell type&quot; = &quot;#1b9e77&quot;)) +
+    labs(title = &quot;Reference phenotypes (loadings)&quot;,
+         x = pc1_lab, y = pc2_lab, colour = &quot;Phenotype layer&quot;) +
+    theme_bw(base_size = 13) +
+    theme(legend.position = &quot;bottom&quot;)
+
+p_scores + p_loadings</code></pre>
+<p><img src="01_phispace_annotation_files/figure-html/biplot-1.png" alt="" width="1344" style="display: block; margin: auto;" /></p>
+<p>This biplot is the single most useful visualisation in Φ-Space. Read
+it like this:</p>
+<ul>
+<li><strong>Query cells cluster by stage.</strong> The three stage
+colours should separate along the PC that is loaded most heavily by
+<code>fetal</code>, <code>young</code>, <code>middle</code>,
+<code>old</code> — that is the maturation axis we will hand off to
+slingshot in Module 2.</li>
+<li><strong>Cell-type phenotypes point to where each lineage
+lives.</strong> A query cell near a <code>Cardiomyocyte:*</code> arrow
+is a cardiomyocyte; one near a <code>Fibroblast:*</code> arrow is a
+fibroblast. Cells in between the two arrows are transitional / ambiguous
+and would be assigned inconsistently by a hard classifier.</li>
+<li><strong>The foetal→adult axis is visible even within
+cardiomyocytes.</strong> Look at where the
+<code>Cardiomyocyte:Fetal_enriched_*</code> loadings sit relative to the
+adult-stage CM subclusters — query cardiomyocytes should spread along
+that direction, which is precisely the trajectory Module 2 will
+trace.</li>
+</ul>
+</div>
+<div id="query-cells-coloured-by-broad-cell-type" class="section level3"
+number="6.3">
+<h3><span class="header-section-number">6.3</span> Query cells coloured
+by broad cell type</h3>
+<p>The stage panel tells us <em>where each donor group lands</em> in
+phenotype space, but not <em>which lineage</em> each cell belongs to. To
+see that, we recolour the same query PCA by the broad cell type derived
+from the fine Φ-Space call (collapsing every <code>Fibroblast:*</code>
+back to <code>Fibroblast</code>, every <code>Cardiomyocyte:*</code> to
+<code>Cardiomyocyte</code>, etc.). We use <code>RColorBrewer</code>’s
+<code>Set1</code> / <code>Dark2</code> — pooled to get enough distinct,
+high-contrast hues for up to ~12 broad lineages without relying on
+subtle shade differences.</p>
+<p>We colour by the <em>broad</em> label rather than the fine one
+because the fine label has 20+ levels — more than any qualitative
+palette can distinguish cleanly. If we ever need to visualise at the
+fine resolution, a <code>facet_wrap(~ broad)</code> with the fine label
+inside each panel is much more legible than a single plot with 20+
+colours.</p>
+<pre class="r"><code>age_levels_biplot &lt;- unique(reference$age_group)
+ct_cols_biplot    &lt;- setdiff(colnames(phi_scores), age_levels_biplot)
+fine_call         &lt;- getLabels(phi_scores[, ct_cols_biplot])
+scores_df$broad   &lt;- sub(&quot;:.*$&quot;, &quot;&quot;, fine_call)
+
+n_broad &lt;- length(unique(scores_df$broad))
+broad_palette &lt;- c(
+    RColorBrewer::brewer.pal(9, &quot;Set1&quot;),
+    RColorBrewer::brewer.pal(8, &quot;Dark2&quot;)
+)[seq_len(n_broad)]
+
+ggplot(scores_df, aes(PC1, PC2, colour = broad)) +
+    geom_point(size = 0.6, alpha = 0.8) +
+    scale_colour_manual(values = broad_palette) +
+    labs(title = &quot;Query cells coloured by broad cell type&quot;,
+         x = pc1_lab, y = pc2_lab, colour = &quot;Broad cell type&quot;) +
+    theme_bw(base_size = 13) +
+    theme(legend.position = &quot;right&quot;) +
+    guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1)))</code></pre>
+<p><img src="01_phispace_annotation_files/figure-html/biplot-broad-1.png" alt="" width="768" style="display: block; margin: auto;" /></p>
+<p>Read this panel against the loadings panel above: each
+broad-cell-type blob should sit on top of (or adjacent to) the loading
+arrows of its own subtypes. Cardiomyocyte cells should cluster around
+the <code>Cardiomyocyte:*</code> arrows, fibroblasts around the
+<code>Fibroblast:*</code> arrows, and so on.</p>
+</div>
+</div>
+<div id="hard-vs-soft-classification" class="section level2" number="7">
+<h2><span class="header-section-number">7</span> Hard vs Soft
+Classification</h2>
+<p>Sometimes you genuinely do need a single label per cell — for
+example, to tabulate cell-type composition per donor. Φ-Space provides
+<code>getLabels()</code> for exactly this: it picks the column with the
+highest score for each cell.</p>
+<pre class="r"><code>age_cols        &lt;- unique(reference$age_group)
+cell_type_cols  &lt;- setdiff(colnames(phi_scores), age_cols)
+
+query$PhiCellType &lt;- getLabels(phi_scores[, cell_type_cols])
+query$PhiAge      &lt;- getLabels(phi_scores[, age_cols])
+
+# Broad label: collapse &quot;CellType:Subtype&quot; back to &quot;CellType&quot;.
+query$PhiCellTypeBroad &lt;- sub(&quot;:.*$&quot;, &quot;&quot;, query$PhiCellType)
+
+table(query$PhiCellType)</code></pre>
+<pre><code>## 
+##                               Adipocyte          Cardiomyocyte:DCM_HCM_enriched 
+##                                     213                                     439 
+## Cardiomyocyte:Fetal_enriched_conduction  Cardiomyocyte:Fetal_enriched_metabolic 
+##                                     652                                    1557 
+##              Cardiomyocyte:Inflammatory                 Cardiomyocyte:Metabolic 
+##                                     211                                    1116 
+##                     Cardiomyocyte:Other                  Cardiomyocyte:Stressed 
+##                                    1375                                      61 
+##                             Endocardial                             Endothelial 
+##                                     143                                     557 
+##                              Epicardial                    Fibroblast:Activated 
+##                                       3                                     190 
+##                Fibroblast:Anti_fibrotic             Fibroblast:DCM_HCM_enriched 
+##                                     373                                     519 
+##                 Fibroblast:Interstitial                  Fibroblast:ND_enriched 
+##                                     154                                     537 
+##                 Fibroblast:Perivascular                                     LEC 
+##                                     468                                      25 
+##                                Lymphoid                                    Mast 
+##                                     100                                      20 
+##                                 Myeloid                                Neuronal 
+##                                     519                                     152 
+##                                Pericyte                                    vSMC 
+##                                     553                                      63</code></pre>
+<pre class="r"><code>table(query$PhiCellTypeBroad)</code></pre>
+<pre><code>## 
+##     Adipocyte Cardiomyocyte   Endocardial   Endothelial    Epicardial 
+##           213          5411           143           557             3 
+##    Fibroblast           LEC      Lymphoid          Mast       Myeloid 
+##          2241            25           100            20           519 
+##      Neuronal      Pericyte          vSMC 
+##           152           553            63</code></pre>
+<pre class="r"><code>table(query$group, query$PhiAge)</code></pre>
+<pre><code>##        
+##         fetal middle  old young
+##   adult     0    717  561   374
+##   fetal  4304    518  391   236
+##   young    16    797  716  1370</code></pre>
+<p>The <code>group</code> × <code>PhiAge</code> cross-table is a useful
+sanity check: most foetal query cells should land in the
+<code>fetal</code> reference bin, and most adult query cells in
+<code>old</code> — but the off-diagonal entries are where the teaching
+is. Those cells are the ones whose continuous scores straddle two age
+groups.</p>
+<p>Let’s look at the cardiomyocytes more closely — they are the main
+interest for Module 2:</p>
+<pre class="r"><code>cm_scores &lt;- phi_scores[query$PhiCellTypeBroad == &quot;Cardiomyocyte&quot;, age_cols, drop = FALSE]
+cm_df &lt;- as.data.frame(cm_scores) %&gt;%
+    tibble::rownames_to_column(&quot;cell&quot;) %&gt;%
+    mutate(group = query$group[match(cell, colnames(query))]) %&gt;%
+    tidyr::pivot_longer(all_of(age_cols), names_to = &quot;age_phenotype&quot;,
+                        values_to = &quot;score&quot;) %&gt;%
+    mutate(age_phenotype = factor(age_phenotype,
+                                  levels = c(&quot;fetal&quot;, &quot;young&quot;, &quot;middle&quot;, &quot;old&quot;)))
+
+ggplot(cm_df, aes(age_phenotype, score, fill = group)) +
+    geom_violin(scale = &quot;width&quot;, alpha = 0.8) +
+    scale_fill_brewer(palette = &quot;Set1&quot;) +
+    labs(x = &quot;Reference age group&quot;, y = &quot;Φ-Space score&quot;,
+         fill = &quot;Query stage&quot;,
+         title = &quot;Age-group scores for query cardiomyocytes&quot;) +
+    theme_bw(base_size = 13)</code></pre>
+<p><img src="01_phispace_annotation_files/figure-html/cm-score-distribution-1.png" alt="" width="960" style="display: block; margin: auto;" /></p>
+<p>Notice that even within a single query stage there is substantial
+spread along the age-group axis. A hard classifier hides this spread;
+the continuous scores are exactly what slingshot will exploit to trace a
+maturation trajectory.</p>
+</div>
+<div id="handing-off-to-module-2" class="section level2" number="8">
+<h2><span class="header-section-number">8</span> Handing Off to Module
+2</h2>
+<p>We save the annotated query object so that Module 2 can pick up where
+we leave off.</p>
+<pre class="r"><code>final_cache &lt;- file.path(results_dir, &quot;05_phispace_query.rds&quot;)
+saveRDS(query, final_cache)
+cat(&quot;Annotated query at&quot;, final_cache, &quot;\n&quot;)</code></pre>
+<pre><code>## Annotated query at /Users/jmao1/Documents/GitHub/scWorkshop/results/05_phispace_query.rds</code></pre>
+<p>The object now carries:</p>
+<ul>
+<li><code>reducedDim(query, "PhiSpace")</code> — the score matrix (fine
+cell-type columns + age-group columns).</li>
+<li><code>colData(query)$PhiCellType</code> — discrete <em>fine</em>
+cell-type label (CM / Fibroblast resolved to subtype).</li>
+<li><code>colData(query)$PhiCellTypeBroad</code> — discrete broad
+cell-type label (CM and Fibroblast subtypes collapsed back).</li>
+<li><code>colData(query)$PhiAge</code> — discrete maturation-stage
+label.</li>
+<li>all original metadata (<code>sample</code>, <code>group</code>,
+<code>sex</code>, QC metrics).</li>
+</ul>
+<p>In Module 2 we will <strong>subset this object to
+cardiomyocytes</strong> (using
+<code>PhiCellTypeBroad == "Cardiomyocyte"</code>) and apply
+<strong>slingshot</strong> to the PhiSpace score matrix. The continuous
+age-group scores will act as the biological anchor that tells slingshot
+which end of the trajectory is foetal and which end is adult.</p>
+</div>
+<div id="summary" class="section level2" number="9">
+<h2><span class="header-section-number">9</span> Summary</h2>
+<ul>
+<li>Φ-Space replaces a hard cell-type label with a continuous score per
+reference phenotype per cell — a natural fit for a dataset that spans a
+developmental gradient.</li>
+<li>The workflow is four steps: match normalisation (we used scran
+normalisation on both reference and query), keep common genes, run
+<code>PhiSpace()</code> with one or more phenotype layers, inspect the
+scores.</li>
+<li>Continuous scores can always be collapsed to a discrete label with
+<code>getLabels()</code>, but the inverse is not possible — preserve the
+scores for any downstream analysis that benefits from soft assignments
+(trajectory inference, co-phenotype analysis, gradient
+visualisation).</li>
+<li>The phenotype-space embedding we saved is the input to Module 2
+(pseudotime) and Module 3 (cell-specific co-expression networks).</li>
+</ul>
+</div>
+<div id="session-info" class="section level2" number="10">
+<h2><span class="header-section-number">10</span> Session Info</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 4.6.0 (2026-04-24)
+## Platform: aarch64-apple-darwin23
+## Running under: macOS Tahoe 26.6.2
+## 
+## Matrix products: default
+## BLAS:   /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRblas.0.dylib 
+## LAPACK: /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+## 
+## locale:
+## [1] en_AU/en_AU/en_AU/C/en_AU/en_AU
+## 
+## time zone: Australia/Melbourne
+## tzcode source: internal
+## 
+## attached base packages:
+## [1] grid      stats4    stats     graphics  grDevices utils     datasets 
+## [8] methods   base     
+## 
+## other attached packages:
+##  [1] ComplexHeatmap_2.28.0       patchwork_1.3.2            
+##  [3] tibble_3.3.1                PhiSpace_0.99.0            
+##  [5] SpatialExperiment_1.22.0    tidyr_1.3.2                
+##  [7] dplyr_1.2.1                 ggplot2_4.0.3              
+##  [9] SingleCellExperiment_1.34.0 SummarizedExperiment_1.42.0
+## [11] Biobase_2.72.0              GenomicRanges_1.64.0       
+## [13] Seqinfo_1.2.0               IRanges_2.46.0             
+## [15] S4Vectors_0.50.1            BiocGenerics_0.58.1        
+## [17] generics_0.1.4              MatrixGenerics_1.24.0      
+## [19] matrixStats_1.5.0           Seurat_5.5.1               
+## [21] SeuratObject_5.4.0          sp_2.2-1                   
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3     shape_1.4.6.1          jsonlite_2.0.0        
+##   [4] magrittr_2.0.5         magick_2.9.1           spatstat.utils_3.2-3  
+##   [7] farver_2.1.2           rmarkdown_2.31         GlobalOptions_0.1.4   
+##  [10] vctrs_0.7.3            ROCR_1.0-12            Cairo_1.7-0           
+##  [13] spatstat.explore_3.8-1 htmltools_0.5.9        S4Arrays_1.12.0       
+##  [16] SparseArray_1.12.2     sass_0.4.10            sctransform_0.4.3     
+##  [19] parallelly_1.48.0      KernSmooth_2.23-26     bslib_0.11.0          
+##  [22] htmlwidgets_1.6.4      ica_1.0-3              plyr_1.8.9            
+##  [25] plotly_4.12.0          zoo_1.8-15             cachem_1.1.0          
+##  [28] igraph_2.3.3           iterators_1.0.14       mime_0.13             
+##  [31] lifecycle_1.0.5        pkgconfig_2.0.3        Matrix_1.7-5          
+##  [34] R6_2.6.1               fastmap_1.2.0          clue_0.3-68           
+##  [37] fitdistrplus_1.2-6     future_1.70.0          shiny_1.14.0          
+##  [40] digest_0.6.39          colorspace_2.1-2       tensor_1.5.1          
+##  [43] RSpectra_0.16-2        irlba_2.3.7            labeling_0.4.3        
+##  [46] progressr_1.0.0        spatstat.sparse_3.2-0  httr_1.4.8            
+##  [49] polyclip_1.10-7        abind_1.4-8            compiler_4.6.0        
+##  [52] doParallel_1.0.17      withr_3.0.3            S7_0.2.2              
+##  [55] fastDummies_1.7.6      MASS_7.3-65            DelayedArray_0.38.2   
+##  [58] rjson_0.2.23           tools_4.6.0            lmtest_0.9-40         
+##  [61] otel_0.2.0             httpuv_1.6.17          future.apply_1.20.2   
+##  [64] goftest_1.2-3          glue_1.8.1             nlme_3.1-169          
+##  [67] promises_1.5.0         Rtsne_0.17             cluster_2.1.8.2       
+##  [70] reshape2_1.4.5         gtable_0.3.6           spatstat.data_3.1-9   
+##  [73] data.table_1.18.4      XVector_0.52.0         spatstat.geom_3.8-1   
+##  [76] RcppAnnoy_0.0.23       foreach_1.5.2          ggrepel_0.9.8         
+##  [79] RANN_2.6.2             pillar_1.11.1          stringr_1.6.0         
+##  [82] spam_2.11-4            RcppHNSW_0.7.0         later_1.4.8           
+##  [85] circlize_0.4.18        splines_4.6.0          lattice_0.22-9        
+##  [88] survival_3.8-9         deldir_2.0-4           tidyselect_1.2.1      
+##  [91] miniUI_0.1.2           pbapply_1.7-4          knitr_1.51            
+##  [94] gridExtra_2.3.1        scattermore_1.2        xfun_0.59             
+##  [97] stringi_1.8.7          lazyeval_0.2.3         yaml_2.3.12           
+## [100] evaluate_1.0.5         codetools_0.2-20       cli_3.6.6             
+## [103] uwot_0.2.4             xtable_1.8-8           reticulate_1.46.0     
+## [106] jquerylib_0.1.4        Rcpp_1.1.2             globals_0.19.1        
+## [109] spatstat.random_3.5-0  png_0.1-9              spatstat.univar_3.2-0 
+## [112] parallel_4.6.0         dotCall64_1.2          listenv_1.0.0         
+## [115] viridisLite_0.4.3      scales_1.4.0           ggridges_0.5.7        
+## [118] crayon_1.5.3           purrr_1.2.2            GetoptLong_1.1.1      
+## [121] rlang_1.3.0            cowplot_1.2.0</code></pre>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Single Cell Workshop" />
+
+<meta name="date" content="2026-11-11" />
+
+<title>Module 2: Pseudotime Trajectory Analysis</title>
+
+<script src="libs/header-attrs-2.31/header-attrs.js"></script>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="libs/navigation-1.1/tabsets.js"></script>
+<script src="libs/navigation-1.1/codefolding.js"></script>
+<link href="libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+<!-- Navigation bar added to every page by setup/build_site.R -->
+<nav id="site-navbar" class="navbar navbar-default" style="margin-bottom: 20px; border-radius: 0;">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="index.html">Continuous Cell States</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a href="00_introduction.html">Introduction</a></li>
+      <li><a href="01_phispace_annotation.html">1. &Phi;-Space</a></li>
+      <li><a href="02_pseudotime.html">2. Pseudotime</a></li>
+      <li><a href="03_nnet.html">3. Co-expression networks</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li><a href="https://github.com/mao-lab-org/scWorkshop">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+<script>
+  // R Markdown places included HTML inside the content column (next to the
+  // floating table of contents). Move the bar to the top of the page so it
+  // spans the full width, and highlight the current page.
+  document.addEventListener("DOMContentLoaded", function () {
+    var nav = document.getElementById("site-navbar");
+    document.body.insertBefore(nav, document.body.firstChild);
+    var page = window.location.pathname.split("/").pop() || "index.html";
+    nav.querySelectorAll(".navbar-nav a").forEach(function (a) {
+      if (a.getAttribute("href") === page) a.parentElement.classList.add("active");
+    });
+  });
+</script>
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Module 2: Pseudotime Trajectory
+Analysis</h1>
+<h4 class="author">Single Cell Workshop</h4>
+<h4 class="date">2026-11-11</h4>
+
+</div>
+
+
+<div id="introduction" class="section level2" number="1">
+<h2><span class="header-section-number">1</span> Introduction</h2>
+<p>In Module 1 we gave each nucleus a continuous score for every
+reference phenotype. Within cardiomyocytes, those scores already
+<em>hint</em> at a foetal→adult gradient. Module 2 turns that hint into
+a single number per cell: <strong>pseudotime</strong>.</p>
+<p>Pseudotime orders cells so that cells close together in a biological
+process get close values. It is not real time, and its scale is
+arbitrary: only the <em>ordering</em> matters. Which end counts as
+“early” is a separate choice, and for some methods it has to be
+supplied. Here the Φ-Space <code>fetal</code> score tells us where
+maturation starts.</p>
+<div id="three-ways-to-order-cardiomyocytes" class="section level3"
+number="1.1">
+<h3><span class="header-section-number">1.1</span> Three ways to order
+cardiomyocytes</h3>
+<p>We compute three pseudotimes, all from the Φ-Space scores:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Φ-Space pseudotime:</strong> the adult-like score minus the
+foetal score. No trajectory model at all; this is our baseline.</li>
+<li><strong>Slingshot,</strong> a <em>principal-curve</em> method. It
+clusters cells, links the cluster centres into a tree, fits a smooth
+curve through it, and projects every cell onto the curve. Pseudotime is
+the distance along the curve.</li>
+<li><strong>Diffusion pseudotime (DPT)</strong> with the destiny
+package. It builds a graph of similar cells and measures how far a
+random walk travels from a root cell.</li>
+</ol>
+<p>We then check them against each other and against the donors’ ages,
+which none of the methods sees. Finally, we look at a common pitfall:
+slingshot’s answer depends on how you cluster the cells.</p>
+<p>A <strong>Going further</strong> section at the end repeats the
+analysis on a PCA embedding of gene expression instead of Φ-Space, for
+anyone who wants to compare.</p>
+</div>
+<div id="learning-objectives" class="section level3" number="1.2">
+<h3><span class="header-section-number">1.2</span> Learning
+objectives</h3>
+<p>By the end of this module you will be able to:</p>
+<ul>
+<li>explain what pseudotime is, what it is not, and why some methods
+need a starting point;</li>
+<li>compute pseudotime with slingshot and with DPT, and display it on a
+UMAP;</li>
+<li>check a pseudotime against independent information (here, donor age)
+and against other methods;</li>
+<li>recognise that clustering-based trajectory methods depend on the
+clustering you give them;</li>
+<li>save the pseudotime-annotated cardiomyocytes for Module 3.</li>
+</ul>
+</div>
+</div>
+<div id="load-libraries-and-module-1-output" class="section level2"
+number="2">
+<h2><span class="header-section-number">2</span> Load Libraries and
+Module 1 Output</h2>
+<pre class="r"><code>library(SingleCellExperiment)
+library(slingshot)
+library(destiny)
+library(scater)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(patchwork)
+library(RColorBrewer)</code></pre>
+<p>Module 1 handed over a single file: the query with Φ-Space scores in
+<code>reducedDim</code>, scran logcounts in
+<code>assay(query, "logcounts")</code>, and the per-cell annotations
+(<code>PhiCellType</code>, <code>PhiCellTypeBroad</code>,
+<code>PhiAge</code>, <code>group</code>, …) in <code>colData</code>.</p>
+<pre class="r"><code>query &lt;- readRDS(file.path(results_dir, &quot;05_phispace_query.rds&quot;))
+
+cat(&quot;Assays:      &quot;, paste(assayNames(query), collapse = &quot;, &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## Assays:       counts, logcounts</code></pre>
+<pre class="r"><code>cat(&quot;reducedDims: &quot;, paste(reducedDimNames(query), collapse = &quot;, &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## reducedDims:  PhiSpace</code></pre>
+<pre class="r"><code>cat(&quot;Cells:       &quot;, ncol(query), &quot;\n&quot;)</code></pre>
+<pre><code>## Cells:        10000</code></pre>
+<pre class="r"><code>cat(&quot;Broad types: &quot;, paste(sort(unique(query$PhiCellTypeBroad)),
+                            collapse = &quot;, &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## Broad types:  Adipocyte, Cardiomyocyte, Endocardial, Endothelial, Epicardial, Fibroblast, LEC, Lymphoid, Mast, Myeloid, Neuronal, Pericyte, vSMC</code></pre>
+<pre class="r"><code>results_dir &lt;- Sys.getenv(&quot;SCW_RESULTS&quot;, &quot;../results&quot;)
+dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)</code></pre>
+</div>
+<div id="subset-to-cardiomyocytes" class="section level2" number="3">
+<h2><span class="header-section-number">3</span> Subset to
+Cardiomyocytes</h2>
+<p>Cardiomyocytes carry the foetal→adult maturation signal we want to
+trace. Running pseudotime on all cell types at once would mix several
+biological processes into one trajectory.</p>
+<pre class="r"><code>cm &lt;- query[, query$PhiCellTypeBroad == &quot;Cardiomyocyte&quot;]
+cat(&quot;Cardiomyocytes:&quot;, ncol(cm), &quot;\n&quot;)</code></pre>
+<pre><code>## Cardiomyocytes: 5411</code></pre>
+<pre class="r"><code>print(table(cm$group))</code></pre>
+<pre><code>## 
+## adult fetal young 
+##   409  4016   986</code></pre>
+<pre class="r"><code>print(sort(table(cm$PhiCellType), decreasing = TRUE))</code></pre>
+<pre><code>## 
+##  Cardiomyocyte:Fetal_enriched_metabolic                     Cardiomyocyte:Other 
+##                                    1557                                    1375 
+##                 Cardiomyocyte:Metabolic Cardiomyocyte:Fetal_enriched_conduction 
+##                                    1116                                     652 
+##          Cardiomyocyte:DCM_HCM_enriched              Cardiomyocyte:Inflammatory 
+##                                     439                                     211 
+##                  Cardiomyocyte:Stressed 
+##                                      61</code></pre>
+<p>The fine Φ-Space labels (<code>Cardiomyocyte:Fetal_enriched_*</code>,
+<code>:Metabolic</code>, <code>:Stressed</code>, …) split the
+cardiomyocytes into biologically meaningful subtypes. We’ll use them as
+slingshot’s clusters.</p>
+</div>
+<div id="a-map-for-plotting-pca-and-umap" class="section level2"
+number="4">
+<h2><span class="header-section-number">4</span> A Map for Plotting: PCA
+and UMAP</h2>
+<p>To display pseudotimes we need a 2D map of the cells. We compute a
+standard pipeline on the logcounts: highly variable genes, then PCA,
+then UMAP. None of the pseudotime methods below uses the UMAP; it is
+only for plotting, so that every method is drawn on the same layout.</p>
+<pre class="r"><code>pca_cache &lt;- file.path(results_dir, &quot;06_cm_pca.rds&quot;)
+
+if (file.exists(pca_cache)) {
+    cm &lt;- readRDS(pca_cache)
+    message(&quot;Loaded cached CM object with PCA from &quot;, pca_cache)
+} else {
+    # Highly variable gene selection
+    gene_var &lt;- rowVars(as.matrix(logcounts(cm)))
+    names(gene_var) &lt;- rownames(cm)
+    n_hvg &lt;- min(2000, nrow(cm))
+    hvg &lt;- names(sort(gene_var, decreasing = TRUE))[seq_len(n_hvg)]
+
+    pca &lt;- prcomp(t(as.matrix(logcounts(cm)[hvg, ])),
+                  center = TRUE, scale. = FALSE)
+    reducedDim(cm, &quot;PCA&quot;) &lt;- pca$x[, 1:20]
+    saveRDS(cm, pca_cache)
+}
+
+cat(&quot;PCA dims:      &quot;, paste(dim(reducedDim(cm, &quot;PCA&quot;)), collapse = &quot; x &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## PCA dims:       5411 x 20</code></pre>
+<pre class="r"><code>cat(&quot;PhiSpace dims: &quot;, paste(dim(reducedDim(cm, &quot;PhiSpace&quot;)),
+                             collapse = &quot; x &quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## PhiSpace dims:  5411 x 28</code></pre>
+<p>We keep the first 20 principal components.</p>
+<p><code>n_neighbors = 15</code> and <code>min_dist = 0.5</code> were
+chosen by trying several settings: smaller <code>n_neighbors</code>
+broke the cardiomyocyte continuum into islands with no biological
+meaning.</p>
+<pre class="r"><code>umap_cache &lt;- file.path(results_dir, &quot;06_cm_umap.rds&quot;)
+
+if (file.exists(umap_cache)) {
+    reducedDim(cm, &quot;UMAP&quot;) &lt;- readRDS(umap_cache)
+    message(&quot;Loaded cached UMAP&quot;)
+} else {
+    set.seed(42)
+    cm &lt;- scater::runUMAP(cm, dimred = &quot;PCA&quot;, name = &quot;UMAP&quot;,
+                          n_neighbors = 15, min_dist = 0.5)
+    saveRDS(reducedDim(cm, &quot;UMAP&quot;), umap_cache)
+}</code></pre>
+<p>A few small helpers for the plots and runs below:</p>
+<pre class="r"><code>umap_df &lt;- as.data.frame(reducedDim(cm, &quot;UMAP&quot;))
+colnames(umap_df) &lt;- c(&quot;UMAP1&quot;, &quot;UMAP2&quot;)
+
+# Rescale to [0, 1] so different methods share one colour scale
+rescale01 &lt;- function(x) {
+    x &lt;- x - min(x, na.rm = TRUE)
+    x / max(x, na.rm = TRUE)
+}
+
+# UMAP coloured by a pseudotime (blue = early, red = late)
+umap_base &lt;- function(pt_vec) {
+    ggplot(cbind(umap_df, pt = pt_vec), aes(UMAP1, UMAP2, colour = pt)) +
+        geom_point(size = 0.4, alpha = 0.7) +
+        scale_colour_distiller(palette = &quot;Spectral&quot;, name = &quot;Pseudotime&quot;) +
+        theme_bw(base_size = 11) +
+        theme(aspect.ratio = 1)
+}
+
+# Slingshot curves, re-fitted in UMAP space for display
+embed_curves_df &lt;- function(sds, label) {
+    curves &lt;- slingCurves(embedCurves(sds, reducedDim(cm, &quot;UMAP&quot;)))
+    do.call(rbind, lapply(seq_along(curves), function(i) {
+        s &lt;- curves[[i]]$s[curves[[i]]$ord, , drop = FALSE]
+        data.frame(UMAP1 = s[, 1], UMAP2 = s[, 2],
+                   lineage = paste0(label, &quot;_L&quot;, i))
+    }))
+}
+with_curves &lt;- function(p, crv_df) {
+    p + geom_path(data = crv_df, aes(UMAP1, UMAP2, group = lineage),
+                  inherit.aes = FALSE, colour = &quot;grey30&quot;, linewidth = 0.8)
+}
+
+# Run slingshot, or load a cached run
+run_slingshot &lt;- function(cache, dimred, clusters, start) {
+    fp &lt;- file.path(results_dir, cache)
+    if (file.exists(fp)) {
+        message(&quot;Loaded cached &quot;, cache)
+        return(readRDS(fp))
+    }
+    sds &lt;- slingshot(
+        reducedDim(cm, dimred),
+        clusterLabels = clusters,
+        start.clus    = start,
+        dist.method   = &quot;simple&quot;
+    )
+    saveRDS(sds, fp)
+    sds
+}
+
+# One pseudotime per cell: the mean over slingshot&#39;s lineages
+lineage_pt &lt;- function(sds) rowMeans(slingPseudotime(sds), na.rm = TRUE)</code></pre>
+<p><code>dist.method = "simple"</code> is needed because slingshot’s
+default distance fails when some clusters are very small.</p>
+</div>
+<div id="pseudotime-1-the-φ-space-score" class="section level2"
+number="5">
+<h2><span class="header-section-number">5</span> Pseudotime 1: the
+Φ-Space Score</h2>
+<p>The simplest ordering needs no trajectory model. The reference has
+four age groups (<code>fetal</code>, <code>young</code>,
+<code>middle</code>, <code>old</code>). We average the three post-natal
+scores into an “adult” score and subtract the <code>fetal</code>
+score:</p>
+<p><span class="math display">\[\text{Φ-Space pseudotime} =
+\text{mean}(\text{young}, \text{middle}, \text{old}) -
+\text{fetal}\]</span></p>
+<p>The raw difference has long tails, which squash the colour scale, so
+for display we also show a cube-root version
+(<code>sign(x) · |x|^(1/3)</code>). It compresses the tails without
+changing the order of cells.</p>
+<pre class="r"><code>phi_scores     &lt;- reducedDim(cm, &quot;PhiSpace&quot;)
+adult_score    &lt;- rowMeans(phi_scores[, c(&quot;young&quot;, &quot;middle&quot;, &quot;old&quot;)])
+cm$fetal_score &lt;- phi_scores[, &quot;fetal&quot;]
+cm$pt_phi_score    &lt;- adult_score - cm$fetal_score
+cm$pt_phi_score_cr &lt;- sign(cm$pt_phi_score) * abs(cm$pt_phi_score)^(1/3)
+
+p_group &lt;- ggplot(cbind(umap_df, group = cm$group),
+                  aes(UMAP1, UMAP2, colour = group)) +
+    geom_point(size = 0.4, alpha = 0.7) +
+    scale_colour_brewer(palette = &quot;Set1&quot;) +
+    theme_bw(base_size = 11) + theme(aspect.ratio = 1) +
+    guides(colour = guide_legend(override.aes = list(size = 3))) +
+    labs(title = &quot;Donor stage&quot;, colour = &quot;Stage&quot;)
+
+p_fetal &lt;- ggplot(cbind(umap_df, fetal = cm$fetal_score),
+                  aes(UMAP1, UMAP2, colour = fetal)) +
+    geom_point(size = 0.4, alpha = 0.7) +
+    scale_colour_gradient(low = &quot;white&quot;, high = &quot;blue&quot;) +
+    theme_bw(base_size = 11) + theme(aspect.ratio = 1) +
+    labs(title = &quot;Φ-Space fetal score&quot;, colour = &quot;fetal&quot;)
+
+p_phi    &lt;- umap_base(cm$pt_phi_score) +
+    labs(title = &quot;Φ-Space pseudotime (adult − fetal)&quot;)
+p_phi_cr &lt;- umap_base(cm$pt_phi_score_cr) +
+    labs(title = &quot;Φ-Space pseudotime (cube-root, for display)&quot;)
+
+(p_group | p_fetal) / (p_phi | p_phi_cr)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/phi-pseudotime-1.png" alt="" width="1248" style="display: block; margin: auto;" /></p>
+<p>The gradient from foetal to adult donors (top left) is matched by the
+Φ-Space pseudotime (bottom row). This is the baseline the fitted methods
+should reproduce: if they don’t, something has gone wrong.</p>
+</div>
+<div id="pseudotime-2-slingshot" class="section level2" number="6">
+<h2><span class="header-section-number">6</span> Pseudotime 2:
+Slingshot</h2>
+<p>Slingshot needs a <strong>starting cluster</strong>. We pick the
+cardiomyocyte subtype with the highest mean <code>fetal</code> score:
+Φ-Space sets the direction, and the clusters define the units the tree
+is built from.</p>
+<pre class="r"><code>mean_fetal_by &lt;- function(cluster_vec) {
+    tibble(cluster = cluster_vec, fetal = cm$fetal_score) |&gt;
+        group_by(cluster) |&gt;
+        summarise(mean_fetal = mean(fetal), n = n(), .groups = &quot;drop&quot;) |&gt;
+        arrange(desc(mean_fetal))
+}
+
+anchor_phict_tbl &lt;- mean_fetal_by(cm$PhiCellType)
+anchor_phict_tbl</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["cluster"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mean_fetal"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["n"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"Cardiomyocyte:Other","2":"0.6669196","3":"1375"},{"1":"Cardiomyocyte:Metabolic","2":"0.6649513","3":"1116"},{"1":"Cardiomyocyte:Fetal_enriched_metabolic","2":"0.5781225","3":"1557"},{"1":"Cardiomyocyte:Stressed","2":"0.5535343","3":"61"},{"1":"Cardiomyocyte:Fetal_enriched_conduction","2":"-0.3261805","3":"652"},{"1":"Cardiomyocyte:Inflammatory","2":"-0.4044378","3":"211"},{"1":"Cardiomyocyte:DCM_HCM_enriched","2":"-0.4316673","3":"439"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>start_cluster_phict &lt;- as.character(anchor_phict_tbl$cluster[1])
+cat(&quot;start.clus:&quot;, start_cluster_phict, &quot;\n&quot;)</code></pre>
+<pre><code>## start.clus: Cardiomyocyte:Other</code></pre>
+<pre class="r"><code>sling_phi_phict &lt;- run_slingshot(&quot;06_slingshot_phi_phict.rds&quot;,
+                                 &quot;PhiSpace&quot;, cm$PhiCellType,
+                                 start_cluster_phict)
+cm$pt_sling_phi_phict &lt;- lineage_pt(sling_phi_phict)
+cat(&quot;Lineages found:&quot;, length(slingLineages(sling_phi_phict)), &quot;\n&quot;)</code></pre>
+<pre><code>## Lineages found: 2</code></pre>
+<p><code>slingPseudotime()</code> returns one column per lineage; we
+average them to get one pseudotime per cell.</p>
+<pre class="r"><code>curves_phi_phict_df &lt;- embed_curves_df(sling_phi_phict, &quot;phi_phict&quot;)
+with_curves(umap_base(rescale01(cm$pt_sling_phi_phict)),
+            curves_phi_phict_df) +
+    labs(title = &quot;Slingshot pseudotime, with its principal curve&quot;)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/slingshot-umap-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pseudotime-3-diffusion-pseudotime-dpt" class="section level2"
+number="7">
+<h2><span class="header-section-number">7</span> Pseudotime 3: Diffusion
+Pseudotime (DPT)</h2>
+<p>DPT needs a single <strong>root cell</strong>. We take the cell with
+the highest <code>fetal</code> score.</p>
+<pre class="r"><code>root_cell &lt;- which.max(cm$fetal_score)
+cat(&quot;Root cell index:&quot;, root_cell,
+    &quot; (fetal score =&quot;, round(cm$fetal_score[root_cell], 3), &quot;)\n&quot;)</code></pre>
+<pre><code>## Root cell index: 1800  (fetal score = 1 )</code></pre>
+<pre class="r"><code>dpt_phi_cache &lt;- file.path(results_dir, &quot;06_dpt_phispace.rds&quot;)
+
+if (file.exists(dpt_phi_cache)) {
+    dpt_phi &lt;- readRDS(dpt_phi_cache)
+    message(&quot;Loaded cached DPT/PhiSpace result&quot;)
+} else {
+    dm_phi &lt;- DiffusionMap(as.matrix(reducedDim(cm, &quot;PhiSpace&quot;)),
+                           n_eigs = 20, sigma = &quot;local&quot;,
+                           verbose = FALSE)
+    dpt_phi &lt;- DPT(dm_phi, tips = root_cell)
+    saveRDS(dpt_phi, dpt_phi_cache)
+}
+
+cm$pt_dpt_phi &lt;- dpt_phi$dpt
+summary(cm$pt_dpt_phi)</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.0000  0.3599  0.5007  4.8707 16.3791 19.1739</code></pre>
+<p>Without <code>tips</code>, destiny would pick end points itself. We
+set the root explicitly so that DPT starts from the same place as the
+other two pseudotimes.</p>
+</div>
+<div id="do-the-three-pseudotimes-agree" class="section level2"
+number="8">
+<h2><span class="header-section-number">8</span> Do the Three
+Pseudotimes Agree?</h2>
+<div id="on-the-umap" class="section level3" number="8.1">
+<h3><span class="header-section-number">8.1</span> On the UMAP</h3>
+<pre class="r"><code>cm$pt_phi_score_01       &lt;- rescale01(cm$pt_phi_score_cr)
+cm$pt_sling_phi_phict_01 &lt;- rescale01(cm$pt_sling_phi_phict)
+cm$pt_dpt_phi_01         &lt;- rescale01(cm$pt_dpt_phi)
+
+# `+` binds tighter than `|` and `/`, so wrap the whole layout before
+# adding plot_layout(); otherwise it applies to the last panel only.
+((umap_base(cm$pt_phi_score_01) + labs(title = &quot;Φ-Space score&quot;)) |
+    (with_curves(umap_base(cm$pt_sling_phi_phict_01), curves_phi_phict_df) +
+         labs(title = &quot;Slingshot&quot;)) |
+    (umap_base(cm$pt_dpt_phi_01) + labs(title = &quot;DPT&quot;))) +
+    plot_layout(guides = &quot;collect&quot;)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/compare-umap-1.png" alt="" width="1440" style="display: block; margin: auto;" /></p>
+</div>
+<div id="by-rank-correlation" class="section level3" number="8.2">
+<h3><span class="header-section-number">8.2</span> By rank
+correlation</h3>
+<p>Each method has its own scale, and only the <em>order</em> of cells
+matters, so we compare them with Spearman (rank) correlation.</p>
+<pre class="r"><code>pt_mat &lt;- data.frame(
+    `Φ-Space score` = cm$pt_phi_score,
+    Slingshot       = cm$pt_sling_phi_phict,
+    DPT             = cm$pt_dpt_phi,
+    check.names = FALSE
+)
+round(cor(pt_mat, use = &quot;complete.obs&quot;, method = &quot;spearman&quot;), 3)</code></pre>
+<pre><code>##               Φ-Space score Slingshot   DPT
+## Φ-Space score         1.000     0.612 0.608
+## Slingshot             0.612     1.000 0.611
+## DPT                   0.608     0.611 1.000</code></pre>
+<p>The correlations are positive but well below 1: the three methods
+agree on the broad order, not on the details.</p>
+</div>
+<div id="against-donor-stage" class="section level3" number="8.3">
+<h3><span class="header-section-number">8.3</span> Against donor
+stage</h3>
+<p>The donors’ stage is <strong>held-out information</strong>: no method
+saw it. If a pseudotime captures maturation, its values should rise from
+foetal to young to adult donors.</p>
+<pre class="r"><code>stage_df &lt;- pt_mat |&gt;
+    mutate(group = factor(cm$group, levels = c(&quot;fetal&quot;, &quot;young&quot;, &quot;adult&quot;))) |&gt;
+    tidyr::pivot_longer(-group, names_to = &quot;method&quot;, values_to = &quot;pseudotime&quot;) |&gt;
+    group_by(method) |&gt;
+    mutate(pseudotime = rescale01(pseudotime),
+           method = factor(method, levels = colnames(pt_mat)))
+
+ggplot(stage_df, aes(group, pseudotime, fill = group)) +
+    geom_violin(scale = &quot;width&quot;, alpha = 0.8) +
+    geom_boxplot(width = 0.15, alpha = 0.6, outlier.size = 0.3) +
+    scale_fill_brewer(palette = &quot;Set1&quot;) +
+    facet_wrap(~ method, nrow = 1) +
+    labs(x = &quot;Donor stage&quot;, y = &quot;Pseudotime (rescaled)&quot;,
+         title = &quot;Do the pseudotimes recover the foetal → adult order?&quot;) +
+    theme_bw(base_size = 12) +
+    theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/compare-stage-1.png" alt="" width="1056" style="display: block; margin: auto;" /></p>
+<p>What the plot shows:</p>
+<ul>
+<li><strong>All three put foetal nuclei clearly first.</strong> The
+biggest change in this data is between the foetal and the post-natal
+heart.</li>
+<li><strong>None separates young from adult donors well.</strong> Within
+the post-natal heart, maturity varies about as much within an age group
+as between them.</li>
+<li><strong>DPT is nearly all-or-nothing:</strong> foetal nuclei sit
+near 0 and almost all post-natal nuclei near 1. It orders the
+foetal-to-post-natal transition but says little about differences after
+birth.</li>
+</ul>
+<p>The spread <em>within</em> each stage shows how much nuclei from
+donors of the same age differ, which is exactly what a single age label
+hides.</p>
+</div>
+</div>
+<div id="a-pitfall-slingshot-depends-on-the-clustering"
+class="section level2" number="9">
+<h2><span class="header-section-number">9</span> A Pitfall: Slingshot
+Depends on the Clustering</h2>
+<p>Slingshot builds its tree on <strong>cluster centres</strong>, so the
+clustering you give it is a modelling choice, not a preprocessing
+detail. To see how much it matters, we rerun slingshot with:</p>
+<ul>
+<li>a different <strong>clustering:</strong> standard unsupervised
+(Louvain) clusters on the PCA embedding, which know nothing about the
+reference;</li>
+<li>a different <strong>embedding:</strong> PCA of gene expression
+instead of the Φ-Space scores.</li>
+</ul>
+<p>That gives four slingshot runs (2 clusterings × 2 embeddings), all
+started from the most foetal cluster.</p>
+<pre class="r"><code># Unsupervised clustering: SNN graph on the PCA embedding, Louvain
+cluster_cache &lt;- file.path(results_dir, &quot;06_cm_clusters.rds&quot;)
+if (file.exists(cluster_cache)) {
+    cm$cluster &lt;- readRDS(cluster_cache)
+    message(&quot;Loaded cached clusters&quot;)
+} else {
+    set.seed(42)
+    snn &lt;- scran::buildSNNGraph(cm, use.dimred = &quot;PCA&quot;, k = 20)
+    cm$cluster &lt;- factor(igraph::cluster_louvain(snn)$membership)
+    saveRDS(cm$cluster, cluster_cache)
+}
+start_cluster_unsup &lt;- as.character(mean_fetal_by(cm$cluster)$cluster[1])
+
+sling_phi_unsup &lt;- run_slingshot(&quot;06_slingshot_phi_unsup.rds&quot;,
+                                 &quot;PhiSpace&quot;, cm$cluster, start_cluster_unsup)
+sling_pca_unsup &lt;- run_slingshot(&quot;06_slingshot_pca_unsup.rds&quot;,
+                                 &quot;PCA&quot;,      cm$cluster, start_cluster_unsup)
+sling_pca_phict &lt;- run_slingshot(&quot;06_slingshot_pca_phict.rds&quot;,
+                                 &quot;PCA&quot;,      cm$PhiCellType, start_cluster_phict)
+
+cm$pt_sling_phi_unsup &lt;- lineage_pt(sling_phi_unsup)
+cm$pt_sling_pca_unsup &lt;- lineage_pt(sling_pca_unsup)
+cm$pt_sling_pca_phict &lt;- lineage_pt(sling_pca_phict)</code></pre>
+<pre class="r"><code>curves_phi_unsup_df &lt;- embed_curves_df(sling_phi_unsup, &quot;phi_unsup&quot;)
+curves_pca_unsup_df &lt;- embed_curves_df(sling_pca_unsup, &quot;pca_unsup&quot;)
+curves_pca_phict_df &lt;- embed_curves_df(sling_pca_phict, &quot;pca_phict&quot;)
+
+p_phi_unsup &lt;- with_curves(umap_base(rescale01(cm$pt_sling_phi_unsup)),
+                           curves_phi_unsup_df) +
+    labs(title = &quot;Φ-Space / unsupervised clusters&quot;)
+p_pca_unsup &lt;- with_curves(umap_base(rescale01(cm$pt_sling_pca_unsup)),
+                           curves_pca_unsup_df) +
+    labs(title = &quot;PCA / unsupervised clusters&quot;)
+p_phi_phict &lt;- with_curves(umap_base(cm$pt_sling_phi_phict_01),
+                           curves_phi_phict_df) +
+    labs(title = &quot;Φ-Space / Φ-Space cell types (used above)&quot;)
+p_pca_phict &lt;- with_curves(umap_base(rescale01(cm$pt_sling_pca_phict)),
+                           curves_pca_phict_df) +
+    labs(title = &quot;PCA / Φ-Space cell types&quot;)
+
+((p_phi_unsup | p_pca_unsup) / (p_phi_phict | p_pca_phict)) +
+    plot_layout(guides = &quot;collect&quot;) +
+    plot_annotation(
+        title    = &quot;Slingshot with two clusterings × two embeddings&quot;,
+        subtitle = &quot;Top: unsupervised Louvain clusters. Bottom: Φ-Space cell types from Module 1.&quot;
+    )</code></pre>
+<p><img src="02_pseudotime_files/figure-html/sensitivity-figure-1.png" alt="" width="1152" style="display: block; margin: auto;" /></p>
+<p>Two numbers per run make the comparison concrete: how many lineages
+(branches) slingshot found, and how well the pseudotime agrees with
+donor stage.</p>
+<pre class="r"><code>stage_num &lt;- as.numeric(factor(cm$group, levels = c(&quot;fetal&quot;, &quot;young&quot;, &quot;adult&quot;)))
+sling_runs &lt;- list(
+    &quot;Φ-Space / unsupervised&quot;       = sling_phi_unsup,
+    &quot;PCA / unsupervised&quot;           = sling_pca_unsup,
+    &quot;Φ-Space / Φ-Space cell types&quot; = sling_phi_phict,
+    &quot;PCA / Φ-Space cell types&quot;     = sling_pca_phict
+)
+tibble(
+    run       = names(sling_runs),
+    lineages  = vapply(sling_runs, function(s) length(slingLineages(s)), integer(1)),
+    spearman_vs_stage = vapply(sling_runs, function(s)
+        round(cor(lineage_pt(s), stage_num, method = &quot;spearman&quot;), 2), numeric(1))
+)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["run"],"name":[1],"type":["chr"],"align":["left"]},{"label":["lineages"],"name":[2],"type":["int"],"align":["right"]},{"label":["spearman_vs_stage"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"Φ-Space / unsupervised","2":"6","3":"0.73"},{"1":"PCA / unsupervised","2":"7","3":"0.72"},{"1":"Φ-Space / Φ-Space cell types","2":"2","3":"0.74"},{"1":"PCA / Φ-Space cell types","2":"3","3":"0.73"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Reading the figure and the table:</p>
+<ul>
+<li><strong>The clustering changes the shape of the trajectory.</strong>
+With the unsupervised clusters, slingshot builds a branching tree with
+many lineages; with the Φ-Space cell types, it finds only a few. The
+curves, and therefore what “pseudotime” means for a given cell, differ
+visibly.</li>
+<li><strong>Yet all four runs agree with donor stage about
+equally.</strong> A single summary check like this can look fine even
+when the trajectories disagree.</li>
+</ul>
+<p>The lesson: <strong>don’t trust one trajectory or one check.</strong>
+Look at the structure of the trajectory itself, compare it with
+independent information such as donor age, and compare it with a method
+that does not need a clustering, such as DPT.</p>
+</div>
+<div id="handing-off-to-module-3" class="section level2" number="10">
+<h2><span class="header-section-number">10</span> Handing Off to Module
+3</h2>
+<p>We save the cardiomyocytes, with their UMAP and pseudotimes, for
+Module 3.</p>
+<pre class="r"><code>final_cache &lt;- file.path(results_dir, &quot;06_cm_pseudotime.rds&quot;)
+saveRDS(cm, final_cache)
+cat(&quot;Annotated CM object at&quot;, final_cache, &quot;\n&quot;)</code></pre>
+<pre><code>## Annotated CM object at /Users/jmao1/Documents/GitHub/scWorkshop/results/06_cm_pseudotime.rds</code></pre>
+<p>In addition to everything Module 1 handed over, the object
+carries:</p>
+<ul>
+<li><code>reducedDim(cm, "PCA")</code> and
+<code>reducedDim(cm, "UMAP")</code>;</li>
+<li><code>pt_phi_score</code>, the Φ-Space pseudotime
+(<code>adult − fetal</code>);</li>
+<li><code>pt_sling_phi_phict</code> and <code>pt_dpt_phi</code>, the
+slingshot and DPT pseudotimes on Φ-Space;</li>
+<li><code>cluster</code> and the three other slingshot runs from the
+sensitivity figure;</li>
+<li><code>*_01</code> columns: pseudotimes rescaled to
+<code>[0, 1]</code>.</li>
+</ul>
+<p>Module 3 uses <code>pt_phi_score</code> to pick genes associated with
+maturation: it needs no trajectory model, so Module 3 does not depend on
+the slingshot or DPT choices above.</p>
+</div>
+<div id="summary" class="section level2" number="11">
+<h2><span class="header-section-number">11</span> Summary</h2>
+<ul>
+<li>Pseudotime orders cells along a process. It is not real time, and
+some methods need to be told where the process starts.</li>
+<li>We built three orderings of the cardiomyocytes: the Φ-Space score
+(no model), slingshot (principal curve) and DPT (diffusion). All three
+put foetal nuclei first; none separates young from adult donors
+well.</li>
+<li>The clustering given to slingshot changes the shape of the
+trajectory (how many branches), even when its agreement with donor age
+barely changes. Look at the trajectory itself, and compare it with
+independent information and with a different method.</li>
+</ul>
+</div>
+<div id="going-further-optional" class="section level2" number="12">
+<h2><span class="header-section-number">12</span> Going Further
+(Optional)</h2>
+<p>This section is not needed for Module 3. It repeats the comparison
+with a second embedding: <strong>PCA of gene expression</strong> instead
+of the Φ-Space scores. Crossing two methods (slingshot, DPT) with two
+embeddings (Φ-Space, PCA) separates the effect of the method from the
+effect of the embedding.</p>
+<div id="dpt-on-pca" class="section level3" number="12.1">
+<h3><span class="header-section-number">12.1</span> DPT on PCA</h3>
+<p>Same settings and root cell as before; only the embedding
+changes.</p>
+<pre class="r"><code>dpt_cache &lt;- file.path(results_dir, &quot;06_dpt_pca.rds&quot;)
+
+if (file.exists(dpt_cache)) {
+    dpt &lt;- readRDS(dpt_cache)
+    message(&quot;Loaded cached DPT/PCA result&quot;)
+} else {
+    dm  &lt;- DiffusionMap(as.matrix(reducedDim(cm, &quot;PCA&quot;)),
+                        n_eigs = 20, sigma = &quot;local&quot;, verbose = FALSE)
+    dpt &lt;- DPT(dm, tips = root_cell)
+    saveRDS(dpt, dpt_cache)
+}
+
+cm$pt_dpt_pca &lt;- dpt$dpt
+summary(cm$pt_dpt_pca)</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.0000  0.4120  0.6941  5.4210 16.1667 20.6281</code></pre>
+</div>
+<div id="two-methods-two-embeddings" class="section level3"
+number="12.2">
+<h3><span class="header-section-number">12.2</span> Two methods × two
+embeddings</h3>
+<pre class="r"><code>p_sling_phi &lt;- with_curves(umap_base(cm$pt_sling_phi_phict_01),
+                           curves_phi_phict_df) +
+    labs(title = &quot;slingshot / Φ-Space&quot;)
+p_sling_pca &lt;- with_curves(umap_base(rescale01(cm$pt_sling_pca_phict)),
+                           curves_pca_phict_df) +
+    labs(title = &quot;slingshot / PCA&quot;)
+p_dpt_phi &lt;- umap_base(cm$pt_dpt_phi_01) + labs(title = &quot;DPT / Φ-Space&quot;)
+p_dpt_pca &lt;- umap_base(rescale01(cm$pt_dpt_pca)) + labs(title = &quot;DPT / PCA&quot;)
+
+((p_sling_phi | p_sling_pca) / (p_dpt_phi | p_dpt_pca)) +
+    plot_layout(guides = &quot;collect&quot;) +
+    plot_annotation(title = &quot;Pseudotime on UMAP: two methods × two embeddings&quot;)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/umap-pt-plots-1.png" alt="" width="1152" style="display: block; margin: auto;" /></p>
+<p>If all four panels show the same blue → red gradient over the same
+UMAP regions, the trajectory is robust. If the two slingshot panels
+agree with each other but not with the DPT panels, that is a
+<em>method</em> effect; if the two Φ-Space panels agree but the two PCA
+panels do not, it is an <em>embedding</em> effect.</p>
+</div>
+<div id="correlations-and-pairwise-agreement" class="section level3"
+number="12.3">
+<h3><span class="header-section-number">12.3</span> Correlations and
+pairwise agreement</h3>
+<pre class="r"><code>pt_mat4 &lt;- data.frame(
+    `slingshot/PhiSpace` = cm$pt_sling_phi_phict,
+    `slingshot/PCA`      = cm$pt_sling_pca_phict,
+    `DPT/PhiSpace`       = cm$pt_dpt_phi,
+    `DPT/PCA`            = cm$pt_dpt_pca,
+    check.names = FALSE
+)
+round(cor(pt_mat4, use = &quot;complete.obs&quot;, method = &quot;spearman&quot;), 3)</code></pre>
+<pre><code>##                    slingshot/PhiSpace slingshot/PCA DPT/PhiSpace DPT/PCA
+## slingshot/PhiSpace              1.000         0.782        0.611   0.602
+## slingshot/PCA                   0.782         1.000        0.601   0.742
+## DPT/PhiSpace                    0.611         0.601        1.000   0.617
+## DPT/PCA                         0.602         0.742        0.617   1.000</code></pre>
+<pre class="r"><code>pt_long &lt;- as.data.frame(lapply(pt_mat4, rescale01), check.names = FALSE) |&gt;
+    mutate(group = cm$group)
+
+make_pair &lt;- function(x, y) {
+    ggplot(pt_long, aes(.data[[x]], .data[[y]], colour = group)) +
+        geom_point(size = 0.4, alpha = 0.5) +
+        geom_abline(slope = 1, intercept = 0, linetype = &quot;dashed&quot;, alpha = 0.5) +
+        scale_colour_brewer(palette = &quot;Set1&quot;) +
+        theme_bw(base_size = 11) +
+        theme(legend.position = &quot;none&quot;) +
+        labs(x = x, y = y)
+}
+
+pairs &lt;- lapply(combn(colnames(pt_mat4), 2, simplify = FALSE),
+                function(p) make_pair(p[1], p[2]))
+wrap_plots(pairs, ncol = 3) +
+    plot_annotation(title = &quot;Pairwise agreement between pseudotimes (coloured by donor stage)&quot;)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/pt-pairs-1.png" alt="" width="960" style="display: block; margin: auto;" /></p>
+<p>How to read the pairs:</p>
+<ul>
+<li><strong>Same method, different embedding</strong>
+(slingshot/PhiSpace vs slingshot/PCA; DPT/PhiSpace vs DPT/PCA): the
+embedding effect.</li>
+<li><strong>Same embedding, different method</strong> (slingshot vs DPT
+on Φ-Space; on PCA): the method effect.</li>
+<li><strong>Both different</strong> (slingshot/PhiSpace vs DPT/PCA;
+slingshot/PCA vs DPT/PhiSpace): agreement here is the strongest evidence
+that the ordering is not an artefact of either choice.</li>
+</ul>
+</div>
+<div id="the-unsupervised-clusters" class="section level3"
+number="12.4">
+<h3><span class="header-section-number">12.4</span> The unsupervised
+clusters</h3>
+<p>The Louvain clusters used in the sensitivity figure, for
+reference:</p>
+<pre class="r"><code>clust_levels &lt;- levels(cm$cluster)
+clust_pal &lt;- c(brewer.pal(9, &quot;Set1&quot;), brewer.pal(8, &quot;Dark2&quot;),
+               brewer.pal(8, &quot;Set2&quot;))[seq_along(clust_levels)]
+names(clust_pal) &lt;- clust_levels
+
+ggplot(cbind(umap_df, cluster = cm$cluster),
+       aes(UMAP1, UMAP2, colour = cluster)) +
+    geom_point(size = 0.4, alpha = 0.7) +
+    scale_colour_manual(values = clust_pal) +
+    theme_bw(base_size = 11) +
+    theme(aspect.ratio = 1) +
+    guides(colour = guide_legend(override.aes = list(size = 2))) +
+    labs(title = &quot;Unsupervised Louvain clusters (SNN on PCA)&quot;)</code></pre>
+<p><img src="02_pseudotime_files/figure-html/umap-clusters-1.png" alt="" width="672" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="session-info" class="section level2" number="13">
+<h2><span class="header-section-number">13</span> Session Info</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 4.6.0 (2026-04-24)
+## Platform: aarch64-apple-darwin23
+## Running under: macOS Tahoe 26.6.2
+## 
+## Matrix products: default
+## BLAS:   /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRblas.0.dylib 
+## LAPACK: /Library/Frameworks/R.framework/Versions/4.6/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+## 
+## locale:
+## [1] en_AU/en_AU/en_AU/C/en_AU/en_AU
+## 
+## time zone: Australia/Melbourne
+## tzcode source: internal
+## 
+## attached base packages:
+## [1] grid      stats4    stats     graphics  grDevices utils     datasets 
+## [8] methods   base     
+## 
+## other attached packages:
+##  [1] RColorBrewer_1.1-3          scater_1.40.2              
+##  [3] scuttle_1.22.0              destiny_3.26.0             
+##  [5] slingshot_2.20.0            TrajectoryUtils_1.20.0     
+##  [7] princurve_2.1.6             ComplexHeatmap_2.28.0      
+##  [9] patchwork_1.3.2             tibble_3.3.1               
+## [11] PhiSpace_0.99.0             SpatialExperiment_1.22.0   
+## [13] tidyr_1.3.2                 dplyr_1.2.1                
+## [15] ggplot2_4.0.3               SingleCellExperiment_1.34.0
+## [17] SummarizedExperiment_1.42.0 Biobase_2.72.0             
+## [19] GenomicRanges_1.64.0        Seqinfo_1.2.0              
+## [21] IRanges_2.46.0              S4Vectors_0.50.1           
+## [23] BiocGenerics_0.58.1         generics_0.1.4             
+## [25] MatrixGenerics_1.24.0       matrixStats_1.5.0          
+## [27] Seurat_5.5.1                SeuratObject_5.4.0         
+## [29] sp_2.2-1                   
+## 
+## loaded via a namespace (and not attached):
+##   [1] spatstat.sparse_3.2-0   httr_1.4.8              doParallel_1.0.17      
+##   [4] tools_4.6.0             mlr3learners_0.15.0     sctransform_0.4.3      
+##   [7] backports_1.5.1         R6_2.6.1                lazyeval_0.2.3         
+##  [10] uwot_0.2.4              GetoptLong_1.1.1        withr_3.0.3            
+##  [13] gridExtra_2.3.1         progressr_1.0.0         cli_3.6.6              
+##  [16] Cairo_1.7-0             spatstat.explore_3.8-1  fastDummies_1.7.6      
+##  [19] labeling_0.4.3          sass_0.4.10             S7_0.2.2               
+##  [22] robustbase_0.99-7       spatstat.data_3.1-9     proxy_0.4-29           
+##  [25] ggridges_0.5.7          pbapply_1.7-4           mlr3tuning_1.6.0       
+##  [28] paradox_1.0.1           parallelly_1.48.0       shape_1.4.6.1          
+##  [31] ica_1.0-3               spatstat.random_3.5-0   car_3.1-5              
+##  [34] Matrix_1.7-5            ggbeeswarm_0.7.3        abind_1.4-8            
+##  [37] lifecycle_1.0.5         scatterplot3d_0.3-45    yaml_2.3.12            
+##  [40] carData_3.0-6           SparseArray_1.12.2      Rtsne_0.17             
+##  [43] promises_1.5.0          crayon_1.5.3            miniUI_0.1.2           
+##  [46] lattice_0.22-9          beachmat_2.28.0         cowplot_1.2.0          
+##  [49] magick_2.9.1            pillar_1.11.1           knitr_1.51             
+##  [52] rjson_0.2.23            boot_1.3-32             future.apply_1.20.2    
+##  [55] codetools_0.2-20        glue_1.8.1              spatstat.univar_3.2-0  
+##  [58] pcaMethods_2.4.0        data.table_1.18.4       vcd_1.4-13             
+##  [61] vctrs_0.7.3             png_0.1-9               spam_2.11-4            
+##  [64] Rdpack_2.6.6            gtable_0.3.6            cachem_1.1.0           
+##  [67] xfun_0.59               rbibutils_2.4.1         S4Arrays_1.12.0        
+##  [70] mime_0.13               RcppEigen_0.3.4.0.2     survival_3.8-9         
+##  [73] iterators_1.0.14        fitdistrplus_1.2-6      ROCR_1.0-12            
+##  [76] nlme_3.1-169            bbotk_1.11.0            RcppAnnoy_0.0.23       
+##  [79] mlr3pipelines_0.11.0    bslib_0.11.0            mlr3_1.7.1             
+##  [82] irlba_2.3.7             vipor_0.4.7             KernSmooth_2.23-26     
+##  [85] otel_0.2.0              colorspace_2.1-2        moocore_0.3.1          
+##  [88] nnet_7.3-20             mlr3misc_0.22.0         tidyselect_1.2.1       
+##  [91] compiler_4.6.0          BiocNeighbors_2.6.0     lgr_0.5.2              
+##  [94] DelayedArray_0.38.2     plotly_4.12.0           checkmate_2.3.4        
+##  [97] scales_1.4.0            DEoptimR_1.2-0          lmtest_0.9-40          
+## [100] hexbin_1.28.5           palmerpenguins_0.1.1    stringr_1.6.0          
+## [103] digest_0.6.39           goftest_1.2-3           spatstat.utils_3.2-3   
+## [106] rmarkdown_2.31          XVector_0.52.0          htmltools_0.5.9        
+## [109] pkgconfig_2.0.3         fastmap_1.2.0           rlang_1.3.0            
+## [112] GlobalOptions_0.1.4     htmlwidgets_1.6.4       ggthemes_5.2.0         
+## [115] shiny_1.14.0            farver_2.1.2            jquerylib_0.1.4        
+## [118] zoo_1.8-15              jsonlite_2.0.0          BiocParallel_1.46.0    
+## [121] BiocSingular_1.28.0     magrittr_2.0.5          Formula_1.2-5          
+## [124] dotCall64_1.2           Rcpp_1.1.2              viridis_0.6.5          
+## [127] reticulate_1.46.0       stringi_1.8.7           MASS_7.3-65            
+## [130] plyr_1.8.9              parallel_4.6.0          listenv_1.0.0          
+## [133] ggrepel_0.9.8           deldir_2.0-4            splines_4.6.0          
+## [136] tensor_1.5.1            circlize_0.4.18         igraph_2.3.3           
+## [139] uuid_1.2-2              ranger_0.18.0           spatstat.geom_3.8-1    
+## [142] RcppHNSW_0.7.0          ScaledMatrix_1.20.0     reshape2_1.4.5         
+## [145] evaluate_1.0.5          laeken_0.5.3            foreach_1.5.2          
+## [148] httpuv_1.6.17           VIM_7.0.0               RANN_2.6.2             
+## [151] purrr_1.2.2             polyclip_1.10-7         future_1.70.0          
+## [154] clue_0.3-68             scattermore_1.2         rsvd_1.0.5             
+## [157] xtable_1.8-8            e1071_1.7-17            RSpectra_0.16-2        
+## [160] later_1.4.8             viridisLite_0.4.3       class_7.3-23           
+## [163] beeswarm_0.4.0          cluster_2.1.8.2         ggplot.multistats_1.0.1
+## [166] globals_0.19.1</code></pre>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
