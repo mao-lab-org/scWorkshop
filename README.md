@@ -5,9 +5,9 @@ Phipson Lab [single-cell workshop](https://phipsonlab.github.io/single_cell_work
 
 | Module | Topic | Packages |
 |---|---|---|
-| 5 | Continuous phenotyping with Φ-Space | PhiSpace |
-| 6 | Pseudotime trajectory analysis | slingshot, destiny |
-| 7 | Cell-specific co-expression networks | NeighbourNet |
+| 1 | Continuous phenotyping with Φ-Space | PhiSpace |
+| 2 | Pseudotime trajectory analysis | slingshot, destiny |
+| 3 | Cell-specific co-expression networks | NeighbourNet |
 
 Data: snRNA-seq of the human heart at foetal, young and adult stages
 (Sim et al. 2021, *Circulation*), with the Gao et al. 2026 left-ventricle

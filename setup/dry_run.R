@@ -1,5 +1,5 @@
 # =============================================================================
-# dry_run.R — render Modules 5-7 end to end and report timings
+# dry_run.R — render Modules 1-3 end to end and report timings
 #
 # From the repository root:
 #
@@ -27,9 +27,9 @@ res_dir <- normalizePath(res_dir)
 out_dir <- normalizePath("dry_run")
 Sys.setenv(SCW_RESULTS = res_dir)
 
-modules <- c("vignettes/05_phispace_annotation.Rmd",
-             "vignettes/06_pseudotime.Rmd",
-             "vignettes/07_nnet.Rmd")
+modules <- c("vignettes/01_phispace_annotation.Rmd",
+             "vignettes/02_pseudotime.Rmd",
+             "vignettes/03_nnet.Rmd")
 
 message("Mode: ", if (fresh) "FRESH (recompute everything)" else "cached",
         "\nResults dir: ", res_dir)

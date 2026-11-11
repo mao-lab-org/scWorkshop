@@ -9,7 +9,7 @@
 # and places its contents in:
 #
 #     data/      afternoon_mvp.rds (query), reference_gao2026.rds (reference)
-#     results/   pre-computed caches for Modules 5-7 (fallbacks for slow steps)
+#     results/   pre-computed caches for Modules 1-3 (fallbacks for slow steps)
 # =============================================================================
 
 options(timeout = 7200)

@@ -1,5 +1,5 @@
 ---
-title: "Module 7: Cell-specific Co-expression Networks (NeighbourNet)"
+title: "Module 3: Cell-specific Co-expression Networks (NeighbourNet)"
 author: "Single Cell Workshop"
 date: "`r Sys.Date()`"
 output:
@@ -12,13 +12,13 @@ output:
     code_folding: show
     df_print: paged
 vignette: >
-  %\VignetteIndexEntry{Module 7: Cell-specific Co-expression Networks (NeighbourNet)}
+  %\VignetteIndexEntry{Module 3: Cell-specific Co-expression Networks (NeighbourNet)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-# Module 7 consumes the cardiomyocyte handoff from Module 6. If the cache
+# Module 3 consumes the cardiomyocyte handoff from Module 2. If the cache
 # is missing, skip execution but still render the prose so the site build
 # succeeds on machines that have not run the afternoon modules yet.
 results_dir <- Sys.getenv("SCW_RESULTS", "../results")
@@ -43,16 +43,16 @@ knitr::opts_chunk$set(
 
 ```{asis, echo = !data_ok}
 > **Note.** This module's code chunks are not evaluated because
-> `results/06_cm_pseudotime.rds` is missing. Render Module 6 first, or
+> `results/06_cm_pseudotime.rds` is missing. Render Module 2 first, or
 > download the pre-computed afternoon caches.
 ```
 
 ## Introduction
 
 The previous two modules gave us a continuous view of cardiomyocyte
-maturation. Module 5 built Φ-Space scores: each cell received a score for
+maturation. Module 1 built Φ-Space scores: each cell received a score for
 how much it resembled fetal, young, middle and old reference phenotypes.
-Module 6 turned those scores into several pseudotime axes and saved a
+Module 2 turned those scores into several pseudotime axes and saved a
 cardiomyocyte-only object for downstream analysis.
 
 Here we ask a different question: as cardiomyocytes mature, do the
@@ -80,7 +80,7 @@ network patterns are visible.
 
 We will:
 
-- load the cardiomyocyte object from Module 6;
+- load the cardiomyocyte object from Module 2;
 - convert it from `SingleCellExperiment` to `Seurat`, because
   NeighbourNet works on Seurat objects;
 - use `PhiSpace::rankFeatures()` to choose maturation-associated target
@@ -94,7 +94,7 @@ We deliberately use `pt_phi_score`, not one of the slingshot or DPT
 pseudotimes. `pt_phi_score` is simply the adult-like Φ-Space score minus
 the fetal Φ-Space score, so it is a trajectory-free maturation baseline.
 That keeps this module focused on network rewiring rather than on the
-method comparison from Module 6.
+method comparison from Module 2.
 
 ### Learning objectives
 
@@ -109,7 +109,7 @@ By the end of this module you will be able to:
 - run the core NeighbourNet workflow on a Seurat object;
 - interpret a meta-network figure without over-claiming causality.
 
-## Load Libraries and Module 6 Output
+## Load Libraries and Module 2 Output
 
 ```{r load-libraries}
 library(SingleCellExperiment)
@@ -123,7 +123,7 @@ library(patchwork)
 library(RColorBrewer)
 ```
 
-Module 6 saved the cardiomyocyte subset with expression, Φ-Space scores,
+Module 2 saved the cardiomyocyte subset with expression, Φ-Space scores,
 UMAP coordinates, six pseudotime estimates, and the trajectory-free
 `pt_phi_score`.
 
@@ -150,7 +150,7 @@ dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
 ## Convert to Seurat
 
 NeighbourNet expects a Seurat object with normalised expression in the
-`data` layer. The scran `logcounts` from Module 5 are already suitable, so
+`data` layer. The scran `logcounts` from Module 1 are already suitable, so
 we do not run `NormalizeData()` again.
 
 ```{r sce-to-seurat}
@@ -357,7 +357,7 @@ meta-network embedding above tells us that cells differ in network space,
 while the UMAP below tells us where those network programs sit on the
 ordinary expression manifold.
 
-We reuse the PCA-based UMAP from Module 6 and colour each cell by its
+We reuse the PCA-based UMAP from Module 2 and colour each cell by its
 score on meta-networks 1 and 2.
 
 ```{r umap-meta-scores, fig.width=11, fig.height=5}
@@ -639,7 +639,7 @@ This module writes one cache:
 
 - `results/07_seu_nnet_10targets.rds` — the cardiomyocyte Seurat object
   after `build.meta.network()`, including `@misc$NNet.mod` and the
-  Module 7 target-gene selection metadata.
+  Module 3 target-gene selection metadata.
 
 Because the cache is saved before visualisation, you can re-run the plots
 and tune the network layout without repeating the per-cell regressions.

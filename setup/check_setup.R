@@ -6,7 +6,7 @@
 #     source("setup/check_setup.R")
 #
 # Checks R / package versions, data files, and runs a ~1 minute smoke test
-# that touches every key function used in Modules 5-7.
+# that touches every key function used in Modules 1-3.
 # =============================================================================
 
 if (!file.exists("setup/check_setup.R")) {

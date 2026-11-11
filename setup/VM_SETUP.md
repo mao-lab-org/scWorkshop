@@ -103,9 +103,9 @@ Reference timings from a dry run on a Mac (Apple Silicon), 11 Nov 2026:
 
 | Module | Cached | `--fresh` |
 |---|---|---|
-| 05 Φ-Space | 40 s | 118 s |
-| 06 Pseudotime | 36 s | 237 s |
-| 07 NeighbourNet | 16 s | 101 s |
+| 01 Φ-Space | 40 s | 118 s |
+| 02 Pseudotime | 36 s | 237 s |
+| 03 NeighbourNet | 16 s | 101 s |
 | **Total** | ~1.5 min | ~7.6 min (peak memory ~10 GB) |
 
 The Zenodo caches were made with PhiSpace 1.1.0; the workshop installs
@@ -115,8 +115,8 @@ identical, and the same meta-network was selected. So the caches are kept.
 Open the HTML files in `dry_run/` and skim the figures.
 
 Then walk through the participant path once by hand: open
-`vignettes/05_phispace_annotation.Rmd` and run the chunks one by one with
-*Run → Run All Chunks Above* or Ctrl+Shift+Enter. Repeat for 06 and 07.
+`vignettes/01_phispace_annotation.Rmd` and run the chunks one by one with
+*Run → Run All Chunks Above* or Ctrl+Shift+Enter. Repeat for 02 and 03.
 
 ## 7. Clean up before handing the VM back
 

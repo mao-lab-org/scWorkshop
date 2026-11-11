@@ -9,7 +9,7 @@
 # contain exactly the nodes, edges, TF modules and layout of the static plot.
 # Run NeighbourNet::prepare.visualise() first, as for visualise.network().
 #
-# Prototype for the BiocAsia 2026 workshop (Module 7).
+# Prototype for the BiocAsia 2026 workshop (Module 3).
 # =============================================================================
 
 # TF-module colours: same palette as visualise.network() (Set1; grey = none).

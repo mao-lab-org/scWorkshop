@@ -1,5 +1,5 @@
 ---
-title: "Module 6: Pseudotime Trajectory Analysis"
+title: "Module 2: Pseudotime Trajectory Analysis"
 author: "Single Cell Workshop"
 date: "`r Sys.Date()`"
 output:
@@ -13,7 +13,7 @@ output:
     df_print: paged
 vignette: >
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Module 6: Pseudotime Trajectory Analysis}
+  %\VignetteIndexEntry{Module 2: Pseudotime Trajectory Analysis}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   markdown: 
@@ -21,7 +21,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-# Module 6 consumes Module 5's PhiSpace output. If that cache is missing
+# Module 2 consumes Module 1's PhiSpace output. If that cache is missing
 # (e.g. fresh clone, or CI before the Zenodo upload), skip execution but
 # still render the prose so the site build succeeds.
 results_dir <- Sys.getenv("SCW_RESULTS", "../results")
@@ -40,16 +40,16 @@ knitr::opts_chunk$set(
 
 ```{asis, echo = !data_ok}
 > **Note.** This module's code chunks are not evaluated because
-> `results/05_phispace_query.rds` is missing. Render Module 5 first, or
+> `results/05_phispace_query.rds` is missing. Render Module 1 first, or
 > download the Zenodo cache.
 ```
 
 ## Introduction
 
-In Module 5 we annotated each query cell with a continuous score on
+In Module 1 we annotated each query cell with a continuous score on
 every reference phenotype. Those scores already *hint* at a foetal→adult
 gradient within cardiomyocytes — recall the age-group scores climbing
-smoothly from `fetal` to `old`. Module 6 turns that hint into a single
+smoothly from `fetal` to `old`. Module 2 turns that hint into a single
 scalar per cell: **pseudotime**.
 
 Pseudotime is a real number per cell such that cells that are close in
@@ -82,7 +82,7 @@ Slingshot additionally depends on the **clustering** passed in: the MST
 is built on cluster centroids, so the clustering you choose is a
 first-class modelling choice, not a preprocessing detail. We therefore
 run slingshot **twice** per embedding — once with unsupervised Louvain
-clusters on PCA, once with the PhiCellType labels from Module 5 — to
+clusters on PCA, once with the PhiCellType labels from Module 1 — to
 show how much the clustering moves the trajectory.
 
 This gives six pseudotimes in total:
@@ -113,9 +113,9 @@ By the end of this module you will be able to:
 - Visualise pseudotime and principal curves on a shared UMAP.
 - Use a four-pseudotime correlation matrix as a sanity check on any
   single trajectory result.
-- Save a pseudotime-annotated CM subset for Module 7.
+- Save a pseudotime-annotated CM subset for Module 3.
 
-## Load Libraries and Module 5 Output
+## Load Libraries and Module 1 Output
 
 ```{r load-libraries}
 library(SingleCellExperiment)
@@ -129,7 +129,7 @@ library(patchwork)
 library(RColorBrewer)
 ```
 
-The handoff from Module 5 is a single file — the query SCE with PhiSpace
+The handoff from Module 1 is a single file — the query SCE with PhiSpace
 scores in `reducedDim`, scran logcounts in `assay(query, "logcounts")`,
 and per-cell annotations (`PhiCellType`, `PhiCellTypeBroad`, `PhiAge`,
 `group`, etc.) in `colData`.
@@ -175,7 +175,7 @@ picking via the reference age-group scores.
 
 For the "classical" slingshot run we need an embedding of gene
 expression. We compute a standard HVG → PCA pipeline on the scran
-logcounts we already have from Module 5.
+logcounts we already have from Module 1.
 
 ```{r pca-expression}
 pca_cache <- file.path(results_dir, "06_cm_pca.rds")
@@ -605,7 +605,7 @@ p_pca_phict <- with_curves(umap_base(cm$pt_sling_pca_phict_01),
     plot_layout(guides = "collect") +
     plot_annotation(
         title    = "Slingshot on two embeddings × two clusterings",
-        subtitle = "Top row: unsupervised Louvain clusters on PCA. Bottom row: PhiCellType labels from Module 5."
+        subtitle = "Top row: unsupervised Louvain clusters on PCA. Bottom row: PhiCellType labels from Module 1."
     )
 ```
 
@@ -745,10 +745,10 @@ pseudotime methods saw it. If the violins step upward cleanly from
 `fetal` to `adult` on all four panels, the trajectory is recovering the
 real maturation order.
 
-## Handing Off to Module 7
+## Handing Off to Module 3
 
 We save the CM object with the Φ-Space maturation score and all six
-pseudotimes attached so Module 7 can use the same cardiomyocyte subset
+pseudotimes attached so Module 3 can use the same cardiomyocyte subset
 for cell-specific co-expression network analysis.
 
 ```{r save-for-module-7}
@@ -757,7 +757,7 @@ saveRDS(cm, final_cache)
 cat("Annotated CM object at", final_cache, "\n")
 ```
 
-The object carries, in addition to everything Module 5 handed us:
+The object carries, in addition to everything Module 1 handed us:
 
 - `reducedDim(cm, "PCA")` — 20 PCs on scran logcounts of HVGs.
 - `reducedDim(cm, "UMAP")` — 2D UMAP on the PCA embedding
@@ -775,7 +775,7 @@ The object carries, in addition to everything Module 5 handed us:
 - `colData(cm)$pt_*_01` — the same pseudotimes rescaled to `[0, 1]` for
   cross-method comparison.
 
-For Module 7 we will primarily use `pt_phi_score` — the trajectory-free
+For Module 3 we will primarily use `pt_phi_score` — the trajectory-free
 Φ-Space maturation baseline — to select maturation-associated target
 genes. The six fitted pseudotimes live in the object for optional
 sensitivity analyses, but the NeighbourNet module is intentionally

@@ -1,5 +1,5 @@
 ---
-title: "Module 5: Continuous Phenotyping with Φ-Space"
+title: "Module 1: Continuous Phenotyping with Φ-Space"
 author: "Single Cell Workshop"
 date: "`r Sys.Date()`"
 output:
@@ -12,13 +12,13 @@ output:
     code_folding: show
     df_print: paged
 vignette: >
-  %\VignetteIndexEntry{Module 5: Continuous Phenotyping with Φ-Space}
+  %\VignetteIndexEntry{Module 1: Continuous Phenotyping with Φ-Space}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-# Module 5 needs two data files that live outside the default workshop
+# Module 1 needs two data files that live outside the default workshop
 # download: the heart query object (`afternoon_mvp.rds`) and the Gao 2026
 # reference (`reference_gao2026.rds`). If either is missing (e.g. on a
 # fresh clone or in CI before the Zenodo upload), skip execution but still
@@ -49,12 +49,12 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-In Module 3 we annotated cell types by looking up **marker genes** and assigning each cluster a single discrete label. That approach is intuitive and directly interpretable, but it rests on two assumptions that are not always true for the heart maturation dataset we are analysing:
+The standard clustering-based cell type annotation annotates cell clusters by looking up their **marker genes** and assigning each cluster a single discrete label. That approach is intuitive and directly interpretable, but it rests on two assumptions that are not always true for the heart maturation dataset we are analysing:
 
 1.  **Cells belong to one cell type.** A cluster is given a single label, and every cell inside it inherits that label.
 2.  **Cell identity is discrete.** Cells are either cardiomyocytes or they are not; there is no notion of a cell that is *partly* a fetal cardiomyocyte and *partly* an adult one.
 
-For a mature tissue with well-separated cell types, these assumptions are reasonable. But our dataset spans foetal, young and adult heart samples, so many cells — especially cardiomyocytes — are in the middle of a maturation continuum. A discrete label forces each cell into one bin and throws away the very gradient we want to study in Module 6 (pseudotime) and Module 7 (cell-specific co-expression networks).
+For a mature tissue with well-separated cell types, these assumptions are reasonable. But our dataset spans foetal, young and adult heart samples, so many cells — especially cardiomyocytes — are in the middle of a maturation continuum. A discrete label forces each cell into one bin and throws away the very gradient we want to study in Module 2 (pseudotime) and Module 3 (cell-specific co-expression networks).
 
 In this module we use **Φ-Space** ([Mao, Deng & Lê Cao, 2025, *Genome Biology*](https://doi.org/10.1186/s13059-025-03755-8)) to re-annotate the heart data with *continuous* phenotype scores instead of hard labels.
 
@@ -72,7 +72,7 @@ Five features of Φ-Space line up unusually well with the Sim et al. heart data:
 2.  **Multiple phenotype layers at once.** We can score each cell simultaneously against cell type *and* developmental stage. Most tools predict one label at a time.
 3.  **Bulk references are allowed.** There is no single cross-age snRNA-seq atlas of the human heart that covers fetal through adult equally well. Φ-Space also accepts bulk RNA-seq references, which opens up developmental bulk time-course atlases as viable options.
 4.  **No extra batch correction between reference and query.** PLS inherently removes unwanted variation. You do not need to run Harmony *between* query and reference — only to match normalisation.
-5.  **The embedding feeds directly into Modules 6 and 7.** Because scores are stored in `reducedDim`, they can be used as input for slingshot (pseudotime) and NeighbourNet target-gene selection without any extra wrangling.
+5.  **The embedding feeds directly into Modules 2 and 3.** Because scores are stored in `reducedDim`, they can be used as input for slingshot (pseudotime) and NeighbourNet target-gene selection without any extra wrangling.
 
 ### Learning objectives
 
@@ -83,7 +83,7 @@ By the end of this module you will be able to:
 - Run `PhiSpace()` to obtain a continuous phenotype space embedding for the query cells.
 - Visualise and interpret the phenotype space embedding through heatmaps and a PCA biplot.
 - Derive discrete labels from continuous scores when needed, and understand what is gained and lost in that step.
-- Export the phenotype space embedding in a form that Modules 6 and 7 can consume.
+- Export the phenotype space embedding in a form that Modules 2 and 3 can consume.
 
 ## Load Libraries and Data
 
@@ -100,7 +100,7 @@ library(ComplexHeatmap)
 
 We need two data objects:
 
-- a **query** — the heart snRNA-seq data from the morning session, trimmed to the essentials (raw counts, sample / stage / sex metadata, \~10,000 cells).
+- a **query** — the human heart snRNA-seq data of Sim et al. (2021), already quality-controlled and down-sampled to \~10,000 nuclei, with raw counts and sample / stage / sex metadata.
 - a **reference** — an annotated left-ventricle atlas covering the full developmental axis (see the next section for details).
 
 ```{r load-data}
@@ -156,7 +156,7 @@ Notice the reference's `age_group` is `fetal / young / middle / old`, while our 
 
 ### Zooming in: splitting cardiomyocyte and fibroblast into subtypes
 
-Looking at `final_cell_type` above, **Cardiomyocyte** (\~1,900 cells) and **Fibroblast** (\~1,300 cells) dominate the reference. They are also the two lineages we care about most biologically: cardiomyocytes carry the foetal→adult maturation signal we will trace in Module 6, and fibroblasts reshape the extracellular matrix across development. The Gao 2026 authors further annotated these two lineages into biologically meaningful subclusters (e.g. `Fetal_enriched_metabolic`, `Stressed`, `Interstitial`, `Perivascular` …) — stored in the `cell_type_plus_subcluster` column as `CellType:Subtype` strings.
+Looking at `final_cell_type` above, **Cardiomyocyte** (\~1,900 cells) and **Fibroblast** (\~1,300 cells) dominate the reference. They are also the two lineages we care about most biologically: cardiomyocytes carry the foetal→adult maturation signal we will trace in Module 2, and fibroblasts reshape the extracellular matrix across development. The Gao 2026 authors further annotated these two lineages into biologically meaningful subclusters (e.g. `Fetal_enriched_metabolic`, `Stressed`, `Interstitial`, `Perivascular` …) — stored in the `cell_type_plus_subcluster` column as `CellType:Subtype` strings.
 
 We therefore build a **fine cell-type column** that keeps every non-CM, non-Fibroblast cell on its broad label, and replaces the CM / Fibroblast labels with the Gao subclusters. Two things happen at once:
 
@@ -268,7 +268,7 @@ if (file.exists(phispace_cache)) {
         scale             = FALSE,
         cellTypeThreshold = 20
     )
-    # Keep logcounts in the cache — Module 6 needs it for PCA on the
+    # Keep logcounts in the cache — Module 2 needs it for PCA on the
     # expression side of its pseudotime comparison.
     saveRDS(query, phispace_cache)
 }
@@ -371,9 +371,9 @@ p_scores + p_loadings
 
 This biplot is the single most useful visualisation in Φ-Space. Read it like this:
 
-- **Query cells cluster by stage.** The three stage colours should separate along the PC that is loaded most heavily by `fetal`, `young`, `middle`, `old` — that is the maturation axis we will hand off to slingshot in Module 6.
+- **Query cells cluster by stage.** The three stage colours should separate along the PC that is loaded most heavily by `fetal`, `young`, `middle`, `old` — that is the maturation axis we will hand off to slingshot in Module 2.
 - **Cell-type phenotypes point to where each lineage lives.** A query cell near a `Cardiomyocyte:*` arrow is a cardiomyocyte; one near a `Fibroblast:*` arrow is a fibroblast. Cells in between the two arrows are transitional / ambiguous and would be assigned inconsistently by a hard classifier.
-- **The foetal→adult axis is visible even within cardiomyocytes.** Look at where the `Cardiomyocyte:Fetal_enriched_*` loadings sit relative to the adult-stage CM subclusters — query cardiomyocytes should spread along that direction, which is precisely the trajectory Module 6 will trace.
+- **The foetal→adult axis is visible even within cardiomyocytes.** Look at where the `Cardiomyocyte:Fetal_enriched_*` loadings sit relative to the adult-stage CM subclusters — query cardiomyocytes should spread along that direction, which is precisely the trajectory Module 2 will trace.
 
 ### Query cells coloured by broad cell type
 
@@ -426,7 +426,7 @@ table(query$group, query$PhiAge)
 
 The `group` × `PhiAge` cross-table is a useful sanity check: most foetal query cells should land in the `fetal` reference bin, and most adult query cells in `old` — but the off-diagonal entries are where the teaching is. Those cells are the ones whose continuous scores straddle two age groups.
 
-Let's look at the cardiomyocytes more closely — they are the main interest for Module 6:
+Let's look at the cardiomyocytes more closely — they are the main interest for Module 2:
 
 ```{r cm-score-distribution, fig.width=10, fig.height=4}
 cm_scores <- phi_scores[query$PhiCellTypeBroad == "Cardiomyocyte", age_cols, drop = FALSE]
@@ -449,9 +449,9 @@ ggplot(cm_df, aes(age_phenotype, score, fill = group)) +
 
 Notice that even within a single query stage there is substantial spread along the age-group axis. A hard classifier hides this spread; the continuous scores are exactly what slingshot will exploit to trace a maturation trajectory.
 
-## Handing Off to Module 6
+## Handing Off to Module 2
 
-We save the annotated query object so that Module 6 can pick up where we leave off.
+We save the annotated query object so that Module 2 can pick up where we leave off.
 
 ```{r save-for-module-6}
 final_cache <- file.path(results_dir, "05_phispace_query.rds")
@@ -467,14 +467,14 @@ The object now carries:
 - `colData(query)$PhiAge` — discrete maturation-stage label.
 - all original metadata (`sample`, `group`, `sex`, QC metrics).
 
-In Module 6 we will **subset this object to cardiomyocytes** (using `PhiCellTypeBroad == "Cardiomyocyte"`) and apply **slingshot** to the PhiSpace score matrix. The continuous age-group scores will act as the biological anchor that tells slingshot which end of the trajectory is foetal and which end is adult.
+In Module 2 we will **subset this object to cardiomyocytes** (using `PhiCellTypeBroad == "Cardiomyocyte"`) and apply **slingshot** to the PhiSpace score matrix. The continuous age-group scores will act as the biological anchor that tells slingshot which end of the trajectory is foetal and which end is adult.
 
 ## Summary
 
 - Φ-Space replaces a hard cell-type label with a continuous score per reference phenotype per cell — a natural fit for a dataset that spans a developmental gradient.
 - The workflow is four steps: match normalisation (we used scran normalisation on both reference and query), keep common genes, run `PhiSpace()` with one or more phenotype layers, inspect the scores.
 - Continuous scores can always be collapsed to a discrete label with `getLabels()`, but the inverse is not possible — preserve the scores for any downstream analysis that benefits from soft assignments (trajectory inference, co-phenotype analysis, gradient visualisation).
-- The phenotype-space embedding we saved is the input to Module 6 (pseudotime) and Module 7 (cell-specific co-expression networks).
+- The phenotype-space embedding we saved is the input to Module 2 (pseudotime) and Module 3 (cell-specific co-expression networks).
 
 ## Session Info
 

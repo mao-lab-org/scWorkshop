@@ -5,17 +5,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Materials for a 3-hour BiocAsia 2026 workshop, "Modelling continuous cell states using
-scRNA-seq data". It is adapted from the afternoon session (Modules 5–7) of the Phipson Lab
-workshop ([phipsonlab/single_cell_workshop](https://github.com/phipsonlab/single_cell_workshop)).
+scRNA-seq data". It is adapted from the afternoon session (Modules 5–7 there; Modules 1–3
+here) of the Phipson Lab workshop
+([phipsonlab/single_cell_workshop](https://github.com/phipsonlab/single_cell_workshop)).
 The materials are R Markdown vignettes run in RStudio. Data: Sim et al. 2021 human heart
 snRNA-seq (foetal / young / adult), with the Gao et al. 2026 left-ventricle atlas as the
 Φ-Space reference.
 
 | Module | File | Methods |
 |---|---|---|
-| 5 | `vignettes/05_phispace_annotation.Rmd` | PhiSpace soft annotation (cell type + age group) |
-| 6 | `vignettes/06_pseudotime.Rmd` | slingshot, destiny DPT on PCA vs Φ-Space embeddings |
-| 7 | `vignettes/07_nnet.Rmd` | NeighbourNet cell-specific co-expression networks |
+| 1 | `vignettes/01_phispace_annotation.Rmd` | PhiSpace soft annotation (cell type + age group) |
+| 2 | `vignettes/02_pseudotime.Rmd` | slingshot, destiny DPT on PCA vs Φ-Space embeddings |
+| 3 | `vignettes/03_nnet.Rmd` | NeighbourNet cell-specific co-expression networks |
 
 ## The participant-VM constraint (read first)
 
@@ -48,18 +49,21 @@ Rscript setup/dry_run.R --fresh      # recompute everything into results_fresh/ 
 Render a single module, writing the HTML outside `vignettes/`:
 
 ```bash
-Rscript -e 'Sys.setenv(SCW_RESULTS = normalizePath("results")); rmarkdown::render("vignettes/07_nnet.Rmd", output_dir = "dry_run")'
+Rscript -e 'Sys.setenv(SCW_RESULTS = normalizePath("results")); rmarkdown::render("vignettes/03_nnet.Rmd", output_dir = "dry_run")'
 ```
 
 `dry_run/`, `results_fresh/` and `downloads/` are gitignored scratch output.
 
 ## How the modules fit together
 
-- **Modules form a chain through cache files.** Module 5 writes
-  `results/05_phispace_query.rds`, which Module 6 reads. Module 6 writes
-  `results/06_cm_pseudotime.rds`, which Module 7 reads. Each slow step is wrapped in an
+- **Modules form a chain through cache files.** Module 1 writes
+  `results/05_phispace_query.rds`, which Module 2 reads. Module 2 writes
+  `results/06_cm_pseudotime.rds`, which Module 3 reads. Each slow step is wrapped in an
   "if the cache exists, load it; otherwise compute and save" block. With caches present,
   a module only re-plots.
+- **Cache files keep the original numbering** (`05_*.rds`, `06_*.rds`, `07_*.rds` for
+  Modules 1, 2, 3). They are frozen on the VM and in the Zenodo/Dropbox zips, so don't
+  rename them; only the module files and titles were renumbered.
 - **Results directory:** every vignette uses `results_dir <- Sys.getenv("SCW_RESULTS", "../results")`.
   Paths are relative to `vignettes/`, because knitr runs from the Rmd's folder.
   `dry_run.R --fresh` points `SCW_RESULTS` at an absolute `results_fresh/` path.
@@ -91,7 +95,7 @@ Rscript -e 'Sys.setenv(SCW_RESULTS = normalizePath("results")); rmarkdown::rende
 - **Don't change the user's main R library to test things.** It is the user's working
   environment. Install into an isolated library instead (`R_LIBS=<scratch dir> Rscript ...`).
 
-## `R/nnet_viz.R` (Module 7's interactive network view)
+## `R/nnet_viz.R` (Module 3's interactive network view)
 
 - `nnet_tables(seu, i, meta.network = TRUE)` returns `nodes` and `edges` data frames.
   It does not recompute anything. It calls `NeighbourNet::visualise.network()` and reads
@@ -130,23 +134,27 @@ Proposed 180-minute timetable:
 
 | Time | Block |
 |---|---|
-| 0:00–0:15 | Recap (data, biological question) |
-| 0:15–1:05 | Module 5 |
+| 0:00–0:15 | Introduction (data, biological question) |
+| 0:15–1:05 | Module 1 |
 | 1:05–1:15 | Break |
-| 1:15–2:00 | Module 6 |
-| 2:00–2:50 | Module 7 |
+| 1:15–2:00 | Module 2 |
+| 2:00–2:50 | Module 3 |
 | 2:50–3:00 | Wrap-up |
 
 Still to do:
-- Write a recap section. BiocAsia participants have not done the morning session.
-- Trim Module 6: run the Φ-Space pseudotime, one slingshot run and one DPT run live; make
+- Write an Introduction (`vignettes/00_introduction.Rmd`): Sim et al. 2021 (PMID 33682422;
+  54,140 nuclei from 9 donors: 3 foetal 19–20 wk, 3 young 4–14 y, 3 adult 35–42 y;
+  progesterone receptor drives sex-dependent cardiomyocyte maturation), why continuous
+  cell states, the data and reference used, how the session runs. BiocAsia participants
+  have not done the original morning session, so no module may assume it.
+- Trim Module 2: run the Φ-Space pseudotime, one slingshot run and one DPT run live; make
   the 2×2 sensitivity analysis optional.
-- Add short exercises with folded solutions to Modules 5 and 6 (Module 7 has some).
+- Add short exercises with folded solutions to Modules 1 and 2 (Module 3 has some).
 - Make slides by adapting the old `afternoon_30min_xaringan.Rmd` from the original repo.
   Follow the slide conventions referenced in the user's global CLAUDE.md. Add "run the
   repo-download snippet" as the first instruction on the opening slide.
-- Small fixes: move `pt_phi_score` from Module 6 into Module 5; fix the
-  "We keep 20 PCs the default" typo in Module 6.
+- Small fixes: move `pt_phi_score` from Module 2 into Module 1; fix the
+  "We keep 20 PCs the default" typo in Module 2.
 - Rehearse and fit the timing.
 
 ## Git

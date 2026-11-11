@@ -43,16 +43,16 @@ cran_pkgs <- c(
     "kerndwd", "umap", "FNN", "ggpubr", "irlba", "plyr", "magrittr", "withr",
     # NeighbourNet imports from CRAN
     "RANN", "progress", "RSpectra", "ggraph", "reshape2", "scatterpie",
-    # interactive network views (Module 7)
+    # interactive network views (Module 3)
     "visNetwork", "ggiraph", "htmlwidgets"
 )
 bioc_pkgs <- c(
     "SingleCellExperiment", "SummarizedExperiment", "SpatialExperiment",
     "S4Vectors", "BiocParallel",
     "scuttle", "scran", "scater",           # normalisation, SNN graph, UMAP
-    "ComplexHeatmap",                       # Module 5 heatmap
-    "slingshot",                            # Module 6 principal curves
-    "destiny",                              # Module 6 diffusion pseudotime
+    "ComplexHeatmap",                       # Module 1 heatmap
+    "slingshot",                            # Module 2 principal curves
+    "destiny",                              # Module 2 diffusion pseudotime
     # Optional ("Suggests") dependencies that slingshot / scater / scran
     # load at run time; not pulled in automatically by install().
     "DelayedMatrixStats", "mclust"
