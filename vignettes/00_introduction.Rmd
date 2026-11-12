@@ -1,6 +1,6 @@
 ---
 title: "Introduction: Continuous Cell States in the Maturing Human Heart"
-author: "Single Cell Workshop"
+author: "Jiadong Mao (UniMelb), Yidi Deng (Florey), Belinda Phipson (WEHI), Melody Jin (WEHI)"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -57,45 +57,16 @@ same data, one per module:
 | 2 | Where is each cell along the maturation process? | Pseudotime (slingshot, diffusion pseudotime) |
 | 3 | How do relationships between genes change as cells mature? | Cell-specific co-expression networks (NeighbourNet) |
 
-Each module builds on the previous one:
-
-- **Module 1** scores every nucleus against a reference atlas.
-- **Module 2** uses those scores to order the cardiomyocytes from foetal-like to adult-like.
-- **Module 3** asks which gene networks change along that ordering.
-
 The data throughout is snRNA-seq of the developing human heart.
 
-### Timetable
-
-| Time | Session |
-|---|---|
-| 0:00–0:15 | Introduction (this page) |
-| 0:15–1:05 | Module 1: Continuous phenotyping with Φ-Space |
-| 1:05–1:15 | Break |
-| 1:15–2:00 | Module 2: Pseudotime trajectory analysis |
-| 2:00–2:50 | Module 3: Cell-specific co-expression networks |
-| 2:50–3:00 | Wrap-up and questions |
 
 ## The Biological Question
 
 ### How does the human heart mature after birth?
 
-The heart keeps maturing long after it starts beating. Much is known about how
-the embryonic heart forms, but much less about the signals that turn the
-foetal heart into the adult one. The heart's muscle cells, the
-**cardiomyocytes**, change in many ways along the way:
-
-<!-- TODO(Jiadong): general background, not from Sim et al. 2021 - please check. -->
-
-- **They stop dividing.** Foetal cardiomyocytes proliferate; after birth most of
-  them stop dividing and grow in size instead.
-- **Their energy source changes.** Foetal cardiomyocytes rely largely on
-  glycolysis; mature ones burn mostly fatty acids in their mitochondria.
-- **Their contractile machinery matures.** Sarcomere proteins switch to adult
-  forms. For example, the foetal troponin I (*TNNI1*) is replaced by cardiac
-  troponin I (*TNNI3*).
-
-None of these happens at a single moment. Maturation is a **continuum**, and
+The heart keeps maturing long after it starts beating. The heart's muscle cells, the
+**cardiomyocytes**, change in many ways along the way. For example, foetal cardiomyocytes proliferate; after birth most of them stop dividing and grow in size instead. Foetal cardiomyocytes rely largely on
+  glycolysis; mature ones burn mostly fatty acids in their mitochondria. None of these happens at a single moment. Maturation is a **continuum**, and
 cardiomyocytes from donors of similar age can sit at different points along it.
 
 ### The study: Sim et al. (2021)
@@ -106,16 +77,10 @@ This workshop uses data from
 > maturation by the progesterone receptor.** *Circulation* 2021;143(16):1614–1628.
 > [doi:10.1161/CIRCULATIONAHA.120.051921](https://doi.org/10.1161/CIRCULATIONAHA.120.051921)
 
-The authors profiled the human heart from foetal stages to adulthood:
-
-- **Single-nucleus RNA-seq** of 54,140 nuclei from 9 donors: 3 foetal
+The authors profiled the human heart from foetal stages to adulthood. The data we're going to look at today is their **single-nucleus RNA-seq** of 54,140 nuclei from 9 donors: 3 foetal
   (19–20 weeks), 3 young (4–14 years) and 3 adult (35–42 years). Nuclei rather
   than whole cells are sequenced because adult cardiomyocytes are too large to
   capture intact.
-- **Bulk RNA-seq and ATAC-seq** on purified cardiomyocyte nuclei from 21 donors,
-  to confirm the transcriptional changes and map chromatin accessibility.
-- **Functional tests** of the sex hormones implicated in maturation, in
-  stem-cell-derived human heart organoids and in mice.
 
 Their main finding: the **progesterone receptor** (gene *PGR*) drives
 sex-dependent programs of cardiomyocyte maturation, affecting both metabolism
@@ -237,6 +202,8 @@ ggplot(pct_df, aes(stage, percent, fill = stage)) +
     theme(legend.position = "none")
 ```
 
+<!-- The following can be made an exercise: ask participants to interpret. Also critically examine the use of proportion of cells with markers detected. -->
+
 Three things stand out:
 
 - **Foetal markers fade.** *TNNI1* is detected in most foetal nuclei but in few
@@ -263,28 +230,7 @@ The reference's age groups (`fetal`, `young`, `middle`, `old`) are not the
 same as our query's stages (`fetal`, `young`, `adult`). That's fine: Φ-Space
 will score every query nucleus against all four reference age groups.
 
-## How This Session Runs
 
-- Each module is an R Markdown file in `vignettes/`. Open it in RStudio and run
-  the chunks in order (**Ctrl/Cmd + Shift + Enter** runs the current chunk).
-- Some steps take minutes. Their results are saved in `results/`, and the
-  modules load them instead of recomputing, so every chunk should finish in
-  seconds. The code that would recompute them is still shown, so you can see
-  what each step does.
-- The modules hand results to each other through these saved files. You can
-  start any module even if you did not finish the previous one.
-
-## Learning Outcomes
-
-By the end of the workshop you should be able to:
-
-- explain when a continuous view of cell state is more informative than discrete
-  cluster labels;
-- annotate cells with continuous phenotype scores from a reference atlas
-  (Φ-Space), and turn them into labels when needed;
-- infer and compare pseudotime orderings, and check them against known biology;
-- build cell-specific co-expression networks and summarise them into
-  meta-networks, without mistaking co-expression for regulation.
 
 ## References
 

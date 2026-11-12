@@ -1,6 +1,6 @@
 ---
 title: "Module 3: Cell-specific Co-expression Networks (NeighbourNet)"
-author: "Single Cell Workshop"
+author: "Jiadong Mao (UniMelb), Yidi Deng (Florey)"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -50,12 +50,7 @@ knitr::opts_chunk$set(
 ## Introduction
 
 The previous two modules gave us a continuous view of cardiomyocyte
-maturation. Module 1 built Φ-Space scores: each cell received a score for
-how much it resembled fetal, young, middle and old reference phenotypes.
-Module 2 turned those scores into several pseudotime axes and saved a
-cardiomyocyte-only object for downstream analysis.
-
-Here we ask a different question: as cardiomyocytes mature, do the
+maturation. Here we ask a different question: as cardiomyocytes mature, do the
 relationships between genes change?
 
 It is tempting to call this a **gene regulatory network** analysis, but
@@ -64,10 +59,8 @@ is directional and mechanistic: it says that one factor regulates another
 in a causal sense. Co-expression does not get us all the way there.
 
 Instead, we will build a **cell-specific co-expression network**. This is
-a statistical scaffold: it tells us which transcription factors and target
-genes vary together in local neighbourhoods of cells. If the scaffold is
-well constructed, it can contain useful regulatory hypotheses, but the
-edges are still associations, not proof of causality.
+a statistical proxy: it tells us which transcription factors and target
+genes vary together in local neighbourhoods of cells. The co-expression networks can contain useful regulatory hypotheses, but the edges are still associations, not proof of causality.
 
 We use **NeighbourNet** (NNet), a method for building noisy per-cell
 co-expression networks and then denoising them into a small number of
@@ -75,39 +68,6 @@ recurring **meta-networks**. The method borrows strength from each cell's
 nearest neighbours, computes a network for each cell, and then aggregates
 those networks with non-negative PCA so that the strongest recurring
 network patterns are visible.
-
-### What this module will do
-
-We will:
-
-- load the cardiomyocyte object from Module 2;
-- convert it from `SingleCellExperiment` to `Seurat`, because
-  NeighbourNet works on Seurat objects;
-- use `PhiSpace::rankFeatures()` to choose maturation-associated target
-  genes from the trajectory-free Φ-Space score `pt_phi_score`;
-- run the NeighbourNet workflow on those target genes;
-- find the meta-network whose cell scores correlate most strongly with
-  `pt_phi_score`;
-- visualise that maturation-associated meta-network.
-
-We deliberately use `pt_phi_score`, not one of the slingshot or DPT
-pseudotimes. `pt_phi_score` is simply the adult-like Φ-Space score minus
-the fetal Φ-Space score, so it is a trajectory-free maturation baseline.
-That keeps this module focused on network rewiring rather than on the
-method comparison from Module 2.
-
-### Learning objectives
-
-By the end of this module you will be able to:
-
-- distinguish co-expression networks from causal gene regulatory
-  networks;
-- explain why NeighbourNet builds per-cell networks before aggregating
-  them into meta-networks;
-- select target genes associated with a continuous phenotype using
-  `PhiSpace::rankFeatures()`;
-- run the core NeighbourNet workflow on a Seurat object;
-- interpret a meta-network figure without over-claiming causality.
 
 ## Load Libraries and Module 2 Output
 
@@ -312,6 +272,8 @@ dim(nnet_mod$meta.network$meta.network)
 ```
 
 ## Meta-network Space
+
+<!-- Just show results on the PCA UMAP-->
 
 Before visualising any one network, we check whether the meta-network
 embedding carries the maturation signal. If the first few meta-networks

@@ -1,6 +1,6 @@
 ---
 title: "Module 2: Pseudotime Trajectory Analysis"
-author: "Single Cell Workshop"
+author: "Jiadong Mao (UniMelb), Yidi Deng (Florey)"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -51,11 +51,15 @@ phenotype. Within cardiomyocytes, those scores already *hint* at a
 foetal→adult gradient. Module 2 turns that hint into a single number per
 cell: **pseudotime**.
 
+High-throughput sequencing 
+
 Pseudotime orders cells so that cells close together in a biological
 process get close values. It is not real time, and its scale is
 arbitrary: only the *ordering* matters. Which end counts as "early" is a
 separate choice, and for some methods it has to be supplied. Here the
 Φ-Space `fetal` score tells us where maturation starts.
+
+
 
 ### Three ways to order cardiomyocytes
 
@@ -79,19 +83,6 @@ A **Going further** section at the end repeats the analysis on a PCA
 embedding of gene expression instead of Φ-Space, for anyone who wants to
 compare.
 
-### Learning objectives
-
-By the end of this module you will be able to:
-
-- explain what pseudotime is, what it is not, and why some methods need
-  a starting point;
-- compute pseudotime with slingshot and with DPT, and display it on a
-  UMAP;
-- check a pseudotime against independent information (here, donor age)
-  and against other methods;
-- recognise that clustering-based trajectory methods depend on the
-  clustering you give them;
-- save the pseudotime-annotated cardiomyocytes for Module 3.
 
 ## Load Libraries and Module 1 Output
 
@@ -373,6 +364,8 @@ pseudotimes.
 
 ## Do the Three Pseudotimes Agree?
 
+<!-- The point is that in reality we need to try a few methods to see which one makes sense. This section provides some ways for benchmarking. -->
+
 ### On the UMAP
 
 ```{r compare-umap, fig.width=15, fig.height=5.5}
@@ -447,6 +440,8 @@ The spread *within* each stage shows how much nuclei from donors of the
 same age differ, which is exactly what a single age label hides.
 
 ## A Pitfall: Slingshot Depends on the Clustering
+
+<!-- Make this an extension part: ask participants to think about the effect of clustering on slingshot and then ask them to run the code. Also mark this part optional, as we might need to skip this part. -->
 
 Slingshot builds its tree on **cluster centres**, so the clustering you
 give it is a modelling choice, not a preprocessing detail. To see how
