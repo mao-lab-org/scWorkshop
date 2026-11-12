@@ -202,17 +202,62 @@ ggplot(pct_df, aes(stage, percent, fill = stage)) +
     theme(legend.position = "none")
 ```
 
-<!-- The following can be made an exercise: ask participants to interpret. Also critically examine the use of proportion of cells with markers detected. -->
+### Exercise: What does the plot show, and can we trust it?
 
-Three things stand out:
+1. Describe what happens to each gene from foetal to young to adult.
+   Which changes fit what you know about cardiomyocyte maturation?
+2. The plot shows the **percentage of nuclei in which a gene is
+   detected**. What can make that percentage change, other than the gene
+   being switched on or off? Use the code below to check two things:
+   whether nuclei from different stages were sequenced to the same depth
+   (UMIs per nucleus), and whether the *expression level* of each gene,
+   normalised for depth, tells the same story.
 
-- **Foetal markers fade.** *TNNI1* is detected in most foetal nuclei but in few
-  young or adult ones. *TNNI3* stays common at all stages, so the switch shows
-  up mainly as the loss of the foetal form. *NPPA* also declines.
-- **Division stops.** *MKI67*, a marker of dividing cells, becomes rarer with
-  age.
-- **The progesterone receptor rises.** *PGR*, the gene at the centre of the
-  paper, is detected in a growing share of nuclei from foetal to adult.
+```{r exercise-detection}
+# Sequencing depth (UMIs per nucleus) of the TTN+ nuclei, by stage
+tapply(seu$nCount_RNA[cm_like], stage, median)
+
+# Mean expression per 10,000 UMIs, by stage
+cp10k <- t(t(as.matrix(counts[names(genes), cm_like])) /
+               seu$nCount_RNA[cm_like]) * 1e4
+round(sapply(stages, function(s) rowMeans(cp10k[, stage == s])), 2)
+
+# Share of all nuclei in each stage that pass the TTN filter
+round(100 * table(stage) / table(factor(seu$group, levels = stages)), 1)
+```
+
+<details>
+<summary>Solution</summary>
+
+1. Three things stand out:
+   - **Foetal markers fade.** *TNNI1* is detected in most foetal nuclei
+     but in few young or adult ones. *NPPA* also declines.
+   - **Division stops.** *MKI67*, a marker of dividing cells, becomes
+     rarer with age.
+   - **The progesterone receptor rises.** *PGR*, the gene at the centre
+     of the paper, is detected in a growing share of nuclei from foetal
+     to adult.
+2. "Detected in a nucleus" means at least one UMI, and that depends on
+   more than whether the gene is on:
+   - **Sequencing depth.** Adult nuclei have more UMIs than foetal or
+     young ones, so any gene is more likely to be detected in them. A
+     difference in depth can create or hide a difference in detection.
+   - **Saturation.** A gene that is already detected in most nuclei has
+     little room to rise in the plot, even if its expression goes up.
+     *TNNI3* is detected in most nuclei at every stage and even looks
+     slightly lower in adults, but its expression per 10,000 UMIs roughly
+     doubles from foetal to adult: the troponin switch is a gain of
+     *TNNI3* as well as a loss of *TNNI1*.
+   - **The filter.** *TTN* > 2 keeps most foetal nuclei but only about
+     half of the young and adult ones, so the three groups were not
+     selected in the same way. *TTN* is itself a gene whose detection
+     depends on depth.
+
+   Detection rates are a quick first look. To compare stages properly,
+   model expression with depth (and the donor) taken into account, as a
+   differential expression analysis would.
+
+</details>
 
 These are averages over age groups. The rest of the workshop asks how such
 changes are distributed **across individual nuclei**, and whether nuclei

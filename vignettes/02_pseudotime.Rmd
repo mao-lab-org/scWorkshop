@@ -51,8 +51,6 @@ phenotype. Within cardiomyocytes, those scores already *hint* at a
 foetal→adult gradient. Module 2 turns that hint into a single number per
 cell: **pseudotime**.
 
-High-throughput sequencing 
-
 Pseudotime orders cells so that cells close together in a biological
 process get close values. It is not real time, and its scale is
 arbitrary: only the *ordering* matters. Which end counts as "early" is a
@@ -76,12 +74,13 @@ We compute three pseudotimes, all from the Φ-Space scores:
    from a root cell.
 
 We then check them against each other and against the donors' ages,
-which none of the methods sees. Finally, we look at a common pitfall:
-slingshot's answer depends on how you cluster the cells.
+which none of the methods sees.
 
-A **Going further** section at the end repeats the analysis on a PCA
-embedding of gene expression instead of Φ-Space, for anyone who wants to
-compare.
+Two optional sections follow the handoff to Module 3: an **extension** on
+a common pitfall (slingshot's answer depends on how you cluster the
+cells), and a **Going further** section that repeats the analysis on a
+PCA embedding of gene expression instead of Φ-Space. Going further uses
+results from the extension, so run the extension first.
 
 
 ## Load Libraries and Module 1 Output
@@ -364,7 +363,16 @@ pseudotimes.
 
 ## Do the Three Pseudotimes Agree?
 
-<!-- The point is that in reality we need to try a few methods to see which one makes sense. This section provides some ways for benchmarking. -->
+With real data there is no ground-truth ordering to check against, and
+no single pseudotime method is best for every dataset. In practice you
+run a few methods and ask which orderings make sense. This section shows
+three simple checks that work for any set of pseudotimes:
+
+- **look** at them on the same map: do they put the same cells early
+  and late?
+- **correlate** them with each other: do they agree on the order?
+- **compare** them with information none of them used, here the donors'
+  stage: does the order match what we know about the biology?
 
 ### On the UMAP
 
@@ -439,13 +447,61 @@ What the plot shows:
 The spread *within* each stage shows how much nuclei from donors of the
 same age differ, which is exactly what a single age label hides.
 
-## A Pitfall: Slingshot Depends on the Clustering
+## Handing Off to Module 3
 
-<!-- Make this an extension part: ask participants to think about the effect of clustering on slingshot and then ask them to run the code. Also mark this part optional, as we might need to skip this part. -->
+We save the cardiomyocytes, with their UMAP and pseudotimes, for
+Module 3.
 
-Slingshot builds its tree on **cluster centres**, so the clustering you
-give it is a modelling choice, not a preprocessing detail. To see how
-much it matters, we rerun slingshot with:
+```{r save-for-module3}
+final_cache <- file.path(results_dir, "06_cm_pseudotime.rds")
+saveRDS(cm, final_cache)
+cat("Annotated CM object at", final_cache, "\n")
+```
+
+In addition to everything Module 1 handed over, the object carries:
+
+- `reducedDim(cm, "PCA")` and `reducedDim(cm, "UMAP")`;
+- `pt_phi_score`, the Φ-Space pseudotime (`adult − fetal`);
+- `pt_sling_phi_phict` and `pt_dpt_phi`, the slingshot and DPT
+  pseudotimes on Φ-Space;
+- `*_01` columns: pseudotimes rescaled to `[0, 1]`.
+
+Module 3 uses `pt_phi_score` to pick genes associated with maturation:
+it needs no trajectory model, so Module 3 does not depend on the
+slingshot or DPT choices above.
+
+## Extension (Optional): Slingshot Depends on the Clustering
+
+This section is optional: Module 3 does not need it, and we may skip it
+in the live session if time is short.
+
+Slingshot builds its tree on **cluster centres**: the clustering you give
+it is a modelling choice, not a preprocessing detail.
+
+**Think first.** Above, slingshot used the Φ-Space cell types as its
+clusters: only a few, each a biologically defined group. Suppose we give
+it standard unsupervised clusters instead, which are more numerous and
+know nothing about the reference.
+
+1. How do you expect the *shape* of the trajectory (the number of
+   branches) to change?
+2. Do you expect the agreement with donor stage to change as much?
+
+Write down your guesses, then run the code below.
+
+<details>
+<summary>What we found</summary>
+
+1. With more clusters, slingshot has more cluster centres to connect,
+   so the tree gets more branches (lineages). The table below shows how
+   many.
+2. The agreement with donor stage barely changes. A single summary check
+   can look fine even when the trajectories themselves differ, which is
+   why it is worth looking at the trajectory, not only at one number.
+
+</details>
+
+To see how much the clustering matters, we rerun slingshot with:
 
 - a different **clustering:** standard unsupervised (Louvain) clusters
   on the PCA embedding, which know nothing about the reference;
@@ -542,31 +598,6 @@ structure of the trajectory itself, compare it with independent
 information such as donor age, and compare it with a method that does not
 need a clustering, such as DPT.
 
-## Handing Off to Module 3
-
-We save the cardiomyocytes, with their UMAP and pseudotimes, for
-Module 3.
-
-```{r save-for-module3}
-final_cache <- file.path(results_dir, "06_cm_pseudotime.rds")
-saveRDS(cm, final_cache)
-cat("Annotated CM object at", final_cache, "\n")
-```
-
-In addition to everything Module 1 handed over, the object carries:
-
-- `reducedDim(cm, "PCA")` and `reducedDim(cm, "UMAP")`;
-- `pt_phi_score`, the Φ-Space pseudotime (`adult − fetal`);
-- `pt_sling_phi_phict` and `pt_dpt_phi`, the slingshot and DPT
-  pseudotimes on Φ-Space;
-- `cluster` and the three other slingshot runs from the sensitivity
-  figure;
-- `*_01` columns: pseudotimes rescaled to `[0, 1]`.
-
-Module 3 uses `pt_phi_score` to pick genes associated with maturation:
-it needs no trajectory model, so Module 3 does not depend on the
-slingshot or DPT choices above.
-
 ## Summary
 
 - Pseudotime orders cells along a process. It is not real time, and
@@ -574,7 +605,9 @@ slingshot or DPT choices above.
 - We built three orderings of the cardiomyocytes: the Φ-Space score (no
   model), slingshot (principal curve) and DPT (diffusion). All three put
   foetal nuclei first; none separates young from adult donors well.
-- The clustering given to slingshot changes the shape of the trajectory
+- With no ground truth, compare several methods with each other and with
+  information they did not use.
+- (Extension) The clustering given to slingshot changes the shape of the trajectory
   (how many branches), even when its agreement with donor age barely
   changes. Look at the trajectory itself, and compare it with independent
   information and with a different method.

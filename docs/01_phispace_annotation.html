@@ -9,9 +9,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Single Cell Workshop" />
+<meta name="author" content="Jiadong Mao (UniMelb)" />
 
-<meta name="date" content="2026-11-11" />
+<meta name="date" content="2026-11-12" />
 
 <title>Module 1: Continuous Phenotyping with Φ-Space</title>
 
@@ -284,8 +284,8 @@ div.tocify {
 
 <h1 class="title toc-ignore">Module 1: Continuous Phenotyping with
 Φ-Space</h1>
-<h4 class="author">Single Cell Workshop</h4>
-<h4 class="date">2026-11-11</h4>
+<h4 class="author">Jiadong Mao (UniMelb)</h4>
+<h4 class="date">2026-11-12</h4>
 
 </div>
 
@@ -305,19 +305,105 @@ cardiomyocytes or they are not; there is no notion of a cell that is
 <em>partly</em> a fetal cardiomyocyte and <em>partly</em> an adult
 one.</li>
 </ol>
-<p>For a mature tissue with well-separated cell types, these assumptions
-are reasonable. But our dataset spans foetal, young and adult heart
-samples, so many cells — especially cardiomyocytes — are in the middle
-of a maturation continuum. A discrete label forces each cell into one
-bin and throws away the very gradient we want to study in Module 2
-(pseudotime) and Module 3 (cell-specific co-expression networks).</p>
+<p>Another issue of the conventional clustering-based annotation
+approach is that of ‘double-dipping’, which has been highlighted by
+recent statistical literature e.g. <a
+href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10418557/">this paper</a>
+and <a
+href="https://www.biorxiv.org/content/10.64898/2026.10.02.756269v1.full">that
+paper</a>. This problem refers to the inflated statistical significance
+due to conducting clustering and differential gene test on the same
+data. This problem will probably be more severe when dealing with fine
+cell types.</p>
+<div id="a-quick-simulation-of-double-dipping" class="section level3"
+number="1.1">
+<h3><span class="header-section-number">1.1</span> A quick simulation of
+double-dipping</h3>
+<p>To see the problem, we simulate 1,000 cells from <strong>one</strong>
+population: every gene has the same expected expression in every cell,
+so there are no real cell types and no real marker genes. We then run
+the standard Seurat workflow (cluster, then test for marker genes
+between clusters). For comparison, we also test between two groups
+chosen at random, which is what a valid test of “no difference” looks
+like.</p>
+<pre class="r"><code>library(Seurat)
+library(ggplot2)
+
+set.seed(2026)
+n_genes &lt;- 1000
+n_cells &lt;- 1000
+gene_means &lt;- rgamma(n_genes, shape = 0.5, rate = 0.5)
+sim_counts &lt;- matrix(
+    rpois(n_genes * n_cells, lambda = gene_means), n_genes, n_cells,
+    dimnames = list(paste0(&quot;gene&quot;, seq_len(n_genes)),
+                    paste0(&quot;cell&quot;, seq_len(n_cells)))
+)
+
+sim &lt;- CreateSeuratObject(as(sim_counts, &quot;dgCMatrix&quot;)) |&gt;
+    NormalizeData(verbose = FALSE) |&gt;
+    FindVariableFeatures(verbose = FALSE) |&gt;
+    ScaleData(verbose = FALSE) |&gt;
+    RunPCA(npcs = 10, verbose = FALSE) |&gt;
+    FindNeighbors(dims = 1:10, verbose = FALSE) |&gt;
+    FindClusters(resolution = 0.5, verbose = FALSE)
+table(Idents(sim))</code></pre>
+<pre><code>## 
+##   0   1 
+## 570 430</code></pre>
+<pre class="r"><code># Clusters 0 vs 1: clustering and testing on the same data
+de_clusters &lt;- FindMarkers(sim, ident.1 = &quot;0&quot;, ident.2 = &quot;1&quot;,
+                           logfc.threshold = 0, min.pct = 0)
+# Two random groups: a valid test
+sim$random_group &lt;- sample(c(&quot;A&quot;, &quot;B&quot;), n_cells, replace = TRUE)
+de_random &lt;- FindMarkers(sim, ident.1 = &quot;A&quot;, ident.2 = &quot;B&quot;,
+                         group.by = &quot;random_group&quot;,
+                         logfc.threshold = 0, min.pct = 0)
+
+data.frame(
+    comparison    = c(&quot;cluster 0 vs cluster 1&quot;, &quot;random groups&quot;),
+    p_below_0.05  = c(sum(de_clusters$p_val &lt; 0.05), sum(de_random$p_val &lt; 0.05)),
+    adj_p_below_0.05 = c(sum(de_clusters$p_val_adj &lt; 0.05),
+                         sum(de_random$p_val_adj &lt; 0.05))
+)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["comparison"],"name":[1],"type":["chr"],"align":["left"]},{"label":["p_below_0.05"],"name":[2],"type":["int"],"align":["right"]},{"label":["adj_p_below_0.05"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"cluster 0 vs cluster 1","2":"204","3":"5"},{"1":"random groups","2":"53","3":"0"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>rbind(data.frame(comparison = &quot;cluster 0 vs cluster 1&quot;, p = de_clusters$p_val),
+      data.frame(comparison = &quot;random groups&quot;, p = de_random$p_val)) |&gt;
+    ggplot(aes(p)) +
+    geom_histogram(breaks = seq(0, 1, 0.05), fill = &quot;grey60&quot;, colour = &quot;white&quot;) +
+    facet_wrap(~ comparison) +
+    labs(x = &quot;p-value&quot;, y = &quot;Number of genes&quot;,
+         title = &quot;No gene truly differs between any cells&quot;) +
+    theme_bw(base_size = 12)</code></pre>
+<p><img src="01_phispace_annotation_files/figure-html/double-dipping-1.png" alt="" width="960" style="display: block; margin: auto;" /></p>
+<p>With no real difference, about 5% of genes should have p &lt; 0.05,
+and the p-values should be spread evenly between 0 and 1. The random
+groups behave like that. Between the two clusters, about four times as
+many genes look “significant”, and some survive multiple-testing
+correction: the clustering split the cells along random noise, and the
+test then rediscovers that noise. The same can happen in real data,
+especially when clusters are split into fine subtypes that differ only
+slightly.</p>
+<p>Our dataset spans foetal, young and adult heart samples, so many
+cells — especially cardiomyocytes — are in the middle of a maturation
+continuum. A discrete label forces each cell into one bin and throws
+away the very gradient we want to study in Module 2 (pseudotime) and
+Module 3 (cell-specific co-expression networks).</p>
 <p>In this module we use <strong>Φ-Space</strong> (<a
 href="https://doi.org/10.1186/s13059-025-03755-8">Mao, Deng &amp; Lê
 Cao, 2025, <em>Genome Biology</em></a>) to re-annotate the heart data
-with <em>continuous</em> phenotype scores instead of hard labels.</p>
+with <em>continuous</em> phenotype scores instead of hard labels. The
+reference based approach can also alleviate the double-dipping problem
+in clustering-based approach, since the reference data, where the
+annotator comes from is different from the query data, on which the
+annotator is applied.</p>
+</div>
 <div id="from-hard-labels-to-soft-scores" class="section level3"
-number="1.1">
-<h3><span class="header-section-number">1.1</span> From hard labels to
+number="1.2">
+<h3><span class="header-section-number">1.2</span> From hard labels to
 soft scores</h3>
 <p>The core idea of Φ-Space is simple: instead of asking <em>“which cell
 type is this cell?”</em>, ask <em>“how much does this cell resemble each
@@ -334,53 +420,6 @@ scores, the <strong>phenotype space embedding</strong>, is stored as a
 <code>reducedDim</code> and becomes the substrate for every downstream
 analysis: visualisation, clustering, marker selection, and trajectory
 inference.</p>
-</div>
-<div id="why-φ-space-is-a-good-fit-for-this-dataset"
-class="section level3" number="1.2">
-<h3><span class="header-section-number">1.2</span> Why Φ-Space is a good
-fit for this dataset</h3>
-<p>Five features of Φ-Space line up unusually well with the Sim et
-al. heart data:</p>
-<ol style="list-style-type: decimal">
-<li><strong>Continuous biology deserves continuous annotation.</strong>
-Cardiomyocyte maturation is gradual. Φ-Space preserves the gradient;
-hard classification collapses it.</li>
-<li><strong>Multiple phenotype layers at once.</strong> We can score
-each cell simultaneously against cell type <em>and</em> developmental
-stage. Most tools predict one label at a time.</li>
-<li><strong>Bulk references are allowed.</strong> There is no single
-cross-age snRNA-seq atlas of the human heart that covers fetal through
-adult equally well. Φ-Space also accepts bulk RNA-seq references, which
-opens up developmental bulk time-course atlases as viable options.</li>
-<li><strong>No extra batch correction between reference and
-query.</strong> PLS inherently removes unwanted variation. You do not
-need to run Harmony <em>between</em> query and reference — only to match
-normalisation.</li>
-<li><strong>The embedding feeds directly into Modules 2 and 3.</strong>
-Because scores are stored in <code>reducedDim</code>, they can be used
-as input for slingshot (pseudotime) and NeighbourNet target-gene
-selection without any extra wrangling.</li>
-</ol>
-</div>
-<div id="learning-objectives" class="section level3" number="1.3">
-<h3><span class="header-section-number">1.3</span> Learning
-objectives</h3>
-<p>By the end of this module you will be able to:</p>
-<ul>
-<li>Explain the difference between hard and soft classification for cell
-type annotation, and identify situations where each is appropriate.</li>
-<li>Prepare an annotated reference dataset and a query dataset for
-Φ-Space, including matched normalisation and gene name
-harmonisation.</li>
-<li>Run <code>PhiSpace()</code> to obtain a continuous phenotype space
-embedding for the query cells.</li>
-<li>Visualise and interpret the phenotype space embedding through
-heatmaps and a PCA biplot.</li>
-<li>Derive discrete labels from continuous scores when needed, and
-understand what is gained and lost in that step.</li>
-<li>Export the phenotype space embedding in a form that Modules 2 and 3
-can consume.</li>
-</ul>
 </div>
 </div>
 <div id="load-libraries-and-data" class="section level2" number="2">
@@ -463,9 +502,7 @@ paediatric and adult heart, so that every query cell has something
 biologically sensible to score against;</li>
 <li><strong>annotates cell types at a useful granularity</strong> — at
 least the major heart lineages (cardiomyocyte, fibroblast, endothelial,
-pericyte, immune, epicardial, neuronal);</li>
-<li><strong>is publicly available</strong> and free of major disease
-confounders.</li>
+pericyte, immune, epicardial, neuronal)</li>
 </ul>
 <p>We use the <strong>Gao et al. 2026</strong> (<em>Genome Biology</em>)
 integrative snRNA-seq atlas of the human left ventricle. It combines 299
@@ -475,6 +512,40 @@ annotations. We have pre-filtered it to non-diseased donors and balanced
 the major cell types by down-sampling; the processing recipe is
 documented in the original workshop’s <a
 href="https://github.com/phipsonlab/single_cell_workshop/blob/main/references/HPC_reference_processing.md"><code>references/HPC_reference_processing.md</code></a>.</p>
+<div id="exercise-1-would-a-single-cell-reference-work"
+class="section level3" number="3.1">
+<h3><span class="header-section-number">3.1</span> Exercise 1: Would a
+single-cell reference work?</h3>
+<p>Our query is single-<em>nucleus</em> RNA-seq, and so is the Gao et
+al. reference. Many published heart atlases are single-<em>cell</em>
+RNA-seq instead. Discuss with your neighbour: could you use a whole-cell
+scRNA-seq reference to annotate this snRNA-seq query? What could go
+wrong, and how would you check?</p>
+<details>
+<summary>
+Some points to consider
+</summary>
+<ul>
+<li><strong>Coverage.</strong> A reference can only score cells against
+phenotypes it contains. Adult cardiomyocytes are too large to capture as
+intact cells, so whole-cell heart datasets often have few or none of
+them, which is exactly why Sim et al. sequenced nuclei. A query cell
+with no matching reference phenotype still gets scores, but they can
+only say which of the <em>available</em> phenotypes it resembles
+most.</li>
+<li><strong>Technology differences.</strong> Nuclei and whole cells
+capture different transcripts. Nuclear data have more unspliced
+(intronic) reads and nuclear-retained RNAs such as <em>MALAT1</em>;
+whole-cell data have more mitochondrial and other cytoplasmic
+transcripts. Genes that differ for technical reasons can shift the
+scores.</li>
+<li><strong>How to check.</strong> Look at whether well-known markers
+get the expected scores (for example, foetal query cells scoring high on
+foetal phenotypes), compare with a second reference if one exists, and
+consider dropping genes known to differ between nuclei and cells
+(mitochondrial genes, for example) before fitting.</li>
+</ul>
+</details>
 <p>Two columns from the reference drive everything that follows:</p>
 <pre class="r"><code>table(reference$final_cell_type)</code></pre>
 <pre><code>## 
@@ -494,10 +565,11 @@ href="https://github.com/phipsonlab/single_cell_workshop/blob/main/references/HP
 Φ-Space will score each query cell against all four reference age
 groups, and we will use those four scores as a fine-grained read-out of
 where on the maturation axis each cell sits.</p>
+</div>
 <div
 id="zooming-in-splitting-cardiomyocyte-and-fibroblast-into-subtypes"
-class="section level3" number="3.1">
-<h3><span class="header-section-number">3.1</span> Zooming in: splitting
+class="section level3" number="3.2">
+<h3><span class="header-section-number">3.2</span> Zooming in: splitting
 cardiomyocyte and fibroblast into subtypes</h3>
 <p>Looking at <code>final_cell_type</code> above,
 <strong>Cardiomyocyte</strong> (~1,900 cells) and
@@ -578,8 +650,8 @@ own right. The two approaches can also be combined — split first, then
 subsample within each fine label.</p>
 </div>
 <div id="a-note-on-very-rare-phenotypes" class="section level3"
-number="3.2">
-<h3><span class="header-section-number">3.2</span> A note on very rare
+number="3.3">
+<h3><span class="header-section-number">3.3</span> A note on very rare
 phenotypes</h3>
 <p>Even after splitting, some fine labels are tiny
 (e.g. <code>Cardiomyocyte:Senescent</code> ≈ 4 cells,
@@ -605,10 +677,9 @@ Query</h2>
 correction between reference and query; it relies on both being on the
 same numerical scale.</li>
 <li><strong>Match gene names.</strong> PLS can only use genes present in
-both datasets.</li>
-<li><strong>Quality control.</strong> Remove all-zero genes from the
-query, which would otherwise carry no signal but still consume model
-capacity.</li>
+both datasets. Both datasets here use gene symbols.</li>
+<li><strong>Quality control.</strong> Remove genes with no counts in any
+query cell. They carry no signal about the query.</li>
 </ol>
 <div id="match-normalisation-with-scran" class="section level3"
 number="4.1">
@@ -649,25 +720,28 @@ assayNames(reference)</code></pre>
 <pre><code>## [1] &quot;counts&quot;    &quot;logcounts&quot;</code></pre>
 <p>Both objects now carry a <code>logcounts</code> assay, and that is
 what Φ-Space will use below (<code>refAssay = "logcounts"</code>).</p>
+<p>How much does it matter that both use the same normalisation?
+Exercise 2 at the end of this module lets you test it.</p>
 </div>
 <div id="keep-common-genes-and-remove-zero-expression-genes"
 class="section level3" number="4.2">
 <h3><span class="header-section-number">4.2</span> Keep common genes and
 remove zero-expression genes</h3>
-<pre class="r"><code>common &lt;- intersect(rownames(reference), rownames(query))
-cat(&quot;Reference genes:&quot;, nrow(reference), &quot;\n&quot;)</code></pre>
+<p><code>PhiSpace()</code> itself keeps only the genes found in both
+reference and query, so you don’t need to match genes before calling it.
+We still subset the query here, because Modules 2 and 3 continue with
+this query object and should only see genes that Φ-Space could use.
+<code>zeroFeatQC()</code> then removes genes with no counts in any query
+cell.</p>
+<pre class="r"><code>cat(&quot;Reference genes:&quot;, nrow(reference), &quot;\n&quot;)</code></pre>
 <pre><code>## Reference genes: 16115</code></pre>
 <pre class="r"><code>cat(&quot;Query genes:    &quot;, nrow(query), &quot;\n&quot;)</code></pre>
 <pre><code>## Query genes:     18953</code></pre>
-<pre class="r"><code>cat(&quot;Common:         &quot;, length(common), &quot;\n&quot;)</code></pre>
-<pre><code>## Common:          15100</code></pre>
-<pre class="r"><code>reference &lt;- reference[common, ]
-query     &lt;- query[common, ]
-query     &lt;- zeroFeatQC(query)
+<pre class="r"><code>query &lt;- query[intersect(rownames(query), rownames(reference)), ]
+query &lt;- zeroFeatQC(query)
 dim(query)</code></pre>
 <pre><code>## [1] 15094 10000</code></pre>
-<p>The gene-symbol overlap is above ten thousand, which is plenty for
-PLS.</p>
+<p>That leaves about 15,000 genes, plenty for PLS.</p>
 </div>
 </div>
 <div id="running-φ-space" class="section level2" number="5">
@@ -685,28 +759,18 @@ does it sit?</li>
 levels represented by fewer than 20 reference cells are dropped before
 PLS fitting — this trims the long tail of rare CM / Fibroblast
 subclusters without touching the well-populated ones.</p>
-<p>This step is the computational bottleneck of the module (even though
-it’s only around one minute on a laptop), so we cache the output.</p>
-<pre class="r"><code>phispace_cache &lt;- file.path(results_dir, &quot;05_phispace_query.rds&quot;)
-
-if (file.exists(phispace_cache)) {
-    query &lt;- readRDS(phispace_cache)
-    message(&quot;Loaded cached PhiSpace result from &quot;, phispace_cache)
-} else {
-    query &lt;- PhiSpace(
-        reference         = reference,
-        query             = query,
-        phenotypes        = c(&quot;cell_type_fine&quot;, &quot;age_group&quot;),
-        refAssay          = &quot;logcounts&quot;,
-        regMethod         = &quot;PLS&quot;,
-        center            = TRUE,
-        scale             = FALSE,
-        cellTypeThreshold = 20
-    )
-    # Keep logcounts in the cache — Module 2 needs it for PCA on the
-    # expression side of its pseudotime comparison.
-    saveRDS(query, phispace_cache)
-}</code></pre>
+<p>Fitting the model and scoring all 10,000 query cells takes a few
+seconds, so we run it live.</p>
+<pre class="r"><code>query &lt;- PhiSpace(
+    reference         = reference,
+    query             = query,
+    phenotypes        = c(&quot;cell_type_fine&quot;, &quot;age_group&quot;),
+    refAssay          = &quot;logcounts&quot;,
+    regMethod         = &quot;PLS&quot;,
+    center            = TRUE,
+    scale             = FALSE,
+    cellTypeThreshold = 20
+)</code></pre>
 <p>The phenotype-space embedding is stored as a
 <code>reducedDim</code>:</p>
 <pre class="r"><code>phi_scores &lt;- reducedDim(query, &quot;PhiSpace&quot;)
@@ -768,7 +832,7 @@ number="5.1">
 <h3><span class="header-section-number">5.1</span> On the number of
 components</h3>
 <p>Φ-Space defaults <code>ncomp</code> to the total number of phenotype
-levels (here 17). This is a sensible starting point that we have found
+levels (here 28). This is a sensible starting point that we have found
 works well in practice. What we tend to observe is that, when there are
 many phenotypes (e.g. 60 cell types), setting <code>ncomp</code> to the
 default value (e.g. 60) might be too much. This is because many of these
@@ -776,6 +840,10 @@ cell types are heavily correlated, hence we do not need as many
 components to capture all the signal. When this is the case, setting
 <code>ncomp</code> to, say, <code>30</code> , might be a better
 choice.</p>
+<p>Another setting is <code>nfeat</code>, the number of genes Φ-Space
+selects to predict each phenotype. By default it uses all genes.
+Exercise 3 at the end of this module asks what changes when you use
+fewer.</p>
 </div>
 </div>
 <div id="exploring-the-phenotype-space" class="section level2"
@@ -817,9 +885,10 @@ structure tells you that Φ-Space has correctly recovered the
 developmental stage of each query cell without ever being told what
 stage it was from.</li>
 <li>Within the <code>cell type</code> columns, the dominant column for
-most cells is <code>Cardiomyocyte</code>, as expected for a heart sample
-— but a subset of cells score high on <code>Fibroblast</code>,
-<code>Endothelial</code>, <code>Myeloid</code>, etc.</li>
+most cells is one of the <code>Cardiomyocyte:</code> subtypes, as
+expected for a heart sample — but a subset of cells score high on
+<code>Fibroblast:</code> subtypes, <code>Endothelial</code>,
+<code>Myeloid</code>, etc.</li>
 </ul>
 </div>
 <div id="pca-biplot-of-the-phenotype-space" class="section level3"
@@ -1030,8 +1099,213 @@ spread along the age-group axis. A hard classifier hides this spread;
 the continuous scores are exactly what slingshot will exploit to trace a
 maturation trajectory.</p>
 </div>
-<div id="handing-off-to-module-2" class="section level2" number="8">
-<h2><span class="header-section-number">8</span> Handing Off to Module
+<div id="exercises-how-robust-are-the-scores-optional"
+class="section level2" number="8">
+<h2><span class="header-section-number">8</span> Exercises: How Robust
+Are the Scores? (Optional)</h2>
+<p>Each <code>PhiSpace()</code> run takes a few seconds, so you can try
+different settings and compare the scores with the ones above. The two
+helper functions below do the bookkeeping. Neither changes
+<code>query</code> or <code>phi_scores</code>, so the rest of the
+workshop is not affected.</p>
+<pre class="r"><code># Run Φ-Space with the settings used above; return the score matrix.
+phi_run &lt;- function(ref, qry, refAssay = &quot;logcounts&quot;, queryAssay = NULL, ...) {
+    res &lt;- PhiSpace(
+        reference         = ref,
+        query             = qry,
+        phenotypes        = c(&quot;cell_type_fine&quot;, &quot;age_group&quot;),
+        refAssay          = refAssay,
+        queryAssay        = queryAssay,
+        regMethod         = &quot;PLS&quot;,
+        center            = TRUE,
+        scale             = FALSE,
+        cellTypeThreshold = 20,
+        ...
+    )
+    reducedDim(res, &quot;PhiSpace&quot;)[, colnames(phi_scores)]
+}
+
+# Compare new scores with the original ones (`phi_scores`):
+# - median correlation of the cell-type and age-group score columns;
+# - % of cells that get the same broad and fine cell-type label.
+compare_scores &lt;- function(new, old = phi_scores) {
+    ct &lt;- setdiff(colnames(old), age_cols)
+    fine_new &lt;- getLabels(new[, ct])
+    fine_old &lt;- getLabels(old[, ct])
+    tibble(
+        cor_cell_type = median(diag(cor(new[, ct], old[, ct]))),
+        cor_age_group = median(diag(cor(new[, age_cols], old[, age_cols]))),
+        same_broad_label_pct = 100 * mean(sub(&quot;:.*$&quot;, &quot;&quot;, fine_new) ==
+                                          sub(&quot;:.*$&quot;, &quot;&quot;, fine_old)),
+        same_fine_label_pct  = 100 * mean(fine_new == fine_old)
+    ) |&gt;
+        mutate(across(everything(), \(x) round(x, 2)))
+}
+
+compare_scores(phi_scores)  # sanity check: identical scores</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["cor_cell_type"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["cor_age_group"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["same_broad_label_pct"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["same_fine_label_pct"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"1","3":"100","4":"100"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div id="exercise-2-does-matching-normalisation-matter"
+class="section level3" number="8.1">
+<h3><span class="header-section-number">8.1</span> Exercise 2: Does
+matching normalisation matter?</h3>
+<p>Φ-Space assumes reference and query are on the same numerical scale.
+Find out what happens when they are not. Run Φ-Space three times and
+compare each result with <code>compare_scores()</code>:</p>
+<ol style="list-style-type: lower-alpha">
+<li>Normalise the query with simple library-size normalisation instead
+of scran:
+<code>logNormTransf(query, assayName = "counts", targetAssay = "lognorm")</code>,
+then
+<code>phi_run(reference, query_ln, queryAssay = "lognorm")</code>.</li>
+<li>Forget to normalise the query:
+<code>phi_run(reference, query, queryAssay = "counts")</code>. Read the
+warning.</li>
+<li>Replace both datasets with within-cell <strong>ranks</strong>
+(<code>RankTransf()</code>), which do not depend on normalisation at
+all. Subset the reference to the query’s genes first, so that both rank
+the same genes.</li>
+</ol>
+<p>Which mismatch matters, and which doesn’t? Then discuss:</p>
+<ul>
+<li>The reference was normalised with Seurat’s
+<strong>SCTransform</strong> and you only have that, while the query
+uses scran. What would you do?</li>
+<li>The query is <strong>imaging-based spatial</strong> data (a panel of
+a few hundred genes). How would you normalise reference and query?</li>
+</ul>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code># a. library-size log-normalisation instead of scran
+query_ln &lt;- logNormTransf(query, assayName = &quot;counts&quot;, targetAssay = &quot;lognorm&quot;)
+scores_ln &lt;- phi_run(reference, query_ln, queryAssay = &quot;lognorm&quot;)
+
+# b. raw counts in the query, log counts in the reference
+scores_counts &lt;- phi_run(reference, query, queryAssay = &quot;counts&quot;)
+
+# c. ranks for both, on the same genes
+ref_rank   &lt;- RankTransf(reference[rownames(query), ], assayname = &quot;logcounts&quot;)
+query_rank &lt;- RankTransf(query, assayname = &quot;counts&quot;)
+scores_rank &lt;- phi_run(ref_rank, query_rank, refAssay = &quot;rank&quot;)
+
+bind_rows(
+    &quot;a. library-size log-normalisation&quot; = compare_scores(scores_ln),
+    &quot;b. raw counts&quot;                     = compare_scores(scores_counts),
+    &quot;c. ranks&quot;                          = compare_scores(scores_rank),
+    .id = &quot;query normalisation&quot;
+)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["query normalisation"],"name":[1],"type":["chr"],"align":["left"]},{"label":["cor_cell_type"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["cor_age_group"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["same_broad_label_pct"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["same_fine_label_pct"],"name":[5],"type":["dbl"],"align":["right"]}],"data":[{"1":"a. library-size log-normalisation","2":"1.00","3":"0.99","4":"97.24","5":"91.39"},{"1":"b. raw counts","2":"0.44","3":"0.11","4":"69.29","5":"43.43"},{"1":"c. ranks","2":"0.87","3":"0.79","4":"93.35","5":"56.16"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<ul>
+<li><strong>(a) barely matters.</strong> scran and library-size
+normalisation are both log-normalisations of counts, so the scores
+hardly change.</li>
+<li><strong>(b) matters a lot.</strong> Raw counts are on a much larger
+scale than log counts, the scores are distorted, and many cells change
+label. Φ-Space warns about this.</li>
+<li><strong>(c) keeps most of the signal.</strong> Ranks give the same
+result whatever normalisation each dataset had, because normalisation
+does not change the order of genes within a cell. The price is
+resolution: broad cell types are mostly kept, fine subtypes much
+less.</li>
+</ul>
+<p>For the discussion:</p>
+<ul>
+<li><strong>SCTransform.</strong> SCTransform’s <code>data</code> layer
+holds log-transformed corrected counts, close to an ordinary
+log-normalisation, so it can be paired with a log-normalised query, as
+in (a). Its <code>scale.data</code> layer holds Pearson residuals, which
+are centred and on a different scale: mixing those with log counts is a
+mismatch like (b). Best is to re-normalise both datasets the same way
+from raw counts; if the reference’s counts are not available, ranks (c)
+are a safe fallback.</li>
+<li><strong>Spatial query.</strong> Use only the genes on the panel, for
+both datasets, and normalise both the same way after subsetting
+(library-size normalisation on a small panel is driven by which genes
+are on it). Ranks are robust here too, because sequencing and imaging
+detect genes with very different efficiencies.</li>
+</ul>
+</details>
+</div>
+<div id="exercise-3-fewer-features" class="section level3" number="8.2">
+<h3><span class="header-section-number">8.2</span> Exercise 3: Fewer
+features</h3>
+<p>By default, Φ-Space uses all genes. With <code>nfeat</code>, it uses
+only the genes that matter most for each phenotype, which is similar in
+spirit to using only marker (DE) genes. Run
+<code>phi_run(reference, query, nfeat = 100)</code> and compare the
+scores with the original ones. Which scores change, and which don’t?
+Look in particular at the age-group scores of the cardiomyocytes: does
+the adult cardiomyocytes’ best-matching reference age group change?</p>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code>scores_nf &lt;- phi_run(reference, query, nfeat = 100)
+compare_scores(scores_nf)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["cor_cell_type"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["cor_age_group"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["same_broad_label_pct"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["same_fine_label_pct"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"0.96","2":"0.71","3":"94.42","4":"78.66"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code># Median age-group score of cardiomyocytes, by query stage
+is_cm &lt;- query$PhiCellTypeBroad == &quot;Cardiomyocyte&quot;
+age_order &lt;- c(&quot;fetal&quot;, &quot;young&quot;, &quot;middle&quot;, &quot;old&quot;)
+age_medians &lt;- function(scores) {
+    apply(scores[is_cm, age_order], 2, \(x) tapply(x, query$group[is_cm], median))
+}
+list(all_genes = round(age_medians(phi_scores), 2),
+     nfeat_100 = round(age_medians(scores_nf), 2))</code></pre>
+<pre><code>## $all_genes
+##       fetal young middle   old
+## adult -0.37  0.18   0.04  0.11
+## fetal  0.68 -0.12  -0.11 -0.09
+## young -0.40  0.39  -0.02  0.00
+## 
+## $nfeat_100
+##       fetal young middle   old
+## adult -0.39  0.05   0.17  0.11
+## fetal  0.66 -0.04  -0.14 -0.18
+## young -0.39  0.27   0.07  0.03</code></pre>
+<pre class="r"><code>stage_split &lt;- factor(query$group[is_cm], levels = c(&quot;fetal&quot;, &quot;young&quot;, &quot;adult&quot;))
+age_heatmap &lt;- function(scores, title) {
+    Heatmap(scores[is_cm, age_order], name = title, column_title = title,
+            row_split = stage_split, cluster_columns = FALSE,
+            cluster_row_slices = FALSE, show_row_names = FALSE,
+            show_row_dend = FALSE, row_title_rot = 0)
+}
+draw(age_heatmap(phi_scores, &quot;All genes&quot;) +
+         age_heatmap(scores_nf, &quot;nfeat = 100&quot;))</code></pre>
+<p><img src="01_phispace_annotation_files/figure-html/exercise-nfeat-1.png" alt="" width="960" style="display: block; margin: auto;" /></p>
+<ul>
+<li>The <strong>cell-type scores</strong> and the
+<strong>foetal</strong> score change little: those phenotypes differ in
+many genes, and the top 100 carry the signal. Broad labels hardly
+change; about a fifth of cells change their fine subtype label, the most
+sensitive part of the annotation.</li>
+<li>The <strong>post-natal age-group scores</strong>
+(<code>young</code>, <code>middle</code>, <code>old</code>) change the
+most. These groups differ in fewer genes, and using all genes dilutes
+them. With 100 genes per phenotype, the adult donors’ cardiomyocytes
+move from <code>young</code> towards <code>middle</code>, closer to
+their true age (35–42 years).</li>
+</ul>
+<p>Fewer features help when you need <strong>specificity</strong>
+between similar phenotypes. They cost robustness: with fewer genes, each
+gene’s noise matters more.</p>
+</details>
+</div>
+</div>
+<div id="handing-off-to-module-2" class="section level2" number="9">
+<h2><span class="header-section-number">9</span> Handing Off to Module
 2</h2>
 <p>We save the annotated query object so that Module 2 can pick up where
 we leave off.</p>
@@ -1059,8 +1333,8 @@ cardiomyocytes</strong> (using
 age-group scores will act as the biological anchor that tells slingshot
 which end of the trajectory is foetal and which end is adult.</p>
 </div>
-<div id="summary" class="section level2" number="9">
-<h2><span class="header-section-number">9</span> Summary</h2>
+<div id="summary" class="section level2" number="10">
+<h2><span class="header-section-number">10</span> Summary</h2>
 <ul>
 <li>Φ-Space replaces a hard cell-type label with a continuous score per
 reference phenotype per cell — a natural fit for a dataset that spans a
@@ -1078,8 +1352,8 @@ visualisation).</li>
 (pseudotime) and Module 3 (cell-specific co-expression networks).</li>
 </ul>
 </div>
-<div id="session-info" class="section level2" number="10">
-<h2><span class="header-section-number">10</span> Session Info</h2>
+<div id="session-info" class="section level2" number="11">
+<h2><span class="header-section-number">11</span> Session Info</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.6.0 (2026-04-24)
 ## Platform: aarch64-apple-darwin23
@@ -1102,15 +1376,16 @@ visualisation).</li>
 ## other attached packages:
 ##  [1] ComplexHeatmap_2.28.0       patchwork_1.3.2            
 ##  [3] tibble_3.3.1                PhiSpace_0.99.0            
-##  [5] SpatialExperiment_1.22.0    tidyr_1.3.2                
-##  [7] dplyr_1.2.1                 ggplot2_4.0.3              
-##  [9] SingleCellExperiment_1.34.0 SummarizedExperiment_1.42.0
-## [11] Biobase_2.72.0              GenomicRanges_1.64.0       
-## [13] Seqinfo_1.2.0               IRanges_2.46.0             
-## [15] S4Vectors_0.50.1            BiocGenerics_0.58.1        
-## [17] generics_0.1.4              MatrixGenerics_1.24.0      
-## [19] matrixStats_1.5.0           Seurat_5.5.1               
-## [21] SeuratObject_5.4.0          sp_2.2-1                   
+##  [5] SpatialExperiment_1.22.0    future_1.70.0              
+##  [7] tidyr_1.3.2                 dplyr_1.2.1                
+##  [9] ggplot2_4.0.3               SingleCellExperiment_1.34.0
+## [11] SummarizedExperiment_1.42.0 Biobase_2.72.0             
+## [13] GenomicRanges_1.64.0        Seqinfo_1.2.0              
+## [15] IRanges_2.46.0              S4Vectors_0.50.1           
+## [17] BiocGenerics_0.58.1         generics_0.1.4             
+## [19] MatrixGenerics_1.24.0       matrixStats_1.5.0          
+## [21] Seurat_5.5.1                SeuratObject_5.4.0         
+## [23] sp_2.2-1                   
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] RColorBrewer_1.1-3     shape_1.4.6.1          jsonlite_2.0.0        
@@ -1125,35 +1400,35 @@ visualisation).</li>
 ##  [28] igraph_2.3.3           iterators_1.0.14       mime_0.13             
 ##  [31] lifecycle_1.0.5        pkgconfig_2.0.3        Matrix_1.7-5          
 ##  [34] R6_2.6.1               fastmap_1.2.0          clue_0.3-68           
-##  [37] fitdistrplus_1.2-6     future_1.70.0          shiny_1.14.0          
-##  [40] digest_0.6.39          colorspace_2.1-2       tensor_1.5.1          
-##  [43] RSpectra_0.16-2        irlba_2.3.7            labeling_0.4.3        
-##  [46] progressr_1.0.0        spatstat.sparse_3.2-0  httr_1.4.8            
-##  [49] polyclip_1.10-7        abind_1.4-8            compiler_4.6.0        
-##  [52] doParallel_1.0.17      withr_3.0.3            S7_0.2.2              
-##  [55] fastDummies_1.7.6      MASS_7.3-65            DelayedArray_0.38.2   
-##  [58] rjson_0.2.23           tools_4.6.0            lmtest_0.9-40         
-##  [61] otel_0.2.0             httpuv_1.6.17          future.apply_1.20.2   
-##  [64] goftest_1.2-3          glue_1.8.1             nlme_3.1-169          
-##  [67] promises_1.5.0         Rtsne_0.17             cluster_2.1.8.2       
-##  [70] reshape2_1.4.5         gtable_0.3.6           spatstat.data_3.1-9   
-##  [73] data.table_1.18.4      XVector_0.52.0         spatstat.geom_3.8-1   
-##  [76] RcppAnnoy_0.0.23       foreach_1.5.2          ggrepel_0.9.8         
-##  [79] RANN_2.6.2             pillar_1.11.1          stringr_1.6.0         
+##  [37] fitdistrplus_1.2-6     shiny_1.14.0           digest_0.6.39         
+##  [40] colorspace_2.1-2       tensor_1.5.1           RSpectra_0.16-2       
+##  [43] irlba_2.3.7            labeling_0.4.3         progressr_1.0.0       
+##  [46] spatstat.sparse_3.2-0  httr_1.4.8             polyclip_1.10-7       
+##  [49] abind_1.4-8            compiler_4.6.0         doParallel_1.0.17     
+##  [52] withr_3.0.3            S7_0.2.2               fastDummies_1.7.6     
+##  [55] MASS_7.3-65            DelayedArray_0.38.2    rjson_0.2.23          
+##  [58] tools_4.6.0            lmtest_0.9-40          otel_0.2.0            
+##  [61] httpuv_1.6.17          future.apply_1.20.2    goftest_1.2-3         
+##  [64] glue_1.8.1             nlme_3.1-169           promises_1.5.0        
+##  [67] Rtsne_0.17             cluster_2.1.8.2        reshape2_1.4.5        
+##  [70] gtable_0.3.6           spatstat.data_3.1-9    data.table_1.18.4     
+##  [73] XVector_0.52.0         spatstat.geom_3.8-1    RcppAnnoy_0.0.23      
+##  [76] foreach_1.5.2          ggrepel_0.9.8          RANN_2.6.2            
+##  [79] pillar_1.11.1          stringr_1.6.0          limma_3.68.4          
 ##  [82] spam_2.11-4            RcppHNSW_0.7.0         later_1.4.8           
 ##  [85] circlize_0.4.18        splines_4.6.0          lattice_0.22-9        
 ##  [88] survival_3.8-9         deldir_2.0-4           tidyselect_1.2.1      
 ##  [91] miniUI_0.1.2           pbapply_1.7-4          knitr_1.51            
 ##  [94] gridExtra_2.3.1        scattermore_1.2        xfun_0.59             
-##  [97] stringi_1.8.7          lazyeval_0.2.3         yaml_2.3.12           
-## [100] evaluate_1.0.5         codetools_0.2-20       cli_3.6.6             
-## [103] uwot_0.2.4             xtable_1.8-8           reticulate_1.46.0     
-## [106] jquerylib_0.1.4        Rcpp_1.1.2             globals_0.19.1        
-## [109] spatstat.random_3.5-0  png_0.1-9              spatstat.univar_3.2-0 
-## [112] parallel_4.6.0         dotCall64_1.2          listenv_1.0.0         
-## [115] viridisLite_0.4.3      scales_1.4.0           ggridges_0.5.7        
-## [118] crayon_1.5.3           purrr_1.2.2            GetoptLong_1.1.1      
-## [121] rlang_1.3.0            cowplot_1.2.0</code></pre>
+##  [97] statmod_1.5.2          stringi_1.8.7          lazyeval_0.2.3        
+## [100] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      
+## [103] cli_3.6.6              uwot_0.2.4             xtable_1.8-8          
+## [106] reticulate_1.46.0      jquerylib_0.1.4        Rcpp_1.1.2            
+## [109] globals_0.19.1         spatstat.random_3.5-0  png_0.1-9             
+## [112] spatstat.univar_3.2-0  parallel_4.6.0         dotCall64_1.2         
+## [115] listenv_1.0.0          viridisLite_0.4.3      scales_1.4.0          
+## [118] ggridges_0.5.7         crayon_1.5.3           purrr_1.2.2           
+## [121] GetoptLong_1.1.1       rlang_1.3.0            cowplot_1.2.0</code></pre>
 </div>
 
 

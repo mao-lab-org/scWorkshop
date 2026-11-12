@@ -9,9 +9,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Single Cell Workshop" />
+<meta name="author" content="Jiadong Mao (UniMelb), Yidi Deng (Florey)" />
 
-<meta name="date" content="2026-11-11" />
+<meta name="date" content="2026-11-12" />
 
 <title>Module 3: Cell-specific Co-expression Networks (NeighbourNet)</title>
 
@@ -288,8 +288,8 @@ div.tocify {
 
 <h1 class="title toc-ignore">Module 3: Cell-specific Co-expression
 Networks (NeighbourNet)</h1>
-<h4 class="author">Single Cell Workshop</h4>
-<h4 class="date">2026-11-11</h4>
+<h4 class="author">Jiadong Mao (UniMelb), Yidi Deng (Florey)</h4>
+<h4 class="date">2026-11-12</h4>
 
 </div>
 
@@ -297,67 +297,25 @@ Networks (NeighbourNet)</h1>
 <div id="introduction" class="section level2" number="1">
 <h2><span class="header-section-number">1</span> Introduction</h2>
 <p>The previous two modules gave us a continuous view of cardiomyocyte
-maturation. Module 1 built Φ-Space scores: each cell received a score
-for how much it resembled fetal, young, middle and old reference
-phenotypes. Module 2 turned those scores into several pseudotime axes
-and saved a cardiomyocyte-only object for downstream analysis.</p>
-<p>Here we ask a different question: as cardiomyocytes mature, do the
-relationships between genes change?</p>
+maturation. Here we ask a different question: as cardiomyocytes mature,
+do the relationships between genes change?</p>
 <p>It is tempting to call this a <strong>gene regulatory
 network</strong> analysis, but that would overstate what single-cell
 RNA-seq alone can prove. A true GRN is directional and mechanistic: it
 says that one factor regulates another in a causal sense. Co-expression
 does not get us all the way there.</p>
 <p>Instead, we will build a <strong>cell-specific co-expression
-network</strong>. This is a statistical scaffold: it tells us which
+network</strong>. This is a statistical proxy: it tells us which
 transcription factors and target genes vary together in local
-neighbourhoods of cells. If the scaffold is well constructed, it can
-contain useful regulatory hypotheses, but the edges are still
-associations, not proof of causality.</p>
+neighbourhoods of cells. The co-expression networks can contain useful
+regulatory hypotheses, but the edges are still associations, not proof
+of causality.</p>
 <p>We use <strong>NeighbourNet</strong> (NNet), a method for building
 noisy per-cell co-expression networks and then denoising them into a
 small number of recurring <strong>meta-networks</strong>. The method
 borrows strength from each cell’s nearest neighbours, computes a network
 for each cell, and then aggregates those networks with non-negative PCA
 so that the strongest recurring network patterns are visible.</p>
-<div id="what-this-module-will-do" class="section level3" number="1.1">
-<h3><span class="header-section-number">1.1</span> What this module will
-do</h3>
-<p>We will:</p>
-<ul>
-<li>load the cardiomyocyte object from Module 2;</li>
-<li>convert it from <code>SingleCellExperiment</code> to
-<code>Seurat</code>, because NeighbourNet works on Seurat objects;</li>
-<li>use <code>PhiSpace::rankFeatures()</code> to choose
-maturation-associated target genes from the trajectory-free Φ-Space
-score <code>pt_phi_score</code>;</li>
-<li>run the NeighbourNet workflow on those target genes;</li>
-<li>find the meta-network whose cell scores correlate most strongly with
-<code>pt_phi_score</code>;</li>
-<li>visualise that maturation-associated meta-network.</li>
-</ul>
-<p>We deliberately use <code>pt_phi_score</code>, not one of the
-slingshot or DPT pseudotimes. <code>pt_phi_score</code> is simply the
-adult-like Φ-Space score minus the fetal Φ-Space score, so it is a
-trajectory-free maturation baseline. That keeps this module focused on
-network rewiring rather than on the method comparison from Module 2.</p>
-</div>
-<div id="learning-objectives" class="section level3" number="1.2">
-<h3><span class="header-section-number">1.2</span> Learning
-objectives</h3>
-<p>By the end of this module you will be able to:</p>
-<ul>
-<li>distinguish co-expression networks from causal gene regulatory
-networks;</li>
-<li>explain why NeighbourNet builds per-cell networks before aggregating
-them into meta-networks;</li>
-<li>select target genes associated with a continuous phenotype using
-<code>PhiSpace::rankFeatures()</code>;</li>
-<li>run the core NeighbourNet workflow on a Seurat object;</li>
-<li>interpret a meta-network figure without over-claiming
-causality.</li>
-</ul>
-</div>
 </div>
 <div id="load-libraries-and-module-2-output" class="section level2"
 number="2">
@@ -432,10 +390,10 @@ a short workshop module we want the network to focus on the maturation
 axis. We therefore rank genes by their association with
 <code>pt_phi_score</code> and keep the top 10.</p>
 <p><code>rankFeatures()</code> fits a PLS model from expression to the
-continuous response and ranks genes by the absolute coefficient.
-Positive and negative coefficients are both useful: they mark genes
-associated with adult-like or fetal-like ends of the same maturation
-gradient.</p>
+continuous response and ranks genes by the absolute coefficient. The
+importance is therefore unsigned: a gene can rank high because it rises
+with maturation or because it falls. Exercise 1 asks which it is for our
+genes.</p>
 <pre class="r"><code>rank_res &lt;- PhiSpace::rankFeatures(
     data       = cm,
     response   = cm$pt_phi_score,
@@ -475,6 +433,51 @@ is less important than the principle: the target set defines the
 biological question asked of NeighbourNet. Here we keep only 10 target
 genes so the per-cell network cube is small enough to knit during the
 workshop.</p>
+<div id="exercise-1-which-way-do-the-target-genes-point"
+class="section level3" number="4.1">
+<h3><span class="header-section-number">4.1</span> Exercise 1: Which way
+do the target genes point?</h3>
+<ol style="list-style-type: decimal">
+<li>For each of the 10 target genes, compute the Spearman correlation
+between its expression (<code>assay(cm, "logcounts")</code>) and
+<code>cm$pt_phi_score</code>. Which genes are higher in foetal-like
+cells, and which in adult-like cells?</li>
+<li>Only some of the 10 genes are used by NeighbourNet (you will see the
+number below). NeighbourNet only models genes in its prior list of
+target genes, <code>NeighbourNet::gene.list$targets</code>. Which of our
+genes are missing from it?</li>
+</ol>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code>target_check &lt;- tibble(
+    gene = top_targets,
+    spearman_with_maturation = vapply(top_targets, function(g) {
+        cor(assay(cm, &quot;logcounts&quot;)[g, ], cm$pt_phi_score, method = &quot;spearman&quot;)
+    }, numeric(1)),
+    in_target_prior = top_targets %in% NeighbourNet::gene.list$targets
+) |&gt;
+    mutate(spearman_with_maturation = round(spearman_with_maturation, 2))
+target_check</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["gene"],"name":[1],"type":["chr"],"align":["left"]},{"label":["spearman_with_maturation"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["in_target_prior"],"name":[3],"type":["lgl"],"align":["right"]}],"data":[{"1":"NEAT1","2":"0.59","3":"FALSE"},{"1":"PDE3A","2":"0.59","3":"TRUE"},{"1":"PXDNL","2":"0.55","3":"FALSE"},{"1":"PRKG1","2":"0.46","3":"TRUE"},{"1":"MYOM2","2":"0.64","3":"TRUE"},{"1":"CD36","2":"0.40","3":"TRUE"},{"1":"ZBTB20","2":"0.41","3":"TRUE"},{"1":"SGCD","2":"0.49","3":"FALSE"},{"1":"CCSER1","2":"0.56","3":"FALSE"},{"1":"RCAN2","2":"0.29","3":"FALSE"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<ol style="list-style-type: decimal">
+<li>All 10 genes rise with maturation: none of them is higher in
+foetal-like cells. A ranking by unsigned importance can be dominated by
+one direction. To cover both ends of the gradient, rank the genes
+separately by direction and take the top genes from each.</li>
+<li>Five genes are not in NeighbourNet’s target prior, so they are
+dropped: they are all expressed in thousands of nuclei, so expression is
+not the reason. One of them, <em>NEAT1</em>, is a nuclear-retained long
+non-coding RNA, which a list of protein targets does not cover. The
+prior list decides which genes NeighbourNet can model at all.</li>
+</ol>
+</details>
+</div>
 </div>
 <div id="run-neighbournet" class="section level2" number="5">
 <h2><span class="header-section-number">5</span> Run NeighbourNet</h2>
@@ -494,30 +497,30 @@ object immediately after <code>build.meta.network()</code>.</p>
     sprintf(&quot;07_seu_nnet_%02dtargets.rds&quot;, n_targets)
 )
 
+# NeighbourNet 1.0.0&#39;s select.gene() currently references a hard-coded
+# object name internally, so we reproduce the small filtering step here.
+select_nnet_genes &lt;- function(seurat_obj, targets, min.cells = 10) {
+    gene_list &lt;- NeighbourNet::gene.list
+    genes_all &lt;- rownames(seurat_obj)
+    counts &lt;- SeuratObject::LayerData(seurat_obj, layer = &quot;counts&quot;)
+    n_cell_expressed &lt;- Matrix::rowSums(counts[genes_all, , drop = FALSE] &gt; 0)
+    genes_kept &lt;- genes_all[n_cell_expressed &gt; min.cells]
+
+    tfs &lt;- intersect(genes_kept, unique(gene_list$tfs))
+    targets &lt;- intersect(genes_kept, intersect(gene_list$targets, targets))
+
+    list(
+        tfs = tfs,
+        targets = targets,
+        bgs = character(0),
+        genes = unique(c(tfs, targets))
+    )
+}
+
 if (file.exists(nnet_cache)) {
     seu &lt;- readRDS(nnet_cache)
     message(&quot;Loaded cached NeighbourNet object from &quot;, nnet_cache)
 } else {
-    # NeighbourNet 1.0.0&#39;s select.gene() currently references a hard-coded
-    # object name internally, so we reproduce the small filtering step here.
-    select_nnet_genes &lt;- function(seurat_obj, targets, min.cells = 10) {
-        gene_list &lt;- NeighbourNet::gene.list
-        genes_all &lt;- rownames(seurat_obj)
-        counts &lt;- SeuratObject::LayerData(seurat_obj, layer = &quot;counts&quot;)
-        n_cell_expressed &lt;- Matrix::rowSums(counts[genes_all, , drop = FALSE] &gt; 0)
-        genes_kept &lt;- genes_all[n_cell_expressed &gt; min.cells]
-
-        tfs &lt;- intersect(genes_kept, unique(gene_list$tfs))
-        targets &lt;- intersect(genes_kept, intersect(gene_list$targets, targets))
-
-        list(
-            tfs = tfs,
-            targets = targets,
-            bgs = character(0),
-            genes = unique(c(tfs, targets))
-        )
-    }
-
     genes &lt;- select_nnet_genes(seu, targets = top_targets, min.cells = 10)
 
     cat(&quot;Predictor TFs:&quot;, length(genes$tfs), &quot;\n&quot;)
@@ -555,10 +558,16 @@ if (file.exists(nnet_cache)) {
     saveRDS(seu, nnet_cache)
 }</code></pre>
 <p>The expensive output now lives under <code>seu@misc$NNet.mod</code>.
-The most useful piece for this module is <code>meta.network$pcs</code>:
-one row per cell and one column per meta-network. You can read it like a
-network-space embedding, where cells close together have similar
-co-expression programs.</p>
+Two pieces matter most for this module:</p>
+<ul>
+<li><code>meta.network$npca.loadings</code>: one row per cell and one
+column per meta-network. Each value is a cell’s non-negative
+<strong>weight</strong> on a meta-network: how much that cell’s own
+network contributes to it.</li>
+<li><code>meta.network$meta.network</code>: the meta-networks
+themselves, one target × TF matrix per meta-network. Each is a weighted
+sum of the cell-specific networks, with the weights above.</li>
+</ul>
 <pre class="r"><code>nnet_mod &lt;- Seurat::Misc(seu, &quot;NNet.mod&quot;)
 names(nnet_mod)</code></pre>
 <pre><code>##  [1] &quot;effect&quot;        &quot;p.val&quot;         &quot;meta.network&quot;  &quot;meta.response&quot;
@@ -569,64 +578,38 @@ names(nnet_mod)</code></pre>
 <pre><code>##  [1] &quot;meta.network&quot;  &quot;p.val&quot;         &quot;pcs&quot;           &quot;pca.loadings&quot; 
 ##  [5] &quot;pca.sd&quot;        &quot;npca.loadings&quot; &quot;npca.sd&quot;       &quot;scale&quot;        
 ##  [9] &quot;non.neg&quot;       &quot;setting&quot;</code></pre>
-<pre class="r"><code>dim(nnet_mod$meta.network$pcs)</code></pre>
-<pre><code>## [1] 5411  100</code></pre>
+<pre class="r"><code>dim(nnet_mod$meta.network$npca.loadings)</code></pre>
+<pre><code>## [1] 5411    2</code></pre>
 <pre class="r"><code>dim(nnet_mod$meta.network$meta.network)</code></pre>
 <pre><code>## [1]   5 875   2</code></pre>
 </div>
-<div id="meta-network-space" class="section level2" number="6">
-<h2><span class="header-section-number">6</span> Meta-network Space</h2>
-<p>Before visualising any one network, we check whether the meta-network
-embedding carries the maturation signal. If the first few meta-networks
-separate fetal-like and adult-like cells, NeighbourNet has found
-co-expression programs that vary with maturation.</p>
-<pre class="r"><code>meta_pcs &lt;- nnet_mod$meta.network$pcs
-if (is.null(rownames(meta_pcs))) {
-    rownames(meta_pcs) &lt;- colnames(seu)
+<div id="meta-network-scores-on-the-umap" class="section level2"
+number="6">
+<h2><span class="header-section-number">6</span> Meta-network Scores on
+the UMAP</h2>
+<p>Each cell has a weight on every meta-network: how much its own
+network contributes to that meta-network. Before looking at any one
+network, we check whether these scores carry the maturation signal. As
+in Figure 3B of the NeighbourNet paper, we colour the familiar
+expression UMAP by the scores. If a meta-network’s score changes from
+the foetal-like to the adult-like region, NeighbourNet has found a
+co-expression program that varies with maturation.</p>
+<p>We reuse the PCA-based UMAP from Module 2 and colour each cell by its
+weight on meta-networks 1 and 2, next to the Φ-Space maturation score
+for reference.</p>
+<pre class="r"><code>meta_scores &lt;- nnet_mod$meta.network$npca.loadings
+if (is.null(rownames(meta_scores))) {
+    rownames(meta_scores) &lt;- colnames(seu)
 }
 
-pcs_df &lt;- as.data.frame(meta_pcs[, 1:2, drop = FALSE])
-colnames(pcs_df) &lt;- c(&quot;NNet1&quot;, &quot;NNet2&quot;)
-pcs_df$cell &lt;- rownames(pcs_df)
-
-meta_df &lt;- seu@meta.data[match(pcs_df$cell, rownames(seu@meta.data)), ]
-pcs_df$group &lt;- meta_df$group
-pcs_df$pt_phi_score &lt;- meta_df$pt_phi_score
-
-p_stage &lt;- ggplot(pcs_df, aes(NNet1, NNet2, colour = group)) +
-    geom_point(size = 0.6, alpha = 0.75) +
-    scale_colour_brewer(palette = &quot;Set1&quot;) +
-    labs(title = &quot;Meta-network space by donor stage&quot;,
-         colour = &quot;Stage&quot;) +
-    theme_bw(base_size = 12)
-
-p_pt &lt;- ggplot(pcs_df, aes(NNet1, NNet2, colour = pt_phi_score)) +
-    geom_point(size = 0.6, alpha = 0.75) +
-    scale_colour_distiller(palette = &quot;Spectral&quot;, direction = -1) +
-    labs(title = &quot;Meta-network space by Φ-Space maturation score&quot;,
-         colour = &quot;pt_phi_score&quot;) +
-    theme_bw(base_size = 12)
-
-p_stage | p_pt</code></pre>
-<p><img src="03_nnet_files/figure-html/meta-network-space-1.png" alt="" width="1056" style="display: block; margin: auto;" /></p>
-<div id="meta-network-scores-on-the-pca-umap" class="section level3"
-number="6.1">
-<h3><span class="header-section-number">6.1</span> Meta-network scores
-on the PCA UMAP</h3>
-<p>Figure 3B of the NeighbourNet paper projects meta-network cell
-weights back onto a familiar expression UMAP. This is useful
-pedagogically: the meta-network embedding above tells us that cells
-differ in network space, while the UMAP below tells us where those
-network programs sit on the ordinary expression manifold.</p>
-<p>We reuse the PCA-based UMAP from Module 2 and colour each cell by its
-score on meta-networks 1 and 2.</p>
-<pre class="r"><code>umap &lt;- reducedDim(cm, &quot;UMAP&quot;)
-umap_df &lt;- as.data.frame(umap[match(rownames(meta_pcs), colnames(cm)), ,
+umap &lt;- reducedDim(cm, &quot;UMAP&quot;)
+umap_df &lt;- as.data.frame(umap[match(rownames(meta_scores), colnames(cm)), ,
                              drop = FALSE])
 colnames(umap_df) &lt;- c(&quot;UMAP1&quot;, &quot;UMAP2&quot;)
-umap_df$cell &lt;- rownames(meta_pcs)
-umap_df$NNet1 &lt;- meta_pcs[, 1]
-umap_df$NNet2 &lt;- meta_pcs[, 2]
+umap_df$cell &lt;- rownames(meta_scores)
+umap_df$NNet1 &lt;- meta_scores[, 1]
+umap_df$NNet2 &lt;- meta_scores[, 2]
+umap_df$pt_phi_score &lt;- seu$pt_phi_score[match(umap_df$cell, colnames(seu))]
 
 umap_score_plot &lt;- function(score_col, title) {
     ggplot(umap_df, aes(UMAP1, UMAP2, colour = .data[[score_col]])) +
@@ -636,21 +619,21 @@ umap_score_plot &lt;- function(score_col, title) {
         theme_bw(base_size = 12)
 }
 
-umap_score_plot(&quot;NNet1&quot;, &quot;Meta-network 1 score on PCA UMAP&quot;) |
-    umap_score_plot(&quot;NNet2&quot;, &quot;Meta-network 2 score on PCA UMAP&quot;)</code></pre>
-<p><img src="03_nnet_files/figure-html/umap-meta-scores-1.png" alt="" width="1056" style="display: block; margin: auto;" /></p>
-</div>
+umap_score_plot(&quot;NNet1&quot;, &quot;Meta-network 1 weight&quot;) |
+    umap_score_plot(&quot;NNet2&quot;, &quot;Meta-network 2 weight&quot;) |
+    umap_score_plot(&quot;pt_phi_score&quot;, &quot;Φ-Space maturation score&quot;)</code></pre>
+<p><img src="03_nnet_files/figure-html/umap-meta-scores-1.png" alt="" width="1440" style="display: block; margin: auto;" /></p>
 </div>
 <div id="pick-the-maturation-meta-network" class="section level2"
 number="7">
 <h2><span class="header-section-number">7</span> Pick the Maturation
 Meta-network</h2>
-<p>Each meta-network has a cell score. We correlate each score with
-<code>pt_phi_score</code>. The paper notes that the meta-networks are
-ordered: meta-network 1 is the strongest recurring co-expression pattern
-in the ensemble, and meta-network 2 is the next strongest pattern. We
-therefore show both, and use the correlation table to interpret which
-one tracks maturation most closely.</p>
+<p>Each meta-network has a weight per cell. We correlate each weight
+with <code>pt_phi_score</code>. The paper notes that the meta-networks
+are ordered: meta-network 1 is the strongest recurring co-expression
+pattern in the ensemble, and meta-network 2 is the next strongest
+pattern. We therefore show both, and use the correlation table to
+interpret which one tracks maturation most closely.</p>
 <pre class="r"><code>safe_cor &lt;- function(x, y) {
     sx &lt;- stats::sd(x, na.rm = TRUE)
     sy &lt;- stats::sd(y, na.rm = TRUE)
@@ -661,8 +644,8 @@ one tracks maturation most closely.</p>
 }
 
 cor_tbl &lt;- tibble(
-    meta_network = seq_len(ncol(meta_pcs)),
-    spearman_cor = apply(meta_pcs, 2, safe_cor, y = seu$pt_phi_score)
+    meta_network = seq_len(ncol(meta_scores)),
+    spearman_cor = apply(meta_scores, 2, safe_cor, y = seu$pt_phi_score)
 ) |&gt;
     mutate(abs_cor = abs(spearman_cor)) |&gt;
     arrange(desc(abs_cor))
@@ -670,7 +653,7 @@ cor_tbl &lt;- tibble(
 cor_tbl</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["meta_network"],"name":[1],"type":["int"],"align":["right"]},{"label":["spearman_cor"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["abs_cor"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"7.241879e-01","3":"7.241879e-01"},{"1":"2","2":"6.091882e-01","3":"6.091882e-01"},{"1":"4","2":"-1.754289e-01","3":"1.754289e-01"},{"1":"3","2":"-1.390068e-01","3":"1.390068e-01"},{"1":"10","2":"-1.104991e-01","3":"1.104991e-01"},{"1":"21","2":"-9.201582e-02","3":"9.201582e-02"},{"1":"6","2":"-9.200319e-02","3":"9.200319e-02"},{"1":"14","2":"-9.197939e-02","3":"9.197939e-02"},{"1":"22","2":"9.144314e-02","3":"9.144314e-02"},{"1":"24","2":"-8.730288e-02","3":"8.730288e-02"},{"1":"28","2":"-8.484559e-02","3":"8.484559e-02"},{"1":"26","2":"8.442887e-02","3":"8.442887e-02"},{"1":"8","2":"7.842176e-02","3":"7.842176e-02"},{"1":"19","2":"-5.989246e-02","3":"5.989246e-02"},{"1":"53","2":"-5.794629e-02","3":"5.794629e-02"},{"1":"63","2":"-5.192684e-02","3":"5.192684e-02"},{"1":"66","2":"-5.181681e-02","3":"5.181681e-02"},{"1":"16","2":"5.012245e-02","3":"5.012245e-02"},{"1":"27","2":"4.996937e-02","3":"4.996937e-02"},{"1":"29","2":"-4.951821e-02","3":"4.951821e-02"},{"1":"33","2":"-4.620590e-02","3":"4.620590e-02"},{"1":"15","2":"-4.491718e-02","3":"4.491718e-02"},{"1":"69","2":"-4.450390e-02","3":"4.450390e-02"},{"1":"34","2":"-4.399232e-02","3":"4.399232e-02"},{"1":"41","2":"4.365147e-02","3":"4.365147e-02"},{"1":"9","2":"4.294990e-02","3":"4.294990e-02"},{"1":"17","2":"4.001727e-02","3":"4.001727e-02"},{"1":"87","2":"3.889596e-02","3":"3.889596e-02"},{"1":"11","2":"3.869886e-02","3":"3.869886e-02"},{"1":"98","2":"3.817648e-02","3":"3.817648e-02"},{"1":"46","2":"-3.783690e-02","3":"3.783690e-02"},{"1":"65","2":"-3.403347e-02","3":"3.403347e-02"},{"1":"57","2":"3.366667e-02","3":"3.366667e-02"},{"1":"40","2":"-3.348354e-02","3":"3.348354e-02"},{"1":"54","2":"-3.304426e-02","3":"3.304426e-02"},{"1":"44","2":"-3.244589e-02","3":"3.244589e-02"},{"1":"23","2":"3.235662e-02","3":"3.235662e-02"},{"1":"59","2":"-3.213553e-02","3":"3.213553e-02"},{"1":"36","2":"3.165053e-02","3":"3.165053e-02"},{"1":"88","2":"3.102548e-02","3":"3.102548e-02"},{"1":"18","2":"-3.090513e-02","3":"3.090513e-02"},{"1":"45","2":"-3.078449e-02","3":"3.078449e-02"},{"1":"92","2":"-2.767900e-02","3":"2.767900e-02"},{"1":"74","2":"2.721927e-02","3":"2.721927e-02"},{"1":"37","2":"2.661654e-02","3":"2.661654e-02"},{"1":"20","2":"-2.629486e-02","3":"2.629486e-02"},{"1":"13","2":"-2.500998e-02","3":"2.500998e-02"},{"1":"7","2":"2.467794e-02","3":"2.467794e-02"},{"1":"50","2":"-2.418590e-02","3":"2.418590e-02"},{"1":"38","2":"-2.379541e-02","3":"2.379541e-02"},{"1":"5","2":"2.377645e-02","3":"2.377645e-02"},{"1":"96","2":"-2.279062e-02","3":"2.279062e-02"},{"1":"55","2":"-2.229449e-02","3":"2.229449e-02"},{"1":"56","2":"2.200310e-02","3":"2.200310e-02"},{"1":"62","2":"2.059304e-02","3":"2.059304e-02"},{"1":"39","2":"-2.025688e-02","3":"2.025688e-02"},{"1":"52","2":"1.977967e-02","3":"1.977967e-02"},{"1":"95","2":"-1.866061e-02","3":"1.866061e-02"},{"1":"89","2":"1.754764e-02","3":"1.754764e-02"},{"1":"43","2":"-1.741441e-02","3":"1.741441e-02"},{"1":"67","2":"1.729016e-02","3":"1.729016e-02"},{"1":"68","2":"1.693864e-02","3":"1.693864e-02"},{"1":"81","2":"-1.636838e-02","3":"1.636838e-02"},{"1":"85","2":"1.614933e-02","3":"1.614933e-02"},{"1":"93","2":"1.511824e-02","3":"1.511824e-02"},{"1":"35","2":"-1.509356e-02","3":"1.509356e-02"},{"1":"30","2":"1.410163e-02","3":"1.410163e-02"},{"1":"61","2":"-1.400199e-02","3":"1.400199e-02"},{"1":"75","2":"-1.392852e-02","3":"1.392852e-02"},{"1":"42","2":"-1.336919e-02","3":"1.336919e-02"},{"1":"83","2":"1.312579e-02","3":"1.312579e-02"},{"1":"73","2":"1.197667e-02","3":"1.197667e-02"},{"1":"80","2":"1.190778e-02","3":"1.190778e-02"},{"1":"84","2":"1.149807e-02","3":"1.149807e-02"},{"1":"91","2":"-1.133636e-02","3":"1.133636e-02"},{"1":"100","2":"-1.081077e-02","3":"1.081077e-02"},{"1":"94","2":"9.620485e-03","3":"9.620485e-03"},{"1":"49","2":"-9.613913e-03","3":"9.613913e-03"},{"1":"12","2":"-9.401469e-03","3":"9.401469e-03"},{"1":"72","2":"8.721499e-03","3":"8.721499e-03"},{"1":"77","2":"-8.587209e-03","3":"8.587209e-03"},{"1":"97","2":"-8.394621e-03","3":"8.394621e-03"},{"1":"76","2":"8.279031e-03","3":"8.279031e-03"},{"1":"48","2":"-7.811381e-03","3":"7.811381e-03"},{"1":"99","2":"-6.784885e-03","3":"6.784885e-03"},{"1":"86","2":"6.212815e-03","3":"6.212815e-03"},{"1":"51","2":"-5.757488e-03","3":"5.757488e-03"},{"1":"47","2":"-3.563727e-03","3":"3.563727e-03"},{"1":"78","2":"3.428070e-03","3":"3.428070e-03"},{"1":"32","2":"2.896455e-03","3":"2.896455e-03"},{"1":"64","2":"2.747160e-03","3":"2.747160e-03"},{"1":"60","2":"-2.349775e-03","3":"2.349775e-03"},{"1":"79","2":"2.116117e-03","3":"2.116117e-03"},{"1":"82","2":"-1.948424e-03","3":"1.948424e-03"},{"1":"90","2":"-1.388274e-03","3":"1.388274e-03"},{"1":"25","2":"1.232556e-03","3":"1.232556e-03"},{"1":"70","2":"7.881847e-04","3":"7.881847e-04"},{"1":"58","2":"4.000360e-04","3":"4.000360e-04"},{"1":"31","2":"1.407822e-04","3":"1.407822e-04"},{"1":"71","2":"-3.150045e-05","3":"3.150045e-05"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["meta_network"],"name":[1],"type":["int"],"align":["right"]},{"label":["spearman_cor"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["abs_cor"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"-0.7241888","3":"0.7241888"},{"1":"2","2":"0.6169631","3":"0.6169631"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>maturation_idx &lt;- cor_tbl$meta_network[1]
@@ -679,6 +662,11 @@ cat(&quot;Meta-network most associated with maturation:&quot;, maturation_idx, &
 <p>This selection is intentionally data-driven. We are not deciding
 which network “looks right”; we are asking which recurring co-expression
 pattern tracks the continuous maturation score most strongly.</p>
+<p>The signs matter too. Meta-network 1’s weight falls with maturation:
+it is the co-expression pattern of <strong>foetal-like</strong> cells.
+Meta-network 2’s weight rises with maturation: it is the pattern of
+<strong>post-natal</strong> cells. The UMAP above shows the same
+thing.</p>
 </div>
 <div id="meta-network-adjacency-matrices" class="section level2"
 number="8">
@@ -689,9 +677,8 @@ the first two meta-networks. Each heatmap is a TF-by-target view of a
 meta-network: bright tiles mark TF-target pairs with strong aggregated
 co-expression in that recurrent network pattern.</p>
 <p>Because our workshop run keeps only 10 requested target genes, and
-five survive NeighbourNet’s target-prior and expression filters in this
-data, we show all retained targets and the top 10 TFs for each
-meta-network.</p>
+five of them are in NeighbourNet’s target prior, we show all retained
+targets and the top 10 TFs for each meta-network.</p>
 <pre class="r"><code>plot_adjacency &lt;- function(i, n_tf = 10, n_target = 10) {
     mat &lt;- Seurat::Misc(seu, &quot;NNet.mod&quot;)$meta.network$meta.network[, , i]
 
@@ -820,13 +807,13 @@ meta_tabs &lt;- lapply(1:2, function(i) {
 })
 
 nnet_vis(meta_tabs[[1]])</code></pre>
-<div id="htmlwidget-229ac6780bf44917f7af" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
+<div id="htmlwidget-941a32a79bedd3525b3b" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
 <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222222;padding:8px 4px 4px;"><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Genes</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">target gene</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#E41A1C" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 1</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#377EB8" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 2</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#4DAF4A" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 3</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#984EA3" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 4</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#F2F2F2" stroke="#BDBDBD" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">no edge above cutoff</span></span></div><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Edges</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3" stroke-dasharray="5,4"/></svg><span style="vertical-align:middle;margin-left:6px;">co-expression only (undirected, not in prior knowledge)</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><polygon points="38,10 29,5 29,15" fill="#555555"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: activation</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><line x1="37" y1="3" x2="37" y2="17" stroke="#555555" stroke-width="3"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: inhibition</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><span style="vertical-align:middle;margin-left:6px;">(width = weight)</span></span></div></div>
-<script type="application/json" data-for="htmlwidget-229ac6780bf44917f7af">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[28.23755243515419,29.00122544173332,29.56123141579539,29.85033784954259,29.09170768785024,29.4130665779642,9,9,9,29.9013413805496,28.87394350820505,9,9,9,29.56123141579539,29.9013413805496,9,9,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.89<br>partners shown: MYOM2 (0.45)","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.94<br>partners shown: MYOM2 (0.54)","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.97<br>partners shown: MYOM2 (0.59)","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.99<br>partners shown: PDE3A (0.91)","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.94<br>partners shown: PDE3A (0.82)","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: PDE3A (0.92)","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.02<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.02<br>partners shown: <i>no edge above the cutoff<\/i>","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.99<br>partners shown: PDE3A (1.00), MYOM2 (0.57)","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.93<br>partners shown: MYOM2 (0.44)","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.26<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.24<br>partners shown: <i>no edge above the cutoff<\/i>","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 0.97<br>partners shown: CUX2 (0.59), NR3C2 (0.57), TLE4 (0.54), MYRF (0.45), NFIA (0.44)","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.99<br>partners shown: NR3C2 (1.00), TOX (0.92), TEAD4 (0.91), SUPT3H (0.82)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.17<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 1.00<br><i>its strongest partner is not among the genes drawn<\/i><br>partners shown: <i>no edge above the cutoff<\/i>","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.45<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#377EB8","#377EB8","#377EB8","#377EB8","#377EB8","#377EB8","#F2F2F2","#F2F2F2","#F2F2F2","#E41A1C","#E41A1C","#F2F2F2","#F2F2F2","#F2F2F2","#FFFFFF","#FFFFFF","#F2F2F2","#F2F2F2","#F2F2F2"],"color.border":["#333333","#333333","#333333","#333333","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD"],"font.color":["#222222","#222222","#222222","#222222","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E"],"borderWidth":[2,2,2,2,2,2,1,1,1,2,2,1,1,1,2,2,1,1,1]},"edges":{"from":["g2.NR3C2","g2.TOX","g2.TEAD4","g2.SUPT3H","g2.CUX2","g2.NR3C2","g2.TLE4","g2.MYRF","g2.NFIA"],"to":["g1.PDE3A","g1.PDE3A","g1.PDE3A","g1.PDE3A","g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.MYOM2"],"width":[8,7.473515119260623,7.368795082851327,6.771495807176065,5.099300917336089,4.97966128774608,4.791771642341113,4.145338668346673,4.063540889116477],"color":["#E41A1C","#377EB8","#377EB8","#377EB8","#377EB8","#E41A1C","#377EB8","#377EB8","#E41A1C"],"title":["<b>NR3C2 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 1.00<br>confidence: 0.99<br>prior knowledge: none (undirected, co-expression only)","<b>TOX &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.92<br>confidence: 0.96<br>prior knowledge: none (undirected, co-expression only)","<b>TEAD4 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.91<br>confidence: 0.99<br>prior knowledge: none (undirected, co-expression only)","<b>SUPT3H &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.82<br>confidence: 0.94<br>prior knowledge: none (undirected, co-expression only)","<b>CUX2 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.59<br>confidence: 0.97<br>prior knowledge: none (undirected, co-expression only)","<b>NR3C2 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.57<br>confidence: 0.96<br>prior knowledge: none (undirected, co-expression only)","<b>TLE4 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.54<br>confidence: 0.94<br>prior knowledge: none (undirected, co-expression only)","<b>MYRF &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.45<br>confidence: 0.89<br>prior knowledge: none (undirected, co-expression only)","<b>NFIA &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.44<br>confidence: 0.93<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[20,16],[18.68378779815156,14.94703023852125],[18.42198770712832,14.73759016570265],[16.92873951794016,13.54299161435213],[12.74825229334022,10.19860183467218],[12.4491532193652,9.959322575492159],[11.97942910585278,9.583543284682227],[10.36334667086668,8.290677336693346],[10.15885222279119,8.127081778232954]],"arrows.to.enabled":[false,false,false,false,false,false,false,false,false],"arrows.to.type":["arrow","arrow","arrow","arrow","arrow","arrow","arrow","arrow","arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Meta-network 1","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.72. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-941a32a79bedd3525b3b">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[28.23755243515419,29.00122544173332,29.56123141579539,29.85033784954259,29.09170768785024,29.4130665779642,9,9,9,29.9013413805496,28.87394350820505,9,9,9,29.56123141579539,29.9013413805496,9,9,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.89<br>partners shown: MYOM2 (0.45)","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.94<br>partners shown: MYOM2 (0.54)","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.97<br>partners shown: MYOM2 (0.59)","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.99<br>partners shown: PDE3A (0.91)","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.94<br>partners shown: PDE3A (0.82)","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: PDE3A (0.92)","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.02<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.02<br>partners shown: <i>no edge above the cutoff<\/i>","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.99<br>partners shown: PDE3A (1.00), MYOM2 (0.57)","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.93<br>partners shown: MYOM2 (0.44)","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.26<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.24<br>partners shown: <i>no edge above the cutoff<\/i>","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 0.97<br>partners shown: CUX2 (0.59), NR3C2 (0.57), TLE4 (0.54), MYRF (0.45), NFIA (0.44)","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.99<br>partners shown: NR3C2 (1.00), TOX (0.92), TEAD4 (0.91), SUPT3H (0.82)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.17<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 1.00<br><i>its strongest partner is not among the genes drawn<\/i><br>partners shown: <i>no edge above the cutoff<\/i>","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.45<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#377EB8","#377EB8","#377EB8","#377EB8","#377EB8","#377EB8","#F2F2F2","#F2F2F2","#F2F2F2","#E41A1C","#E41A1C","#F2F2F2","#F2F2F2","#F2F2F2","#FFFFFF","#FFFFFF","#F2F2F2","#F2F2F2","#F2F2F2"],"color.border":["#333333","#333333","#333333","#333333","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD"],"font.color":["#222222","#222222","#222222","#222222","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E"],"borderWidth":[2,2,2,2,2,2,1,1,1,2,2,1,1,1,2,2,1,1,1]},"edges":{"from":["g2.NR3C2","g2.TOX","g2.TEAD4","g2.SUPT3H","g2.CUX2","g2.NR3C2","g2.TLE4","g2.MYRF","g2.NFIA"],"to":["g1.PDE3A","g1.PDE3A","g1.PDE3A","g1.PDE3A","g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.MYOM2"],"width":[8,7.473515119260623,7.368795082851327,6.771495807176065,5.099300917336089,4.97966128774608,4.791771642341113,4.145338668346673,4.063540889116477],"color":["#E41A1C","#377EB8","#377EB8","#377EB8","#377EB8","#E41A1C","#377EB8","#377EB8","#E41A1C"],"title":["<b>NR3C2 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 1.00<br>confidence: 0.99<br>prior knowledge: none (undirected, co-expression only)","<b>TOX &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.92<br>confidence: 0.96<br>prior knowledge: none (undirected, co-expression only)","<b>TEAD4 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.91<br>confidence: 0.99<br>prior knowledge: none (undirected, co-expression only)","<b>SUPT3H &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.82<br>confidence: 0.94<br>prior knowledge: none (undirected, co-expression only)","<b>CUX2 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.59<br>confidence: 0.97<br>prior knowledge: none (undirected, co-expression only)","<b>NR3C2 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.57<br>confidence: 0.96<br>prior knowledge: none (undirected, co-expression only)","<b>TLE4 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.54<br>confidence: 0.94<br>prior knowledge: none (undirected, co-expression only)","<b>MYRF &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.45<br>confidence: 0.89<br>prior knowledge: none (undirected, co-expression only)","<b>NFIA &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.44<br>confidence: 0.93<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[20,16],[18.68378779815156,14.94703023852125],[18.42198770712832,14.73759016570265],[16.92873951794016,13.54299161435213],[12.74825229334022,10.19860183467218],[12.4491532193652,9.959322575492159],[11.97942910585278,9.583543284682227],[10.36334667086668,8.290677336693346],[10.15885222279119,8.127081778232954]],"arrows.to.enabled":[false,false,false,false,false,false,false,false,false],"arrows.to.type":["arrow","arrow","arrow","arrow","arrow","arrow","arrow","arrow","arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Meta-network 1","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.72. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 <pre class="r"><code>nnet_vis(meta_tabs[[2]])</code></pre>
-<div id="htmlwidget-5758f60e697e170996b3" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
+<div id="htmlwidget-8e8c2172b702d3b4cdd0" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
 <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222222;padding:8px 4px 4px;"><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Genes</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">target gene</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#E41A1C" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 1</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#377EB8" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 2</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#4DAF4A" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 3</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#984EA3" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 4</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#F2F2F2" stroke="#BDBDBD" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">no edge above cutoff</span></span></div><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Edges</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3" stroke-dasharray="5,4"/></svg><span style="vertical-align:middle;margin-left:6px;">co-expression only (undirected, not in prior knowledge)</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><polygon points="38,10 29,5 29,15" fill="#555555"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: activation</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><line x1="37" y1="3" x2="37" y2="17" stroke="#555555" stroke-width="3"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: inhibition</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><span style="vertical-align:middle;margin-left:6px;">(width = weight)</span></span></div></div>
-<script type="application/json" data-for="htmlwidget-5758f60e697e170996b3">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[9,9,9,9,9,9,26.19200713816708,25.70018239676776,9,9,9,20.21023275203589,25.57632755555681,30,30,20.21023275203589,9,9,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.76<br>partners shown: MYOM2 (0.74)","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.73<br>partners shown: MYOM2 (0.67)","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.36<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.17<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.14<br>partners shown: <i>no edge above the cutoff<\/i>","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.39<br>partners shown: PDE3A (0.42)","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.72<br>partners shown: MYOM2 (0.46)","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 1.00<br>partners shown: MYOM2 (1.00)","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 1.00<br>partners shown: IRX5 (1.00), HSF4 (0.74), HLF (0.67), IRX3 (0.46)","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.39<br>partners shown: RORC (0.42)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.07<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 0.24<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.15<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#984EA3","#984EA3","#F2F2F2","#F2F2F2","#F2F2F2","#4DAF4A","#4DAF4A","#4DAF4A","#FFFFFF","#FFFFFF","#F2F2F2","#F2F2F2","#F2F2F2"],"color.border":["#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#333333","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD"],"font.color":["#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#222222","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E"],"borderWidth":[1,1,1,1,1,1,2,2,1,1,1,2,2,2,2,2,1,1,1]},"edges":{"from":["g2.IRX5","g2.HSF4","g2.HLF","g2.IRX3","g2.RORC"],"to":["g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.PDE3A"],"width":[8,6.147766833779133,5.718822067351158,4.235854440680521,3.941517544676102],"color":["#4DAF4A","#984EA3","#984EA3","#4DAF4A","#4DAF4A"],"title":["<b>IRX5 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 1.00<br>confidence: 1.00<br>prior knowledge: none (undirected, co-expression only)","<b>HSF4 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.74<br>confidence: 0.76<br>prior knowledge: none (undirected, co-expression only)","<b>HLF &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.67<br>confidence: 0.73<br>prior knowledge: none (undirected, co-expression only)","<b>IRX3 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.46<br>confidence: 0.72<br>prior knowledge: none (undirected, co-expression only)","<b>RORC &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.42<br>confidence: 0.39<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[20,16],[15.36941708444783,12.29553366755827],[14.2970551683779,11.43764413470232],[10.5896361017013,8.471708881361042],[9.853793861690255,7.883035089352203]],"arrows.to.enabled":[false,false,false,false,false],"arrows.to.type":["arrow","arrow","arrow","arrow","arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Meta-network 2","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.37. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-8e8c2172b702d3b4cdd0">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[9,9,9,9,9,9,26.19200713816708,25.70018239676776,9,9,9,20.21023275203589,25.57632755555681,30,30,20.21023275203589,9,9,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.13<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.76<br>partners shown: MYOM2 (0.74)","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.73<br>partners shown: MYOM2 (0.67)","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.36<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.17<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.14<br>partners shown: <i>no edge above the cutoff<\/i>","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.39<br>partners shown: PDE3A (0.42)","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.72<br>partners shown: MYOM2 (0.46)","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 1.00<br>partners shown: MYOM2 (1.00)","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 1.00<br>partners shown: IRX5 (1.00), HSF4 (0.74), HLF (0.67), IRX3 (0.46)","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.39<br>partners shown: RORC (0.42)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.07<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 0.24<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.15<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#984EA3","#984EA3","#F2F2F2","#F2F2F2","#F2F2F2","#4DAF4A","#4DAF4A","#4DAF4A","#FFFFFF","#FFFFFF","#F2F2F2","#F2F2F2","#F2F2F2"],"color.border":["#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#333333","#333333","#333333","#BDBDBD","#BDBDBD","#BDBDBD"],"font.color":["#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#222222","#222222","#222222","#9E9E9E","#9E9E9E","#9E9E9E"],"borderWidth":[1,1,1,1,1,1,2,2,1,1,1,2,2,2,2,2,1,1,1]},"edges":{"from":["g2.IRX5","g2.HSF4","g2.HLF","g2.IRX3","g2.RORC"],"to":["g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.MYOM2","g1.PDE3A"],"width":[8,6.147766833779133,5.718822067351158,4.235854440680521,3.941517544676102],"color":["#4DAF4A","#984EA3","#984EA3","#4DAF4A","#4DAF4A"],"title":["<b>IRX5 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 1.00<br>confidence: 1.00<br>prior knowledge: none (undirected, co-expression only)","<b>HSF4 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.74<br>confidence: 0.76<br>prior knowledge: none (undirected, co-expression only)","<b>HLF &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.67<br>confidence: 0.73<br>prior knowledge: none (undirected, co-expression only)","<b>IRX3 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.46<br>confidence: 0.72<br>prior knowledge: none (undirected, co-expression only)","<b>RORC &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.42<br>confidence: 0.39<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[20,16],[15.36941708444783,12.29553366755827],[14.2970551683779,11.43764413470232],[10.5896361017013,8.471708881361042],[9.853793861690255,7.883035089352203]],"arrows.to.enabled":[false,false,false,false,false],"arrows.to.type":["arrow","arrow","arrow","arrow","arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Meta-network 2","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.37. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 <p>The tables are ordinary data frames, so you can sort, filter or save
 them:</p>
 <pre class="r"><code>meta_tabs[[1]]$edges</code></pre>
@@ -835,7 +822,10 @@ them:</p>
 {"columns":[{"label":["from"],"name":[1],"type":["chr"],"align":["left"]},{"label":["to"],"name":[2],"type":["chr"],"align":["left"]},{"label":["kind"],"name":[3],"type":["chr"],"align":["left"]},{"label":["weight"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["confidence"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["prior"],"name":[6],"type":["chr"],"align":["left"]},{"label":["module"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"g2.NR3C2","2":"g1.PDE3A","3":"co-expression","4":"1.0000000","5":"0.9938338","6":"none","7":"1"},{"1":"g2.TOX","2":"g1.PDE3A","3":"co-expression","4":"0.9247879","5":"0.9633167","6":"none","7":"2"},{"1":"g2.TEAD4","2":"g1.PDE3A","3":"co-expression","4":"0.9098279","5":"0.9906461","6":"none","7":"2"},{"1":"g2.SUPT3H","2":"g1.PDE3A","3":"co-expression","4":"0.8244994","5":"0.9432317","6":"none","7":"2"},{"1":"g2.CUX2","2":"g1.MYOM2","3":"co-expression","4":"0.5856144","5":"0.9725770","6":"none","7":"2"},{"1":"g2.NR3C2","2":"g1.MYOM2","3":"co-expression","4":"0.5685230","5":"0.9603337","6":"none","7":"1"},{"1":"g2.TLE4","2":"g1.MYOM2","3":"co-expression","4":"0.5416817","5":"0.9375766","6":"none","7":"2"},{"1":"g2.MYRF","2":"g1.MYOM2","3":"co-expression","4":"0.4493341","5":"0.8898470","6":"none","7":"2"},{"1":"g2.NFIA","2":"g1.MYOM2","3":"co-expression","4":"0.4376487","5":"0.9296215","6":"none","7":"1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<p><strong>Try it.</strong></p>
+<div id="exercise-2-read-the-interactive-networks"
+class="section level3" number="10.1">
+<h3><span class="header-section-number">10.1</span> Exercise 2: Read the
+interactive networks</h3>
 <ol style="list-style-type: decimal">
 <li>In meta-network 1, which target gene is the hub? Which TF modules
 feed into it?</li>
@@ -844,7 +834,67 @@ its strongest edge confidence is high. What does that tell you about
 which TFs were selected for drawing?</li>
 <li>Compare the two meta-networks. Do they use different TF modules for
 different target genes?</li>
+<li>How many edges have prior-knowledge support (solid lines)? What does
+that mean for how you describe these networks?</li>
 </ol>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code># Edges per target gene, and the TF modules they come from
+lapply(meta_tabs, function(tabs) {
+    tabs$edges |&gt;
+        group_by(target = sub(&quot;^g1\\.&quot;, &quot;&quot;, to)) |&gt;
+        summarise(n_edges = n(),
+                  tf_modules = paste(sort(unique(module)), collapse = &quot;, &quot;),
+                  strongest_weight = round(max(weight), 2))
+})</code></pre>
+<pre><code>## [[1]]
+## # A tibble: 2 × 4
+##   target n_edges tf_modules strongest_weight
+##   &lt;chr&gt;    &lt;int&gt; &lt;chr&gt;                 &lt;dbl&gt;
+## 1 MYOM2        5 1, 2                   0.59
+## 2 PDE3A        4 1, 2                   1   
+## 
+## [[2]]
+## # A tibble: 2 × 4
+##   target n_edges tf_modules strongest_weight
+##   &lt;chr&gt;    &lt;int&gt; &lt;chr&gt;                 &lt;dbl&gt;
+## 1 MYOM2        4 3, 4                   1   
+## 2 PDE3A        1 3                      0.42</code></pre>
+<pre class="r"><code># ZBTB20&#39;s strongest TFs in meta-network 1, by weight
+zbtb20_w &lt;- nnet_mod$meta.network$meta.network[&quot;ZBTB20&quot;, , 1]
+round(head(sort(zbtb20_w, decreasing = TRUE), 3), 2)</code></pre>
+<pre><code>##  ZHX2 PLAG1 SP100 
+##  6.10  4.14  3.12</code></pre>
+<pre class="r"><code># ...compared with the TFs of the strongest edges in the drawing
+pde3a_w &lt;- nnet_mod$meta.network$meta.network[&quot;PDE3A&quot;, , 1]
+round(head(sort(pde3a_w, decreasing = TRUE), 3), 2)</code></pre>
+<pre><code>## NR3C2   TOX TEAD4 
+## 13.18 12.19 11.99</code></pre>
+<pre class="r"><code># Edges with prior-knowledge support, per meta-network
+vapply(meta_tabs, function(tabs) sum(tabs$edges$prior != &quot;none&quot;), integer(1))</code></pre>
+<pre><code>## [1] 0 0</code></pre>
+<ol style="list-style-type: decimal">
+<li><em>MYOM2</em> has the most edges in meta-network 1, from TF modules
+1 and
+<ol start="2" style="list-style-type: decimal">
+<li><em>PDE3A</em> has almost as many and the strongest ones.</li>
+</ol></li>
+<li>ZBTB20’s partners (ZHX2, PLAG1, …) are confident but their edge
+weights are about half those of PDE3A’s partners. The plot only draws a
+few <strong>central</strong> TFs per meta-network, chosen by weight, so
+ZBTB20’s partners were not drawn. Confidence and weight are different
+things: an edge can be reliable but weak.</li>
+<li>Yes. Meta-network 1 links TF modules 1 and 2 to <em>PDE3A</em> and
+<em>MYOM2</em>; meta-network 2 links modules 3 and 4 (IRX5, IRX3, HSF4,
+HLF) mostly to <em>MYOM2</em>.</li>
+<li>None: every edge is dashed. These are co-expression patterns with no
+support from the prior, so they are hypotheses to test, not known
+regulation.</li>
+</ol>
+</details>
+</div>
 </div>
 <div id="representative-cell-specific-networks" class="section level2"
 number="11">
@@ -852,19 +902,19 @@ number="11">
 Cell-specific Networks</h2>
 <p>A meta-network is an aggregate over many cell-specific networks. To
 make that connection concrete, we pick one representative cell for each
-of the first two meta-networks: the cell with the largest score on that
+of the first two meta-networks: the cell with the largest weight on that
 meta-network. These plots are slices of the original cell-specific
 network ensemble, not averages.</p>
-<pre class="r"><code>shown_meta_networks &lt;- seq_len(min(2, ncol(meta_pcs)))
+<pre class="r"><code>shown_meta_networks &lt;- seq_len(min(2, ncol(meta_scores)))
 rep_tbl &lt;- tibble(
     meta_network = shown_meta_networks,
     cell_idx = vapply(shown_meta_networks, function(i) {
-        which.max(meta_pcs[, i])
+        which.max(meta_scores[, i])
     }, integer(1))
 ) |&gt;
     mutate(
-        cell = rownames(meta_pcs)[cell_idx],
-        meta_score = meta_pcs[cbind(cell_idx, meta_network)],
+        cell = rownames(meta_scores)[cell_idx],
+        meta_weight = meta_scores[cbind(cell_idx, meta_network)],
         group = seu$group[match(cell, colnames(seu))],
         pt_phi_score = seu$pt_phi_score[match(cell, colnames(seu))]
     )
@@ -872,7 +922,7 @@ rep_tbl &lt;- tibble(
 rep_tbl</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["meta_network"],"name":[1],"type":["int"],"align":["right"]},{"label":["cell_idx"],"name":[2],"type":["int"],"align":["right"]},{"label":["cell"],"name":[3],"type":["chr"],"align":["left"]},{"label":["meta_score"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["group"],"name":[5],"type":["chr"],"align":["left"]},{"label":["pt_phi_score"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"5244","3":"TATTTCGAGGGAGAAT_a1","4":"8.860176e-18","5":"adult","6":"0.4293677"},{"1":"2","2":"4443","3":"GCAACCGAGTGGGAAA_y2","4":"8.294486e-01","5":"young","6":"0.4877844"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["meta_network"],"name":[1],"type":["int"],"align":["right"]},{"label":["cell_idx"],"name":[2],"type":["int"],"align":["right"]},{"label":["cell"],"name":[3],"type":["chr"],"align":["left"]},{"label":["meta_weight"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["group"],"name":[5],"type":["chr"],"align":["left"]},{"label":["pt_phi_score"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"1750","3":"CCACGTTCAGAGTAAT_f2","4":"0.01986453","5":"fetal","6":"-0.7992110"},{"1":"2","2":"4443","3":"GCAACCGAGTGGGAAA_y2","4":"0.03890250","5":"young","6":"0.4877844"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>plot_cell_network &lt;- function(cell_idx, meta_idx, cell_name) {
@@ -903,9 +953,230 @@ wrap_plots(cell_plots, nrow = 1)</code></pre>
 meta-networks, but they will be noisier. That is the point of the
 meta-network step: it denoises repeated cell-specific patterns without
 collapsing the whole population into a single global network.</p>
+<div id="exercise-3-a-foetal-cell-and-an-adult-cell"
+class="section level3" number="11.1">
+<h3><span class="header-section-number">11.1</span> Exercise 3: A foetal
+cell and an adult cell</h3>
+<p>The representative cells above are chosen by meta-network weight.
+Instead, compare the cell-specific networks of the <strong>most
+foetal-like</strong> and the <strong>most adult-like</strong> cell
+(lowest and highest <code>pt_phi_score</code>). Use
+<code>nnet_tables(seu, i = &lt;cell index&gt;, meta.network = FALSE)</code>
+and <code>nnet_vis()</code>: gene positions are the same as in the
+meta-network views, so you can compare all four directly. Which TFs and
+targets are connected in each cell? Which donor stage does the most
+adult-like cell come from?</p>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code>extreme_cells &lt;- c(most_foetal = which.min(seu$pt_phi_score),
+                   most_adult  = which.max(seu$pt_phi_score))
+seu$group[extreme_cells]</code></pre>
+<pre><code>## CCTCCAAGTAATGCGG_f2 TCGAACATCTAAGGAA_y2 
+##             &quot;fetal&quot;             &quot;young&quot;</code></pre>
+<pre class="r"><code>cell_tabs &lt;- lapply(extreme_cells, function(i) {
+    nnet_tables(seu, i = i, meta.network = FALSE,
+                radius = c(0.4, 0.7, 0.85, 1))
+})
+lapply(cell_tabs, `[[`, &quot;edges&quot;)</code></pre>
+<pre><code>## $most_foetal.CCTCCAAGTAATGCGG_f2
+##     from       to          kind    weight confidence prior module
+## 1 g2.TOX g1.PDE3A co-expression 0.5735234  0.9688455  none      2
+## 
+## $most_adult.TCGAACATCTAAGGAA_y2
+##      from        to          kind    weight confidence prior module
+## 1 g2.KLF9  g1.PDE3A co-expression 0.7449725  0.9796409  none      4
+## 2 g2.HSF4  g1.MYOM2 co-expression 0.4739657  0.9764711  none      4
+## 3 g2.KLF9 g1.ZBTB20 co-expression 0.4046725  0.9799045  none      4</code></pre>
+<pre class="r"><code>nnet_vis(cell_tabs$most_foetal, title = &quot;Most foetal-like cell&quot;)</code></pre>
+<div id="htmlwidget-dd9056633cf839c90d1b" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222222;padding:8px 4px 4px;"><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Genes</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">target gene</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#E41A1C" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 1</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#377EB8" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 2</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#4DAF4A" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 3</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#984EA3" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 4</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#F2F2F2" stroke="#BDBDBD" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">no edge above cutoff</span></span></div><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Edges</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3" stroke-dasharray="5,4"/></svg><span style="vertical-align:middle;margin-left:6px;">co-expression only (undirected, not in prior knowledge)</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><polygon points="38,10 29,5 29,15" fill="#555555"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: activation</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><line x1="37" y1="3" x2="37" y2="17" stroke="#555555" stroke-width="3"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: inhibition</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><span style="vertical-align:middle;margin-left:6px;">(width = weight)</span></span></div></div>
+<script type="application/json" data-for="htmlwidget-dd9056633cf839c90d1b">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[9,9,9,9,9,29.50152865402023,9,9,9,9,9,9,9,9,9,29.50152865402022,9,9,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.95<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.97<br>partners shown: PDE3A (0.57)","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.56<br>partners shown: <i>no edge above the cutoff<\/i>","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.90<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.94<br>partners shown: <i>no edge above the cutoff<\/i>","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.85<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.81<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.19<br>partners shown: <i>no edge above the cutoff<\/i>","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.97<br>partners shown: TOX (0.57)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.94<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 0.97<br><i>its strongest partner is not among the genes drawn<\/i><br>partners shown: <i>no edge above the cutoff<\/i>","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.93<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#377EB8","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#FFFFFF","#F2F2F2","#F2F2F2","#F2F2F2"],"color.border":["#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#BDBDBD","#BDBDBD","#BDBDBD"],"font.color":["#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#9E9E9E","#9E9E9E","#9E9E9E"],"borderWidth":[1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1]},"edges":{"from":["g2.TOX"],"to":["g1.PDE3A"],"width":[5.014664073119576],"color":["#377EB8"],"title":["<b>TOX &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.57<br>confidence: 0.97<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[12.53666018279894,10.02932814623915]],"arrows.to.enabled":[false],"arrows.to.type":["arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Most foetal-like cell","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.97. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>nnet_vis(cell_tabs$most_adult, title = &quot;Most adult-like cell&quot;)</code></pre>
+<div id="htmlwidget-29f4c918338b7c436582" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222222;padding:8px 4px 4px;"><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Genes</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">target gene</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#E41A1C" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 1</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#377EB8" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 2</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#4DAF4A" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 3</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#984EA3" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 4</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#F2F2F2" stroke="#BDBDBD" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">no edge above cutoff</span></span></div><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Edges</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3" stroke-dasharray="5,4"/></svg><span style="vertical-align:middle;margin-left:6px;">co-expression only (undirected, not in prior knowledge)</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><polygon points="38,10 29,5 29,15" fill="#555555"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: activation</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><line x1="37" y1="3" x2="37" y2="17" stroke="#555555" stroke-width="3"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: inhibition</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><span style="vertical-align:middle;margin-left:6px;">(width = weight)</span></span></div></div>
+<script type="application/json" data-for="htmlwidget-29f4c918338b7c436582">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[9,9,9,9,9,9,29.62353762929472,9,29.67847126107007,9,9,9,9,9,29.62353762929472,29.67425371933452,9,29.81779225548474,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.53<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.73<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.57<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.65<br>partners shown: <i>no edge above the cutoff<\/i>","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.79<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.44<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.98<br>partners shown: MYOM2 (0.47)","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.97<br>partners shown: <i>no edge above the cutoff<\/i>","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.98<br>partners shown: PDE3A (0.74), ZBTB20 (0.40)","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.95<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.92<br>partners shown: <i>no edge above the cutoff<\/i>","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.93<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.93<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.95<br>partners shown: <i>no edge above the cutoff<\/i>","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 0.98<br>partners shown: HSF4 (0.47)","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.98<br>partners shown: KLF9 (0.74)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.95<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 0.99<br>partners shown: KLF9 (0.40)","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.97<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#984EA3","#F2F2F2","#984EA3","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#FFFFFF","#FFFFFF","#F2F2F2","#FFFFFF","#F2F2F2"],"color.border":["#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#BDBDBD","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#333333","#BDBDBD","#333333","#BDBDBD"],"font.color":["#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#9E9E9E","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#222222","#9E9E9E","#222222","#9E9E9E"],"borderWidth":[1,1,1,1,1,1,2,1,2,1,1,1,1,1,2,2,1,2,1]},"edges":{"from":["g2.KLF9","g2.HSF4","g2.KLF9"],"to":["g1.PDE3A","g1.MYOM2","g1.ZBTB20"],"width":[6.214807377885914,4.317759768654748,3.832707315168032],"color":["#984EA3","#984EA3","#984EA3"],"title":["<b>KLF9 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.74<br>confidence: 0.98<br>prior knowledge: none (undirected, co-expression only)","<b>HSF4 &ndash; MYOM2<\/b> (co-expression)<br>edge weight: 0.47<br>confidence: 0.98<br>prior knowledge: none (undirected, co-expression only)","<b>KLF9 &ndash; ZBTB20<\/b> (co-expression)<br>edge weight: 0.40<br>confidence: 0.98<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[15.53701844471479,12.42961475577183],[10.79439942163687,8.635519537309495],[9.581768287920081,7.665414630336064]],"arrows.to.enabled":[false,false,false],"arrows.to.type":["arrow","arrow","arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Most adult-like cell","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.97. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<ul>
+<li>The two cells use different TFs, and each looks like one of the
+meta-networks. In the most foetal-like cell, <em>PDE3A</em> is linked to
+TOX, as in meta-network 1 (the foetal pattern). In the most adult-like
+cell, KLF9 and HSF4 (TF module 4, as in meta-network 2, the post-natal
+pattern) link to <em>PDE3A</em>, <em>MYOM2</em> and
+<em>ZBTB20</em>.</li>
+<li>The most adult-like cell comes from a <strong>young</strong> donor,
+not an adult one: as in Module 2, maturity varies within an age
+group.</li>
+<li>Each cell shows only a few edges above the cutoff. Single-cell
+networks are noisy, which is why NeighbourNet summarises them into
+meta-networks.</li>
+</ul>
+</details>
 </div>
-<div id="what-we-are-not-running" class="section level2" number="12">
-<h2><span class="header-section-number">12</span> What We Are Not
+</div>
+<div id="does-an-edge-change-as-cells-mature" class="section level2"
+number="12">
+<h2><span class="header-section-number">12</span> Does an Edge Change as
+Cells Mature?</h2>
+<p>The question of this module is whether relationships between genes
+change as cardiomyocytes mature. NeighbourNet stores, for every cell,
+the signed strength of each TF–target association in that cell’s
+neighbourhood: <code>effect[target, TF, cell]</code>. Positive means the
+two genes go up and down together, negative means one goes up as the
+other goes down. Following one edge across cells, ordered by
+<code>pt_phi_score</code>, shows whether it changes with maturation.</p>
+<pre class="r"><code>edge_along_maturation &lt;- function(tf, target) {
+    effect &lt;- nnet_mod$effect[target, tf, ]
+    df &lt;- tibble(
+        pt_phi_score = seu$pt_phi_score,
+        effect = effect,
+        stage = factor(seu$group, levels = c(&quot;fetal&quot;, &quot;young&quot;, &quot;adult&quot;))
+    )
+    ggplot(df, aes(pt_phi_score, effect)) +
+        geom_hline(yintercept = 0, colour = &quot;grey50&quot;) +
+        geom_point(aes(colour = stage), size = 0.5, alpha = 0.5) +
+        geom_smooth(colour = &quot;black&quot;, se = FALSE) +
+        scale_colour_brewer(palette = &quot;Set1&quot;) +
+        labs(title = paste(tf, &quot;–&quot;, target),
+             subtitle = sprintf(&quot;Spearman correlation with maturation: %.2f&quot;,
+                                cor(effect, df$pt_phi_score,
+                                    method = &quot;spearman&quot;)),
+             x = &quot;Φ-Space maturation score&quot;, y = &quot;Cell-specific effect&quot;,
+             colour = &quot;Stage&quot;) +
+        theme_bw(base_size = 12)
+}
+
+edge_along_maturation(&quot;NR3C2&quot;, &quot;PDE3A&quot;)</code></pre>
+<p><img src="03_nnet_files/figure-html/edge-along-maturation-1.png" alt="" width="768" style="display: block; margin: auto;" /></p>
+<p>The strongest edge of meta-network 1, NR3C2–PDE3A, is strongest in
+foetal-like cells and weaker after birth, as we would expect for the
+foetal meta-network.</p>
+<div id="exercise-4-follow-other-edges" class="section level3"
+number="12.1">
+<h3><span class="header-section-number">12.1</span> Exercise 4: Follow
+other edges</h3>
+<ol style="list-style-type: decimal">
+<li>Draw TOX–PDE3A, another edge of meta-network 1. How does it change
+with maturation, compared with NR3C2–PDE3A?</li>
+<li>Draw IRX5–MYOM2, the strongest edge of meta-network 2.</li>
+<li>A meta-network contains edges that change in different ways along
+maturation. Why might that be?</li>
+</ol>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code>edge_along_maturation(&quot;TOX&quot;, &quot;PDE3A&quot;) | edge_along_maturation(&quot;IRX5&quot;, &quot;MYOM2&quot;)</code></pre>
+<p><img src="03_nnet_files/figure-html/exercise-edges-1.png" alt="" width="1152" style="display: block; margin: auto;" /></p>
+<ol style="list-style-type: decimal">
+<li>TOX–PDE3A is <strong>negative</strong> in foetal-like cells and
+close to zero after birth: the two genes move in opposite directions in
+foetal cells and become unrelated later. NR3C2–PDE3A is positive and
+also weakens after birth. Both edges are strongest in foetal-like cells,
+like meta-network 1, and both change most at the foetal to post-natal
+transition, the biggest change in this data (Module 2).</li>
+<li>IRX5–MYOM2 goes the other way: it gets stronger with maturation,
+like meta-network 2’s weight.</li>
+<li>NeighbourNet builds meta-networks from the <strong>size</strong> of
+each edge (it squares the effects), not its sign. Edges whose size rises
+and falls together across cells end up in the same meta-network, even if
+one is positive and the other negative, as for NR3C2–PDE3A and
+TOX–PDE3A.</li>
+</ol>
+</details>
+</div>
+</div>
+<div id="optional-exercises" class="section level2" number="13">
+<h2><span class="header-section-number">13</span> Optional
+Exercises</h2>
+<div id="exercise-5-how-much-does-the-edge-cutoff-matter"
+class="section level3" number="13.1">
+<h3><span class="header-section-number">13.1</span> Exercise 5: How much
+does the edge cutoff matter?</h3>
+<p>Every network view above draws only the edges whose confidence is
+above a cutoff. The default is the mean, over target genes, of each
+target’s strongest edge confidence. Redraw meta-network 1 with
+<code>cutoff = 0.5</code> and <code>cutoff = 0.99</code> in
+<code>nnet_tables()</code>. Which edges survive a strict cutoff?</p>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code>meta_tabs[[1]]$info$cutoff  # the default cutoff</code></pre>
+<pre><code>## [1] 0.7171637</code></pre>
+<pre class="r"><code>for (cutoff in c(0.5, 0.99)) {
+    tabs &lt;- nnet_tables(seu, i = 1, meta.network = TRUE, cutoff = cutoff,
+                        radius = c(0.4, 0.7, 0.85, 1))
+    cat(&quot;cutoff&quot;, cutoff, &quot;:&quot;, nrow(tabs$edges), &quot;edges\n&quot;)
+}</code></pre>
+<pre><code>## cutoff 0.5 : 12 edges
+## cutoff 0.99 : 2 edges</code></pre>
+<pre class="r"><code>strict &lt;- nnet_tables(seu, i = 1, meta.network = TRUE, cutoff = 0.99,
+                      radius = c(0.4, 0.7, 0.85, 1))
+strict$edges</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["from"],"name":[1],"type":["chr"],"align":["left"]},{"label":["to"],"name":[2],"type":["chr"],"align":["left"]},{"label":["kind"],"name":[3],"type":["chr"],"align":["left"]},{"label":["weight"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["confidence"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["prior"],"name":[6],"type":["chr"],"align":["left"]},{"label":["module"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"g2.NR3C2","2":"g1.PDE3A","3":"co-expression","4":"1.0000000","5":"0.9938338","6":"none","7":"1"},{"1":"g2.TEAD4","2":"g1.PDE3A","3":"co-expression","4":"0.9098279","5":"0.9906461","6":"none","7":"2"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>nnet_vis(strict, title = &quot;Meta-network 1, cutoff 0.99&quot;)</code></pre>
+<div id="htmlwidget-3bacbda02a18136aefd5" style="width:100%;height:550px;" class="visNetwork html-widget"></div>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222222;padding:8px 4px 4px;"><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Genes</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#FFFFFF" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">target gene</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#E41A1C" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 1</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#377EB8" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 2</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#4DAF4A" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 3</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><polygon points="10,2 18,10 10,18 2,10" fill="#984EA3" stroke="#333333" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">TF module 4</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;"><circle cx="10" cy="10" r="7" fill="#F2F2F2" stroke="#BDBDBD" stroke-width="1.5"/></svg><span style="vertical-align:middle;margin-left:6px;">no edge above cutoff</span></span></div><div style="display:block;width:100%;"><span style="display:inline-block;font-weight:bold;margin:0 12px 6px 0;vertical-align:middle;">Edges</span><span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3" stroke-dasharray="5,4"/></svg><span style="vertical-align:middle;margin-left:6px;">co-expression only (undirected, not in prior knowledge)</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><polygon points="38,10 29,5 29,15" fill="#555555"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: activation</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:middle;"><line x1="2" y1="10" x2="34" y2="10" stroke="#555555" stroke-width="3"/><line x1="37" y1="3" x2="37" y2="17" stroke="#555555" stroke-width="3"/></svg><span style="vertical-align:middle;margin-left:6px;">+ prior knowledge: inhibition</span></span> <span style="display:inline-block;margin:0 16px 6px 0;white-space:nowrap;"><span style="vertical-align:middle;margin-left:6px;">(width = weight)</span></span></div></div>
+<script type="application/json" data-for="htmlwidget-3bacbda02a18136aefd5">{"x":{"nodes":{"id":["g2.MYRF","g2.TLE4","g2.CUX2","g2.TEAD4","g2.SUPT3H","g2.TOX","g2.HSF4","g2.HLF","g2.KLF9","g2.NR3C2","g2.NFIA","g2.RORC","g2.IRX3","g2.IRX5","g1.MYOM2","g1.PDE3A","g1.PRKG1","g1.ZBTB20","g1.CD36"],"label":["MYRF","TLE4","CUX2","TEAD4","SUPT3H","TOX","HSF4","HLF","KLF9","NR3C2","NFIA","RORC","IRX3","IRX5","MYOM2","PDE3A","PRKG1","ZBTB20","CD36"],"group":["TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","TF","target","target","target","target","target"],"shape":["diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","diamond","dot","dot","dot","dot","dot"],"size":[9,9,9,29.85033784954259,9,9,9,9,9,29.9013413805496,9,9,9,9,9,29.9013413805496,9,9,9],"x":[320,288.3100377287741,199.5167365947947,71.20669886602062,-71.20669886602059,-199.5167365947948,-288.3100377287741,-320,-288.3100377287741,-199.5167365947945,-71.20669886602039,71.20669886602056,199.5167365947947,288.3100377287741,160,49.44271909999159,-129.4427190999916,-129.4427190999916,49.44271909999156],"y":[-0,-138.8427965176186,-250.1860743897695,-311.9769318981836,-311.9769318981836,-250.1860743897695,-138.8427965176186,-3.91886975727153e-14,138.8427965176186,250.1860743897697,311.9769318981836,311.9769318981836,250.1860743897696,138.8427965176187,-0,-152.1690426072246,-94.04564036679572,94.04564036679568,152.1690426072246],"title":["<b>MYRF<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.89<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TLE4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.94<br>partners shown: <i>no edge above the cutoff<\/i>","<b>CUX2<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.97<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TEAD4<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.99<br>partners shown: PDE3A (0.91)","<b>SUPT3H<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.94<br>partners shown: <i>no edge above the cutoff<\/i>","<b>TOX<\/b> &middot; TF &middot; TF module 2<br>strongest edge confidence (any partner): 0.96<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HSF4<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.02<br>partners shown: <i>no edge above the cutoff<\/i>","<b>HLF<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.02<br>partners shown: <i>no edge above the cutoff<\/i>","<b>KLF9<\/b> &middot; TF &middot; TF module 4<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>NR3C2<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.99<br>partners shown: PDE3A (1.00)","<b>NFIA<\/b> &middot; TF &middot; TF module 1<br>strongest edge confidence (any partner): 0.93<br>partners shown: <i>no edge above the cutoff<\/i>","<b>RORC<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.01<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX3<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.26<br>partners shown: <i>no edge above the cutoff<\/i>","<b>IRX5<\/b> &middot; TF &middot; TF module 3<br>strongest edge confidence (any partner): 0.24<br>partners shown: <i>no edge above the cutoff<\/i>","<b>MYOM2<\/b> &middot; target<br>strongest edge confidence (any partner): 0.97<br>partners shown: <i>no edge above the cutoff<\/i>","<b>PDE3A<\/b> &middot; target<br>strongest edge confidence (any partner): 0.99<br>partners shown: NR3C2 (1.00), TEAD4 (0.91)","<b>PRKG1<\/b> &middot; target<br>strongest edge confidence (any partner): 0.17<br>partners shown: <i>no edge above the cutoff<\/i>","<b>ZBTB20<\/b> &middot; target<br>strongest edge confidence (any partner): 1.00<br><i>its strongest partner is not among the genes drawn<\/i><br>partners shown: <i>no edge above the cutoff<\/i>","<b>CD36<\/b> &middot; target<br>strongest edge confidence (any partner): 0.45<br>partners shown: <i>no edge above the cutoff<\/i>"],"color.background":["#F2F2F2","#F2F2F2","#F2F2F2","#377EB8","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#E41A1C","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#F2F2F2","#FFFFFF","#F2F2F2","#F2F2F2","#F2F2F2"],"color.border":["#BDBDBD","#BDBDBD","#BDBDBD","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#BDBDBD","#333333","#BDBDBD","#BDBDBD","#BDBDBD"],"font.color":["#9E9E9E","#9E9E9E","#9E9E9E","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#9E9E9E","#222222","#9E9E9E","#9E9E9E","#9E9E9E"],"borderWidth":[1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1]},"edges":{"from":["g2.NR3C2","g2.TEAD4"],"to":["g1.PDE3A","g1.PDE3A"],"width":[8,7.368795082851327],"color":["#E41A1C","#377EB8"],"title":["<b>NR3C2 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 1.00<br>confidence: 0.99<br>prior knowledge: none (undirected, co-expression only)","<b>TEAD4 &ndash; PDE3A<\/b> (co-expression)<br>edge weight: 0.91<br>confidence: 0.99<br>prior knowledge: none (undirected, co-expression only)"],"dashes":[[20,16],[18.42198770712832,14.73759016570265]],"arrows.to.enabled":[false,false],"arrows.to.type":["arrow","arrow"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","font":{"size":18,"face":"arial"}},"manipulation":{"enabled":false},"physics":{"enabled":false},"edges":{"hoverWidth":1,"selectionWidth":2,"smooth":false},"interaction":{"dragNodes":true,"hover":true,"navigationButtons":true,"tooltipDelay":80,"zoomSpeed":1}},"groups":["TF","target"],"width":"100%","height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select a gene","values":["g1.CD36","g2.CUX2","g2.HLF","g2.HSF4","g2.IRX3","g2.IRX5","g2.KLF9","g1.MYOM2","g2.MYRF","g2.NFIA","g2.NR3C2","g1.PDE3A","g1.PRKG1","g2.RORC","g2.SUPT3H","g2.TEAD4","g2.TLE4","g2.TOX","g1.ZBTB20"]},"byselection":{"enabled":true,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false,"variable":"group","main":"Select a role","values":["target","TF"]},"main":{"text":"Meta-network 1, cutoff 0.99","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":{"text":"Edges with confidence > 0.99. Hover for details; click a gene to highlight its partners.","style":"font-family:Georgia, Times New Roman, Times, serif;font-size:12px;text-align:center;"},"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<p>A lower cutoff adds weaker edges; a strict cutoff keeps only the most
+confident ones, here edges into <em>PDE3A</em>. The cutoff changes how
+busy the picture is, not the network itself: report it with any network
+figure, and check that your conclusions do not depend on it.</p>
+</details>
+</div>
+<div id="exercise-6-more-target-genes" class="section level3"
+number="13.2">
+<h3><span class="header-section-number">13.2</span> Exercise 6: More
+target genes</h3>
+<p>We kept only 10 target genes so the module runs quickly. Re-run
+NeighbourNet with the top 20 genes from <code>rank_tbl</code> (about 40
+seconds and 1 GB of memory). How many targets does NeighbourNet keep? Do
+the first two meta-networks still track maturation (compare with the
+correlation table above)?</p>
+<details>
+<summary>
+Solution
+</summary>
+<pre class="r"><code>seu20 &lt;- as.Seurat(cm, counts = &quot;counts&quot;, data = &quot;logcounts&quot;)
+seu20$pt_phi_score &lt;- cm$pt_phi_score
+
+genes20 &lt;- select_nnet_genes(seu20, targets = head(rank_tbl$feature, 20))
+genes20$targets</code></pre>
+<pre><code>## [1] &quot;CFLAR&quot;  &quot;ZBTB20&quot; &quot;DGKG&quot;   &quot;IGFBP7&quot; &quot;CD36&quot;   &quot;MYOM2&quot;  &quot;PRKG1&quot;  &quot;PDE3A&quot; 
+## [9] &quot;MYH6&quot;</code></pre>
+<pre class="r"><code>seu20 &lt;- seu20 |&gt;
+    prepare.seurat(genes = genes20$genes, npcs = 50) |&gt;
+    prepare.graph(knn = 30) |&gt;
+    prepare.reg(predictors = genes20$tfs, responses = genes20$targets) |&gt;
+    run.nn.reg(responses = genes20$targets, return.p.val = TRUE) |&gt;
+    build.meta.network(n.net = 2)
+
+w20 &lt;- Seurat::Misc(seu20, &quot;NNet.mod&quot;)$meta.network$npca.loadings
+round(cor(w20, seu20$pt_phi_score, method = &quot;spearman&quot;), 2)</code></pre>
+<pre><code>##              [,1]
+## component_1 -0.72
+## component_2  0.75</code></pre>
+<pre class="r"><code>rm(seu20)
+invisible(gc())</code></pre>
+<ul>
+<li>NeighbourNet keeps 9 of the 20 genes: the 5 from before plus
+<em>CFLAR</em>, <em>DGKG</em>, <em>IGFBP7</em> and <em>MYH6</em>. The
+others are not in its target prior.</li>
+<li>The pattern is the same: meta-network 1’s weight falls with
+maturation (the foetal pattern) and meta-network 2’s rises (the
+post-natal pattern), with correlations of similar size. The main result
+does not depend on keeping only 10 genes.</li>
+</ul>
+</details>
+</div>
+</div>
+<div id="what-we-are-not-running" class="section level2" number="14">
+<h2><span class="header-section-number">14</span> What We Are Not
 Running</h2>
 <p>NeighbourNet also includes <code>receptor.activity()</code>, which
 propagates cell-specific TF-target networks through the signalling prior
@@ -915,8 +1186,8 @@ add another conceptual layer to this short workshop. For self-study, the
 NeighbourNet cell-cycle vignette shows the full receptor-activity
 workflow.</p>
 </div>
-<div id="handing-off" class="section level2" number="13">
-<h2><span class="header-section-number">13</span> Handing Off</h2>
+<div id="handing-off" class="section level2" number="15">
+<h2><span class="header-section-number">15</span> Handing Off</h2>
 <p>This module writes one cache:</p>
 <ul>
 <li><code>results/07_seu_nnet_10targets.rds</code> — the cardiomyocyte
@@ -928,8 +1199,8 @@ metadata.</li>
 plots and tune the network layout without repeating the per-cell
 regressions.</p>
 </div>
-<div id="summary" class="section level2" number="14">
-<h2><span class="header-section-number">14</span> Summary</h2>
+<div id="summary" class="section level2" number="16">
+<h2><span class="header-section-number">16</span> Summary</h2>
 <ul>
 <li>NeighbourNet builds <strong>cell-specific co-expression
 networks</strong>, not causal GRNs.</li>
@@ -945,8 +1216,8 @@ the same ensemble.</li>
 biologically suggestive, but not causal proof.</li>
 </ul>
 </div>
-<div id="session-info" class="section level2" number="15">
-<h2><span class="header-section-number">15</span> Session Info</h2>
+<div id="session-info" class="section level2" number="17">
+<h2><span class="header-section-number">17</span> Session Info</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.6.0 (2026-04-24)
 ## Platform: aarch64-apple-darwin23
@@ -973,78 +1244,80 @@ biologically suggestive, but not causal proof.</li>
 ##  [7] TrajectoryUtils_1.20.0      princurve_2.1.6            
 ##  [9] ComplexHeatmap_2.28.0       patchwork_1.3.2            
 ## [11] tibble_3.3.1                PhiSpace_0.99.0            
-## [13] SpatialExperiment_1.22.0    tidyr_1.3.2                
-## [15] dplyr_1.2.1                 ggplot2_4.0.3              
-## [17] SingleCellExperiment_1.34.0 SummarizedExperiment_1.42.0
-## [19] Biobase_2.72.0              GenomicRanges_1.64.0       
-## [21] Seqinfo_1.2.0               IRanges_2.46.0             
-## [23] S4Vectors_0.50.1            BiocGenerics_0.58.1        
-## [25] generics_0.1.4              MatrixGenerics_1.24.0      
-## [27] matrixStats_1.5.0           Seurat_5.5.1               
-## [29] SeuratObject_5.4.0          sp_2.2-1                   
+## [13] SpatialExperiment_1.22.0    future_1.70.0              
+## [15] tidyr_1.3.2                 dplyr_1.2.1                
+## [17] ggplot2_4.0.3               SingleCellExperiment_1.34.0
+## [19] SummarizedExperiment_1.42.0 Biobase_2.72.0             
+## [21] GenomicRanges_1.64.0        Seqinfo_1.2.0              
+## [23] IRanges_2.46.0              S4Vectors_0.50.1           
+## [25] BiocGenerics_0.58.1         generics_0.1.4             
+## [27] MatrixGenerics_1.24.0       matrixStats_1.5.0          
+## [29] Seurat_5.5.1                SeuratObject_5.4.0         
+## [31] sp_2.2-1                   
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] fs_2.1.0                spatstat.sparse_3.2-0   httr_1.4.8             
 ##   [4] doParallel_1.0.17       tools_4.6.0             mlr3learners_0.15.0    
-##   [7] sctransform_0.4.3       backports_1.5.1         R6_2.6.1               
-##  [10] lazyeval_0.2.3          uwot_0.2.4              GetoptLong_1.1.1       
-##  [13] withr_3.0.3             prettyunits_1.2.0       gridExtra_2.3.1        
-##  [16] progressr_1.0.0         cli_3.6.6               Cairo_1.7-0            
-##  [19] spatstat.explore_3.8-1  fastDummies_1.7.6       scatterpie_0.2.6       
-##  [22] labeling_0.4.3          sass_0.4.10             S7_0.2.2               
-##  [25] robustbase_0.99-7       spatstat.data_3.1-9     proxy_0.4-29           
-##  [28] ggridges_0.5.7          pbapply_1.7-4           yulab.utils_0.2.4      
-##  [31] mlr3tuning_1.6.0        paradox_1.0.1           parallelly_1.48.0      
-##  [34] visNetwork_2.1.4        shape_1.4.6.1           ica_1.0-3              
-##  [37] spatstat.random_3.5-0   car_3.1-5               Matrix_1.7-5           
-##  [40] ggbeeswarm_0.7.3        abind_1.4-8             lifecycle_1.0.5        
-##  [43] scatterplot3d_0.3-45    yaml_2.3.12             carData_3.0-6          
-##  [46] SparseArray_1.12.2      Rtsne_0.17              promises_1.5.0         
-##  [49] crayon_1.5.3            miniUI_0.1.2            lattice_0.22-9         
-##  [52] beachmat_2.28.0         cowplot_1.2.0           magick_2.9.1           
-##  [55] pillar_1.11.1           knitr_1.51              rjson_0.2.23           
-##  [58] boot_1.3-32             future.apply_1.20.2     codetools_0.2-20       
-##  [61] glue_1.8.1              ggfun_0.2.1             spatstat.univar_3.2-0  
-##  [64] pcaMethods_2.4.0        data.table_1.18.4       vcd_1.4-13             
-##  [67] vctrs_0.7.3             png_0.1-9               spam_2.11-4            
-##  [70] Rdpack_2.6.6            gtable_0.3.6            cachem_1.1.0           
-##  [73] xfun_0.59               rbibutils_2.4.1         S4Arrays_1.12.0        
-##  [76] mime_0.13               tidygraph_1.3.1         RcppEigen_0.3.4.0.2    
-##  [79] survival_3.8-9          iterators_1.0.14        fitdistrplus_1.2-6     
-##  [82] ROCR_1.0-12             nlme_3.1-169            progress_1.2.3         
-##  [85] bbotk_1.11.0            RcppAnnoy_0.0.23        mlr3pipelines_0.11.0   
-##  [88] bslib_0.11.0            mlr3_1.7.1              irlba_2.3.7            
-##  [91] vipor_0.4.7             KernSmooth_2.23-26      otel_0.2.0             
-##  [94] colorspace_2.1-2        moocore_0.3.1           nnet_7.3-20            
-##  [97] mlr3misc_0.22.0         tidyselect_1.2.1        compiler_4.6.0         
-## [100] BiocNeighbors_2.6.0     lgr_0.5.2               DelayedArray_0.38.2    
-## [103] plotly_4.12.0           checkmate_2.3.4         scales_1.4.0           
-## [106] DEoptimR_1.2-0          lmtest_0.9-40           hexbin_1.28.5          
-## [109] rappdirs_0.3.4          palmerpenguins_0.1.1    stringr_1.6.0          
-## [112] digest_0.6.39           goftest_1.2-3           spatstat.utils_3.2-3   
-## [115] rmarkdown_2.31          XVector_0.52.0          htmltools_0.5.9        
-## [118] pkgconfig_2.0.3         fastmap_1.2.0           rlang_1.3.0            
-## [121] GlobalOptions_0.1.4     htmlwidgets_1.6.4       ggthemes_5.2.0         
-## [124] shiny_1.14.0            farver_2.1.2            jquerylib_0.1.4        
-## [127] zoo_1.8-15              jsonlite_2.0.0          BiocParallel_1.46.0    
-## [130] BiocSingular_1.28.0     magrittr_2.0.5          Formula_1.2-5          
-## [133] dotCall64_1.2           Rcpp_1.1.2              viridis_0.6.5          
-## [136] reticulate_1.46.0       stringi_1.8.7           ggraph_2.2.2           
-## [139] MASS_7.3-65             plyr_1.8.9              parallel_4.6.0         
-## [142] listenv_1.0.0           ggrepel_0.9.8           deldir_2.0-4           
-## [145] graphlayouts_1.2.4      splines_4.6.0           tensor_1.5.1           
-## [148] hms_1.1.4               circlize_0.4.18         igraph_2.3.3           
-## [151] uuid_1.2-2              ranger_0.18.0           spatstat.geom_3.8-1    
-## [154] RcppHNSW_0.7.0          ScaledMatrix_1.20.0     reshape2_1.4.5         
-## [157] evaluate_1.0.5          laeken_0.5.3            tweenr_2.0.3           
-## [160] foreach_1.5.2           httpuv_1.6.17           VIM_7.0.0              
-## [163] RANN_2.6.2              purrr_1.2.2             polyclip_1.10-7        
-## [166] future_1.70.0           clue_0.3-68             scattermore_1.2        
-## [169] ggforce_0.5.0           rsvd_1.0.5              xtable_1.8-8           
-## [172] e1071_1.7-17            RSpectra_0.16-2         later_1.4.8            
-## [175] viridisLite_0.4.3       class_7.3-23            memoise_2.0.1          
-## [178] beeswarm_0.4.0          cluster_2.1.8.2         ggplot.multistats_1.0.1
-## [181] globals_0.19.1</code></pre>
+##   [7] sctransform_0.4.3       backports_1.5.1         utf8_1.2.6             
+##  [10] R6_2.6.1                mgcv_1.9-4              lazyeval_0.2.3         
+##  [13] uwot_0.2.4              GetoptLong_1.1.1        withr_3.0.3            
+##  [16] prettyunits_1.2.0       gridExtra_2.3.1         progressr_1.0.0        
+##  [19] cli_3.6.6               Cairo_1.7-0             spatstat.explore_3.8-1 
+##  [22] fastDummies_1.7.6       scatterpie_0.2.6        labeling_0.4.3         
+##  [25] sass_0.4.10             S7_0.2.2                robustbase_0.99-7      
+##  [28] spatstat.data_3.1-9     proxy_0.4-29            ggridges_0.5.7         
+##  [31] pbapply_1.7-4           yulab.utils_0.2.4       mlr3tuning_1.6.0       
+##  [34] paradox_1.0.1           parallelly_1.48.0       limma_3.68.4           
+##  [37] visNetwork_2.1.4        shape_1.4.6.1           ica_1.0-3              
+##  [40] spatstat.random_3.5-0   car_3.1-5               Matrix_1.7-5           
+##  [43] ggbeeswarm_0.7.3        abind_1.4-8             lifecycle_1.0.5        
+##  [46] scatterplot3d_0.3-45    yaml_2.3.12             carData_3.0-6          
+##  [49] SparseArray_1.12.2      Rtsne_0.17              promises_1.5.0         
+##  [52] crayon_1.5.3            miniUI_0.1.2            lattice_0.22-9         
+##  [55] beachmat_2.28.0         cowplot_1.2.0           magick_2.9.1           
+##  [58] pillar_1.11.1           knitr_1.51              rjson_0.2.23           
+##  [61] boot_1.3-32             future.apply_1.20.2     codetools_0.2-20       
+##  [64] glue_1.8.1              ggfun_0.2.1             spatstat.univar_3.2-0  
+##  [67] pcaMethods_2.4.0        data.table_1.18.4       vcd_1.4-13             
+##  [70] vctrs_0.7.3             png_0.1-9               spam_2.11-4            
+##  [73] Rdpack_2.6.6            gtable_0.3.6            cachem_1.1.0           
+##  [76] xfun_0.59               rbibutils_2.4.1         S4Arrays_1.12.0        
+##  [79] mime_0.13               tidygraph_1.3.1         RcppEigen_0.3.4.0.2    
+##  [82] survival_3.8-9          iterators_1.0.14        statmod_1.5.2          
+##  [85] fitdistrplus_1.2-6      ROCR_1.0-12             nlme_3.1-169           
+##  [88] progress_1.2.3          bbotk_1.11.0            RcppAnnoy_0.0.23       
+##  [91] mlr3pipelines_0.11.0    bslib_0.11.0            mlr3_1.7.1             
+##  [94] irlba_2.3.7             vipor_0.4.7             KernSmooth_2.23-26     
+##  [97] otel_0.2.0              colorspace_2.1-2        moocore_0.3.1          
+## [100] nnet_7.3-20             mlr3misc_0.22.0         tidyselect_1.2.1       
+## [103] compiler_4.6.0          BiocNeighbors_2.6.0     lgr_0.5.2              
+## [106] DelayedArray_0.38.2     plotly_4.12.0           checkmate_2.3.4        
+## [109] scales_1.4.0            DEoptimR_1.2-0          lmtest_0.9-40          
+## [112] hexbin_1.28.5           rappdirs_0.3.4          palmerpenguins_0.1.1   
+## [115] stringr_1.6.0           digest_0.6.39           goftest_1.2-3          
+## [118] spatstat.utils_3.2-3    rmarkdown_2.31          XVector_0.52.0         
+## [121] htmltools_0.5.9         pkgconfig_2.0.3         fastmap_1.2.0          
+## [124] rlang_1.3.0             GlobalOptions_0.1.4     htmlwidgets_1.6.4      
+## [127] ggthemes_5.2.0          shiny_1.14.0            farver_2.1.2           
+## [130] jquerylib_0.1.4         zoo_1.8-15              jsonlite_2.0.0         
+## [133] BiocParallel_1.46.0     BiocSingular_1.28.0     magrittr_2.0.5         
+## [136] Formula_1.2-5           dotCall64_1.2           Rcpp_1.1.2             
+## [139] viridis_0.6.5           reticulate_1.46.0       stringi_1.8.7          
+## [142] ggraph_2.2.2            MASS_7.3-65             plyr_1.8.9             
+## [145] parallel_4.6.0          listenv_1.0.0           ggrepel_0.9.8          
+## [148] deldir_2.0-4            graphlayouts_1.2.4      splines_4.6.0          
+## [151] tensor_1.5.1            hms_1.1.4               circlize_0.4.18        
+## [154] igraph_2.3.3            uuid_1.2-2              ranger_0.18.0          
+## [157] spatstat.geom_3.8-1     RcppHNSW_0.7.0          ScaledMatrix_1.20.0    
+## [160] reshape2_1.4.5          evaluate_1.0.5          laeken_0.5.3           
+## [163] tweenr_2.0.3            foreach_1.5.2           httpuv_1.6.17          
+## [166] VIM_7.0.0               RANN_2.6.2              purrr_1.2.2            
+## [169] polyclip_1.10-7         clue_0.3-68             scattermore_1.2        
+## [172] ggforce_0.5.0           rsvd_1.0.5              xtable_1.8-8           
+## [175] e1071_1.7-17            RSpectra_0.16-2         later_1.4.8            
+## [178] viridisLite_0.4.3       class_7.3-23            memoise_2.0.1          
+## [181] beeswarm_0.4.0          cluster_2.1.8.2         ggplot.multistats_1.0.1
+## [184] globals_0.19.1</code></pre>
 </div>
 
 

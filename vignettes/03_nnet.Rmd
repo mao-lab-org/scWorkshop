@@ -136,9 +136,10 @@ We therefore rank genes by their association with `pt_phi_score` and keep
 the top `r n_targets`.
 
 `rankFeatures()` fits a PLS model from expression to the continuous
-response and ranks genes by the absolute coefficient. Positive and
-negative coefficients are both useful: they mark genes associated with
-adult-like or fetal-like ends of the same maturation gradient.
+response and ranks genes by the absolute coefficient. The importance is
+therefore unsigned: a gene can rank high because it rises with
+maturation or because it falls. Exercise 1 asks which it is for our
+genes.
 
 ```{r rank-targets}
 rank_res <- PhiSpace::rankFeatures(
@@ -176,6 +177,44 @@ important than the principle: the target set defines the biological
 question asked of NeighbourNet. Here we keep only 10 target genes so the
 per-cell network cube is small enough to knit during the workshop.
 
+### Exercise 1: Which way do the target genes point?
+
+1. For each of the 10 target genes, compute the Spearman correlation
+   between its expression (`assay(cm, "logcounts")`) and
+   `cm$pt_phi_score`. Which genes are higher in foetal-like cells, and
+   which in adult-like cells?
+2. Only some of the 10 genes are used by NeighbourNet (you will see the
+   number below). NeighbourNet only models genes in its prior list of
+   target genes, `NeighbourNet::gene.list$targets`. Which of our genes
+   are missing from it?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-target-direction}
+target_check <- tibble(
+    gene = top_targets,
+    spearman_with_maturation = vapply(top_targets, function(g) {
+        cor(assay(cm, "logcounts")[g, ], cm$pt_phi_score, method = "spearman")
+    }, numeric(1)),
+    in_target_prior = top_targets %in% NeighbourNet::gene.list$targets
+) |>
+    mutate(spearman_with_maturation = round(spearman_with_maturation, 2))
+target_check
+```
+
+1. All 10 genes rise with maturation: none of them is higher in
+   foetal-like cells. A ranking by unsigned importance can be dominated
+   by one direction. To cover both ends of the gradient, rank the genes
+   separately by direction and take the top genes from each.
+2. Five genes are not in NeighbourNet's target prior, so they are
+   dropped: they are all expressed in thousands of nuclei, so expression
+   is not the reason. One of them, *NEAT1*, is a nuclear-retained
+   long non-coding RNA, which a list of protein targets does not cover.
+   The prior list decides which genes NeighbourNet can model at all.
+
+</details>
+
 ## Run NeighbourNet
 
 The core workflow is:
@@ -196,30 +235,30 @@ nnet_cache <- file.path(
     sprintf("07_seu_nnet_%02dtargets.rds", n_targets)
 )
 
+# NeighbourNet 1.0.0's select.gene() currently references a hard-coded
+# object name internally, so we reproduce the small filtering step here.
+select_nnet_genes <- function(seurat_obj, targets, min.cells = 10) {
+    gene_list <- NeighbourNet::gene.list
+    genes_all <- rownames(seurat_obj)
+    counts <- SeuratObject::LayerData(seurat_obj, layer = "counts")
+    n_cell_expressed <- Matrix::rowSums(counts[genes_all, , drop = FALSE] > 0)
+    genes_kept <- genes_all[n_cell_expressed > min.cells]
+
+    tfs <- intersect(genes_kept, unique(gene_list$tfs))
+    targets <- intersect(genes_kept, intersect(gene_list$targets, targets))
+
+    list(
+        tfs = tfs,
+        targets = targets,
+        bgs = character(0),
+        genes = unique(c(tfs, targets))
+    )
+}
+
 if (file.exists(nnet_cache)) {
     seu <- readRDS(nnet_cache)
     message("Loaded cached NeighbourNet object from ", nnet_cache)
 } else {
-    # NeighbourNet 1.0.0's select.gene() currently references a hard-coded
-    # object name internally, so we reproduce the small filtering step here.
-    select_nnet_genes <- function(seurat_obj, targets, min.cells = 10) {
-        gene_list <- NeighbourNet::gene.list
-        genes_all <- rownames(seurat_obj)
-        counts <- SeuratObject::LayerData(seurat_obj, layer = "counts")
-        n_cell_expressed <- Matrix::rowSums(counts[genes_all, , drop = FALSE] > 0)
-        genes_kept <- genes_all[n_cell_expressed > min.cells]
-
-        tfs <- intersect(genes_kept, unique(gene_list$tfs))
-        targets <- intersect(genes_kept, intersect(gene_list$targets, targets))
-
-        list(
-            tfs = tfs,
-            targets = targets,
-            bgs = character(0),
-            genes = unique(c(tfs, targets))
-        )
-    }
-
     genes <- select_nnet_genes(seu, targets = top_targets, min.cells = 10)
 
     cat("Predictor TFs:", length(genes$tfs), "\n")
@@ -258,78 +297,52 @@ if (file.exists(nnet_cache)) {
 }
 ```
 
-The expensive output now lives under `seu@misc$NNet.mod`. The most useful
-piece for this module is `meta.network$pcs`: one row per cell and one
-column per meta-network. You can read it like a network-space embedding,
-where cells close together have similar co-expression programs.
+The expensive output now lives under `seu@misc$NNet.mod`. Two pieces
+matter most for this module:
+
+- `meta.network$npca.loadings`: one row per cell and one column per
+  meta-network. Each value is a cell's non-negative **weight** on a
+  meta-network: how much that cell's own network contributes to it.
+- `meta.network$meta.network`: the meta-networks themselves, one
+  target × TF matrix per meta-network. Each is a weighted sum of the
+  cell-specific networks, with the weights above.
 
 ```{r inspect-nnet}
 nnet_mod <- Seurat::Misc(seu, "NNet.mod")
 names(nnet_mod)
 names(nnet_mod$meta.network)
-dim(nnet_mod$meta.network$pcs)
+dim(nnet_mod$meta.network$npca.loadings)
 dim(nnet_mod$meta.network$meta.network)
 ```
 
-## Meta-network Space
+## Meta-network Scores on the UMAP
 
-<!-- Just show results on the PCA UMAP-->
-
-Before visualising any one network, we check whether the meta-network
-embedding carries the maturation signal. If the first few meta-networks
-separate fetal-like and adult-like cells, NeighbourNet has found
-co-expression programs that vary with maturation.
-
-```{r meta-network-space, fig.width=11, fig.height=5}
-meta_pcs <- nnet_mod$meta.network$pcs
-if (is.null(rownames(meta_pcs))) {
-    rownames(meta_pcs) <- colnames(seu)
-}
-
-pcs_df <- as.data.frame(meta_pcs[, 1:2, drop = FALSE])
-colnames(pcs_df) <- c("NNet1", "NNet2")
-pcs_df$cell <- rownames(pcs_df)
-
-meta_df <- seu@meta.data[match(pcs_df$cell, rownames(seu@meta.data)), ]
-pcs_df$group <- meta_df$group
-pcs_df$pt_phi_score <- meta_df$pt_phi_score
-
-p_stage <- ggplot(pcs_df, aes(NNet1, NNet2, colour = group)) +
-    geom_point(size = 0.6, alpha = 0.75) +
-    scale_colour_brewer(palette = "Set1") +
-    labs(title = "Meta-network space by donor stage",
-         colour = "Stage") +
-    theme_bw(base_size = 12)
-
-p_pt <- ggplot(pcs_df, aes(NNet1, NNet2, colour = pt_phi_score)) +
-    geom_point(size = 0.6, alpha = 0.75) +
-    scale_colour_distiller(palette = "Spectral", direction = -1) +
-    labs(title = "Meta-network space by Φ-Space maturation score",
-         colour = "pt_phi_score") +
-    theme_bw(base_size = 12)
-
-p_stage | p_pt
-```
-
-### Meta-network scores on the PCA UMAP
-
-Figure 3B of the NeighbourNet paper projects meta-network cell weights
-back onto a familiar expression UMAP. This is useful pedagogically: the
-meta-network embedding above tells us that cells differ in network space,
-while the UMAP below tells us where those network programs sit on the
-ordinary expression manifold.
+Each cell has a weight on every meta-network: how much its own network
+contributes to that meta-network. Before looking at any one network,
+we check whether these scores carry the maturation signal. As in Figure
+3B of the NeighbourNet paper, we colour the familiar expression UMAP by
+the scores. If a meta-network's score changes from the foetal-like to
+the adult-like region, NeighbourNet has found a co-expression program
+that varies with maturation.
 
 We reuse the PCA-based UMAP from Module 2 and colour each cell by its
-score on meta-networks 1 and 2.
+weight on meta-networks 1 and 2, next to the Φ-Space maturation score for
+reference.
 
-```{r umap-meta-scores, fig.width=11, fig.height=5}
+```{r umap-meta-scores, fig.width=15, fig.height=5}
+meta_scores <- nnet_mod$meta.network$npca.loadings
+if (is.null(rownames(meta_scores))) {
+    rownames(meta_scores) <- colnames(seu)
+}
+
 umap <- reducedDim(cm, "UMAP")
-umap_df <- as.data.frame(umap[match(rownames(meta_pcs), colnames(cm)), ,
+umap_df <- as.data.frame(umap[match(rownames(meta_scores), colnames(cm)), ,
                              drop = FALSE])
 colnames(umap_df) <- c("UMAP1", "UMAP2")
-umap_df$cell <- rownames(meta_pcs)
-umap_df$NNet1 <- meta_pcs[, 1]
-umap_df$NNet2 <- meta_pcs[, 2]
+umap_df$cell <- rownames(meta_scores)
+umap_df$NNet1 <- meta_scores[, 1]
+umap_df$NNet2 <- meta_scores[, 2]
+umap_df$pt_phi_score <- seu$pt_phi_score[match(umap_df$cell, colnames(seu))]
 
 umap_score_plot <- function(score_col, title) {
     ggplot(umap_df, aes(UMAP1, UMAP2, colour = .data[[score_col]])) +
@@ -339,13 +352,14 @@ umap_score_plot <- function(score_col, title) {
         theme_bw(base_size = 12)
 }
 
-umap_score_plot("NNet1", "Meta-network 1 score on PCA UMAP") |
-    umap_score_plot("NNet2", "Meta-network 2 score on PCA UMAP")
+umap_score_plot("NNet1", "Meta-network 1 weight") |
+    umap_score_plot("NNet2", "Meta-network 2 weight") |
+    umap_score_plot("pt_phi_score", "Φ-Space maturation score")
 ```
 
 ## Pick the Maturation Meta-network
 
-Each meta-network has a cell score. We correlate each score with
+Each meta-network has a weight per cell. We correlate each weight with
 `pt_phi_score`. The paper notes that the meta-networks are ordered:
 meta-network 1 is the strongest recurring co-expression pattern in the
 ensemble, and meta-network 2 is the next strongest pattern. We therefore
@@ -363,8 +377,8 @@ safe_cor <- function(x, y) {
 }
 
 cor_tbl <- tibble(
-    meta_network = seq_len(ncol(meta_pcs)),
-    spearman_cor = apply(meta_pcs, 2, safe_cor, y = seu$pt_phi_score)
+    meta_network = seq_len(ncol(meta_scores)),
+    spearman_cor = apply(meta_scores, 2, safe_cor, y = seu$pt_phi_score)
 ) |>
     mutate(abs_cor = abs(spearman_cor)) |>
     arrange(desc(abs_cor))
@@ -379,6 +393,11 @@ This selection is intentionally data-driven. We are not deciding which
 network "looks right"; we are asking which recurring co-expression pattern
 tracks the continuous maturation score most strongly.
 
+The signs matter too. Meta-network 1's weight falls with maturation: it
+is the co-expression pattern of **foetal-like** cells. Meta-network 2's
+weight rises with maturation: it is the pattern of **post-natal**
+cells. The UMAP above shows the same thing.
+
 ## Meta-network Adjacency Matrices
 
 Figure 3C in the paper shows the weighted adjacency matrices behind the
@@ -387,7 +406,7 @@ meta-network: bright tiles mark TF-target pairs with strong aggregated
 co-expression in that recurrent network pattern.
 
 Because our workshop run keeps only 10 requested target genes, and five
-survive NeighbourNet's target-prior and expression filters in this data,
+of them are in NeighbourNet's target prior,
 we show all retained targets and the top 10 TFs for each meta-network.
 
 ```{r meta-network-adjacency, fig.width=12, fig.height=5}
@@ -520,7 +539,7 @@ The tables are ordinary data frames, so you can sort, filter or save them:
 meta_tabs[[1]]$edges
 ```
 
-**Try it.**
+### Exercise 2: Read the interactive networks
 
 1. In meta-network 1, which target gene is the hub? Which TF modules feed
    into it?
@@ -529,26 +548,69 @@ meta_tabs[[1]]$edges
    TFs were selected for drawing?
 3. Compare the two meta-networks. Do they use different TF modules for
    different target genes?
+4. How many edges have prior-knowledge support (solid lines)? What does
+   that mean for how you describe these networks?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-read-networks}
+# Edges per target gene, and the TF modules they come from
+lapply(meta_tabs, function(tabs) {
+    tabs$edges |>
+        group_by(target = sub("^g1\\.", "", to)) |>
+        summarise(n_edges = n(),
+                  tf_modules = paste(sort(unique(module)), collapse = ", "),
+                  strongest_weight = round(max(weight), 2))
+})
+
+# ZBTB20's strongest TFs in meta-network 1, by weight
+zbtb20_w <- nnet_mod$meta.network$meta.network["ZBTB20", , 1]
+round(head(sort(zbtb20_w, decreasing = TRUE), 3), 2)
+
+# ...compared with the TFs of the strongest edges in the drawing
+pde3a_w <- nnet_mod$meta.network$meta.network["PDE3A", , 1]
+round(head(sort(pde3a_w, decreasing = TRUE), 3), 2)
+
+# Edges with prior-knowledge support, per meta-network
+vapply(meta_tabs, function(tabs) sum(tabs$edges$prior != "none"), integer(1))
+```
+
+1. *MYOM2* has the most edges in meta-network 1, from TF modules 1 and
+   2. *PDE3A* has almost as many and the strongest ones.
+2. ZBTB20's partners (ZHX2, PLAG1, ...) are confident but their edge
+   weights are about half those of PDE3A's partners. The plot only
+   draws a few **central** TFs per meta-network, chosen by weight, so
+   ZBTB20's partners were not drawn. Confidence and weight are different
+   things: an edge can be reliable but weak.
+3. Yes. Meta-network 1 links TF modules 1 and 2 to *PDE3A* and *MYOM2*;
+   meta-network 2 links modules 3 and 4 (IRX5, IRX3, HSF4, HLF) mostly to
+   *MYOM2*.
+4. None: every edge is dashed. These are co-expression patterns with no
+   support from the prior, so they are hypotheses to test, not known
+   regulation.
+
+</details>
 
 ## Representative Cell-specific Networks
 
 A meta-network is an aggregate over many cell-specific networks. To make
 that connection concrete, we pick one representative cell for each of the
-first two meta-networks: the cell with the largest score on that
+first two meta-networks: the cell with the largest weight on that
 meta-network. These plots are slices of the original cell-specific network
 ensemble, not averages.
 
 ```{r representative-cells}
-shown_meta_networks <- seq_len(min(2, ncol(meta_pcs)))
+shown_meta_networks <- seq_len(min(2, ncol(meta_scores)))
 rep_tbl <- tibble(
     meta_network = shown_meta_networks,
     cell_idx = vapply(shown_meta_networks, function(i) {
-        which.max(meta_pcs[, i])
+        which.max(meta_scores[, i])
     }, integer(1))
 ) |>
     mutate(
-        cell = rownames(meta_pcs)[cell_idx],
-        meta_score = meta_pcs[cbind(cell_idx, meta_network)],
+        cell = rownames(meta_scores)[cell_idx],
+        meta_weight = meta_scores[cbind(cell_idx, meta_network)],
         group = seu$group[match(cell, colnames(seu))],
         pt_phi_score = seu$pt_phi_score[match(cell, colnames(seu))]
     )
@@ -586,6 +648,193 @@ The representative cell networks should resemble their corresponding
 meta-networks, but they will be noisier. That is the point of the
 meta-network step: it denoises repeated cell-specific patterns without
 collapsing the whole population into a single global network.
+
+### Exercise 3: A foetal cell and an adult cell
+
+The representative cells above are chosen by meta-network weight. Instead,
+compare the cell-specific networks of the **most foetal-like** and the
+**most adult-like** cell (lowest and highest `pt_phi_score`). Use
+`nnet_tables(seu, i = <cell index>, meta.network = FALSE)` and
+`nnet_vis()`: gene positions are the same as in the meta-network views,
+so you can compare all four directly. Which TFs and targets are
+connected in each cell? Which donor stage does the most adult-like cell
+come from?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-two-cells}
+extreme_cells <- c(most_foetal = which.min(seu$pt_phi_score),
+                   most_adult  = which.max(seu$pt_phi_score))
+seu$group[extreme_cells]
+
+cell_tabs <- lapply(extreme_cells, function(i) {
+    nnet_tables(seu, i = i, meta.network = FALSE,
+                radius = c(0.4, 0.7, 0.85, 1))
+})
+lapply(cell_tabs, `[[`, "edges")
+
+nnet_vis(cell_tabs$most_foetal, title = "Most foetal-like cell")
+nnet_vis(cell_tabs$most_adult, title = "Most adult-like cell")
+```
+
+- The two cells use different TFs, and each looks like one of the
+  meta-networks. In the most foetal-like cell, *PDE3A* is linked to TOX,
+  as in meta-network 1 (the foetal pattern). In the most adult-like
+  cell, KLF9 and HSF4 (TF module 4, as in meta-network 2, the post-natal
+  pattern) link to *PDE3A*, *MYOM2* and *ZBTB20*.
+- The most adult-like cell comes from a **young** donor, not an adult
+  one: as in Module 2, maturity varies within an age group.
+- Each cell shows only a few edges above the cutoff. Single-cell networks
+  are noisy, which is why NeighbourNet summarises them into
+  meta-networks.
+
+</details>
+
+## Does an Edge Change as Cells Mature?
+
+The question of this module is whether relationships between genes
+change as cardiomyocytes mature. NeighbourNet stores, for every cell, the
+signed strength of each TF–target association in that cell's
+neighbourhood: `effect[target, TF, cell]`. Positive means the two genes
+go up and down together, negative means one goes up as the other goes
+down. Following one edge across cells, ordered by `pt_phi_score`, shows
+whether it changes with maturation.
+
+```{r edge-along-maturation, fig.width=8, fig.height=4.5}
+edge_along_maturation <- function(tf, target) {
+    effect <- nnet_mod$effect[target, tf, ]
+    df <- tibble(
+        pt_phi_score = seu$pt_phi_score,
+        effect = effect,
+        stage = factor(seu$group, levels = c("fetal", "young", "adult"))
+    )
+    ggplot(df, aes(pt_phi_score, effect)) +
+        geom_hline(yintercept = 0, colour = "grey50") +
+        geom_point(aes(colour = stage), size = 0.5, alpha = 0.5) +
+        geom_smooth(colour = "black", se = FALSE) +
+        scale_colour_brewer(palette = "Set1") +
+        labs(title = paste(tf, "–", target),
+             subtitle = sprintf("Spearman correlation with maturation: %.2f",
+                                cor(effect, df$pt_phi_score,
+                                    method = "spearman")),
+             x = "Φ-Space maturation score", y = "Cell-specific effect",
+             colour = "Stage") +
+        theme_bw(base_size = 12)
+}
+
+edge_along_maturation("NR3C2", "PDE3A")
+```
+
+The strongest edge of meta-network 1, NR3C2–PDE3A, is strongest in
+foetal-like cells and weaker after birth, as we would expect for the
+foetal meta-network.
+
+### Exercise 4: Follow other edges
+
+1. Draw TOX–PDE3A, another edge of meta-network 1. How does it change
+   with maturation, compared with NR3C2–PDE3A?
+2. Draw IRX5–MYOM2, the strongest edge of meta-network 2.
+3. A meta-network contains edges that change in different ways along
+   maturation. Why might that be?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-edges, fig.width=12, fig.height=4.5}
+edge_along_maturation("TOX", "PDE3A") | edge_along_maturation("IRX5", "MYOM2")
+```
+
+1. TOX–PDE3A is **negative** in foetal-like cells and close to zero after
+   birth: the two genes move in opposite directions in foetal cells and
+   become unrelated later. NR3C2–PDE3A is positive and also weakens
+   after birth. Both edges are strongest in foetal-like cells, like
+   meta-network 1, and both change most at the foetal to post-natal
+   transition, the biggest change in this data (Module 2).
+2. IRX5–MYOM2 goes the other way: it gets stronger with maturation, like
+   meta-network 2's weight.
+3. NeighbourNet builds meta-networks from the **size** of each edge
+   (it squares the effects), not its sign. Edges whose size rises and
+   falls together across cells end up in the same meta-network, even if
+   one is positive and the other negative, as for NR3C2–PDE3A and
+   TOX–PDE3A.
+
+</details>
+
+## Optional Exercises
+
+### Exercise 5: How much does the edge cutoff matter?
+
+Every network view above draws only the edges whose confidence is above
+a cutoff. The default is the mean, over target genes, of each target's
+strongest edge confidence. Redraw meta-network 1 with `cutoff = 0.5` and
+`cutoff = 0.99` in `nnet_tables()`. Which edges survive a strict cutoff?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-cutoff}
+meta_tabs[[1]]$info$cutoff  # the default cutoff
+
+for (cutoff in c(0.5, 0.99)) {
+    tabs <- nnet_tables(seu, i = 1, meta.network = TRUE, cutoff = cutoff,
+                        radius = c(0.4, 0.7, 0.85, 1))
+    cat("cutoff", cutoff, ":", nrow(tabs$edges), "edges\n")
+}
+
+strict <- nnet_tables(seu, i = 1, meta.network = TRUE, cutoff = 0.99,
+                      radius = c(0.4, 0.7, 0.85, 1))
+strict$edges
+nnet_vis(strict, title = "Meta-network 1, cutoff 0.99")
+```
+
+A lower cutoff adds weaker edges; a strict cutoff keeps only the most
+confident ones, here edges into *PDE3A*. The cutoff changes how busy the
+picture is, not the network itself: report it with any network figure,
+and check that your conclusions do not depend on it.
+
+</details>
+
+### Exercise 6: More target genes
+
+We kept only 10 target genes so the module runs quickly. Re-run
+NeighbourNet with the top 20 genes from `rank_tbl` (about 40 seconds and
+1 GB of memory). How many targets does NeighbourNet keep? Do the first
+two meta-networks still track maturation (compare with the correlation
+table above)?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-more-targets}
+seu20 <- as.Seurat(cm, counts = "counts", data = "logcounts")
+seu20$pt_phi_score <- cm$pt_phi_score
+
+genes20 <- select_nnet_genes(seu20, targets = head(rank_tbl$feature, 20))
+genes20$targets
+
+seu20 <- seu20 |>
+    prepare.seurat(genes = genes20$genes, npcs = 50) |>
+    prepare.graph(knn = 30) |>
+    prepare.reg(predictors = genes20$tfs, responses = genes20$targets) |>
+    run.nn.reg(responses = genes20$targets, return.p.val = TRUE) |>
+    build.meta.network(n.net = 2)
+
+w20 <- Seurat::Misc(seu20, "NNet.mod")$meta.network$npca.loadings
+round(cor(w20, seu20$pt_phi_score, method = "spearman"), 2)
+
+rm(seu20)
+invisible(gc())
+```
+
+- NeighbourNet keeps 9 of the 20 genes: the 5 from before plus *CFLAR*,
+  *DGKG*, *IGFBP7* and *MYH6*. The others are not in its target prior.
+- The pattern is the same: meta-network 1's weight falls with
+  maturation (the foetal pattern) and meta-network 2's rises (the
+  post-natal pattern), with correlations of similar size. The main
+  result does not depend on keeping only 10 genes.
+
+</details>
 
 ## What We Are Not Running
 

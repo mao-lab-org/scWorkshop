@@ -56,7 +56,71 @@ The standard clustering-based cell type annotation annotates cell clusters by lo
 
 Another issue of the conventional clustering-based annotation approach is that of 'double-dipping', which has been highlighted by recent statistical literature e.g. [this paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC10418557/) and [that paper](https://www.biorxiv.org/content/10.64898/2026.10.02.756269v1.full). This problem refers to the inflated statistical significance due to conducting clustering and differential gene test on the same data. This problem will probably be more severe when dealing with fine cell types. 
 
-<!-- Need a simulation here-->
+### A quick simulation of double-dipping
+
+To see the problem, we simulate 1,000 cells from **one** population:
+every gene has the same expected expression in every cell, so there are
+no real cell types and no real marker genes. We then run the standard
+Seurat workflow (cluster, then test for marker genes between clusters).
+For comparison, we also test between two groups chosen at random, which
+is what a valid test of "no difference" looks like.
+
+```{r double-dipping, fig.width=10, fig.height=4}
+library(Seurat)
+library(ggplot2)
+
+set.seed(2026)
+n_genes <- 1000
+n_cells <- 1000
+gene_means <- rgamma(n_genes, shape = 0.5, rate = 0.5)
+sim_counts <- matrix(
+    rpois(n_genes * n_cells, lambda = gene_means), n_genes, n_cells,
+    dimnames = list(paste0("gene", seq_len(n_genes)),
+                    paste0("cell", seq_len(n_cells)))
+)
+
+sim <- CreateSeuratObject(as(sim_counts, "dgCMatrix")) |>
+    NormalizeData(verbose = FALSE) |>
+    FindVariableFeatures(verbose = FALSE) |>
+    ScaleData(verbose = FALSE) |>
+    RunPCA(npcs = 10, verbose = FALSE) |>
+    FindNeighbors(dims = 1:10, verbose = FALSE) |>
+    FindClusters(resolution = 0.5, verbose = FALSE)
+table(Idents(sim))
+
+# Clusters 0 vs 1: clustering and testing on the same data
+de_clusters <- FindMarkers(sim, ident.1 = "0", ident.2 = "1",
+                           logfc.threshold = 0, min.pct = 0)
+# Two random groups: a valid test
+sim$random_group <- sample(c("A", "B"), n_cells, replace = TRUE)
+de_random <- FindMarkers(sim, ident.1 = "A", ident.2 = "B",
+                         group.by = "random_group",
+                         logfc.threshold = 0, min.pct = 0)
+
+data.frame(
+    comparison    = c("cluster 0 vs cluster 1", "random groups"),
+    p_below_0.05  = c(sum(de_clusters$p_val < 0.05), sum(de_random$p_val < 0.05)),
+    adj_p_below_0.05 = c(sum(de_clusters$p_val_adj < 0.05),
+                         sum(de_random$p_val_adj < 0.05))
+)
+
+rbind(data.frame(comparison = "cluster 0 vs cluster 1", p = de_clusters$p_val),
+      data.frame(comparison = "random groups", p = de_random$p_val)) |>
+    ggplot(aes(p)) +
+    geom_histogram(breaks = seq(0, 1, 0.05), fill = "grey60", colour = "white") +
+    facet_wrap(~ comparison) +
+    labs(x = "p-value", y = "Number of genes",
+         title = "No gene truly differs between any cells") +
+    theme_bw(base_size = 12)
+```
+
+With no real difference, about 5% of genes should have p < 0.05, and the
+p-values should be spread evenly between 0 and 1. The random groups
+behave like that. Between the two clusters, about four times as many
+genes look "significant", and some survive multiple-testing correction:
+the clustering split the cells along random noise, and the test then
+rediscovers that noise. The same can happen in real data, especially
+when clusters are split into fine subtypes that differ only slightly.
 
 Our dataset spans foetal, young and adult heart samples, so many cells — especially cardiomyocytes — are in the middle of a maturation continuum. A discrete label forces each cell into one bin and throws away the very gradient we want to study in Module 2 (pseudotime) and Module 3 (cell-specific co-expression networks).
 
@@ -132,7 +196,35 @@ A Φ-Space annotation is only as good as the reference it is built on. For the S
 
 We use the **Gao et al. 2026** (*Genome Biology*) integrative snRNA-seq atlas of the human left ventricle. It combines 299 donors from eight published studies, spans 8 post-conceptional weeks through ≥60 years, and provides harmonised cell type and age-group annotations. We have pre-filtered it to non-diseased donors and balanced the major cell types by down-sampling; the processing recipe is documented in the original workshop's [`references/HPC_reference_processing.md`](https://github.com/phipsonlab/single_cell_workshop/blob/main/references/HPC_reference_processing.md).
 
-<!-- Add an extension/exercise here: ask participants to think about if a scRNA-seq reference will work. -->
+### Exercise 1: Would a single-cell reference work?
+
+Our query is single-*nucleus* RNA-seq, and so is the Gao et al.
+reference. Many published heart atlases are single-*cell* RNA-seq
+instead. Discuss with your neighbour: could you use a whole-cell
+scRNA-seq reference to annotate this snRNA-seq query? What could go
+wrong, and how would you check?
+
+<details>
+<summary>Some points to consider</summary>
+
+- **Coverage.** A reference can only score cells against phenotypes it
+  contains. Adult cardiomyocytes are too large to capture as intact
+  cells, so whole-cell heart datasets often have few or none of them,
+  which is exactly why Sim et al. sequenced nuclei. A query cell with no
+  matching reference phenotype still gets scores, but they can only say
+  which of the *available* phenotypes it resembles most.
+- **Technology differences.** Nuclei and whole cells capture different
+  transcripts. Nuclear data have more unspliced (intronic) reads and
+  nuclear-retained RNAs such as *MALAT1*; whole-cell data have more
+  mitochondrial and other cytoplasmic transcripts. Genes that differ for
+  technical reasons can shift the scores.
+- **How to check.** Look at whether well-known markers get the expected
+  scores (for example, foetal query cells scoring high on foetal
+  phenotypes), compare with a second reference if one exists, and
+  consider dropping genes known to differ between nuclei and cells
+  (mitochondrial genes, for example) before fitting.
+
+</details>
 
 Two columns from the reference drive everything that follows:
 
@@ -179,8 +271,8 @@ Even after splitting, some fine labels are tiny (e.g. `Cardiomyocyte:Senescent` 
 Three preparation steps are required before we can run Φ-Space:
 
 1.  **Match normalisation.** Φ-Space does not do batch correction between reference and query; it relies on both being on the same numerical scale.
-2.  **Match gene names.** PLS can only use genes present in both datasets.
-3.  **Quality control.** Remove all-zero genes from the query, which would otherwise carry no signal but still consume model capacity.
+2.  **Match gene names.** PLS can only use genes present in both datasets. Both datasets here use gene symbols.
+3.  **Quality control.** Remove genes with no counts in any query cell. They carry no signal about the query.
 
 ### Match normalisation with scran
 
@@ -213,25 +305,27 @@ assayNames(query)
 
 Both objects now carry a `logcounts` assay, and that is what Φ-Space will use below (`refAssay = "logcounts"`).
 
-<!-- Need an exercise: what about SCTransform for ref and scran for query? What about scRNA-seq vs spatial query, how to normalise?  -->
+How much does it matter that both use the same normalisation? Exercise 2
+at the end of this module lets you test it.
 
 ### Keep common genes and remove zero-expression genes
 
-<!-- this step is unnecessary as the genes are matched internally. Check if we can delete this part -->
+`PhiSpace()` itself keeps only the genes found in both reference and
+query, so you don't need to match genes before calling it. We still
+subset the query here, because Modules 2 and 3 continue with this query
+object and should only see genes that Φ-Space could use. `zeroFeatQC()`
+then removes genes with no counts in any query cell.
 
 ```{r common-genes}
-common <- intersect(rownames(reference), rownames(query))
 cat("Reference genes:", nrow(reference), "\n")
 cat("Query genes:    ", nrow(query), "\n")
-cat("Common:         ", length(common), "\n")
 
-reference <- reference[common, ]
-query     <- query[common, ]
-query     <- zeroFeatQC(query)
+query <- query[intersect(rownames(query), rownames(reference)), ]
+query <- zeroFeatQC(query)
 dim(query)
 ```
 
-The gene-symbol overlap is above ten thousand, which is plenty for PLS.
+That leaves about 15,000 genes, plenty for PLS.
 
 ## Running Φ-Space
 
@@ -242,31 +336,20 @@ We now fit the PLS model on the reference and project the query into the phenoty
 
 We also pass `cellTypeThreshold = 20` so that phenotype levels represented by fewer than 20 reference cells are dropped before PLS fitting — this trims the long tail of rare CM / Fibroblast subclusters without touching the well-populated ones.
 
-<!-- Is this still true? We might ask teh participants to run by themselves as the package should be much faster to run now. -->
-
-This step is the computational bottleneck of the module (even though it's only around one minute on a laptop), so we cache the output.
+Fitting the model and scoring all 10,000 query cells takes a few seconds,
+so we run it live.
 
 ```{r run-phispace}
-phispace_cache <- file.path(results_dir, "05_phispace_query.rds")
-
-if (file.exists(phispace_cache)) {
-    query <- readRDS(phispace_cache)
-    message("Loaded cached PhiSpace result from ", phispace_cache)
-} else {
-    query <- PhiSpace(
-        reference         = reference,
-        query             = query,
-        phenotypes        = c("cell_type_fine", "age_group"),
-        refAssay          = "logcounts",
-        regMethod         = "PLS",
-        center            = TRUE,
-        scale             = FALSE,
-        cellTypeThreshold = 20
-    )
-    # Keep logcounts in the cache — Module 2 needs it for PCA on the
-    # expression side of its pseudotime comparison.
-    saveRDS(query, phispace_cache)
-}
+query <- PhiSpace(
+    reference         = reference,
+    query             = query,
+    phenotypes        = c("cell_type_fine", "age_group"),
+    refAssay          = "logcounts",
+    regMethod         = "PLS",
+    center            = TRUE,
+    scale             = FALSE,
+    cellTypeThreshold = 20
+)
 ```
 
 The phenotype-space embedding is stored as a `reducedDim`:
@@ -282,9 +365,11 @@ Each row is a query cell, each column is a reference phenotype level. Values are
 
 ### On the number of components
 
-Φ-Space defaults `ncomp` to the total number of phenotype levels (here 17). This is a sensible starting point that we have found works well in practice. What we tend to observe is that, when there are many phenotypes (e.g. 60 cell types), setting `ncomp` to the default value (e.g. 60) might be too much. This is because many of these cell types are heavily correlated, hence we do not need as many components to capture all the signal. When this is the case, setting `ncomp` to, say, `30` , might be a better choice.
+Φ-Space defaults `ncomp` to the total number of phenotype levels (here 28). This is a sensible starting point that we have found works well in practice. What we tend to observe is that, when there are many phenotypes (e.g. 60 cell types), setting `ncomp` to the default value (e.g. 60) might be too much. This is because many of these cell types are heavily correlated, hence we do not need as many components to capture all the signal. When this is the case, setting `ncomp` to, say, `30` , might be a better choice.
 
-<!-- Can also limite the number of features to use. maybe show a heatmap with fewer features. And ask participants what's the effect of using fewer features. My experience is that it matters when we need more specificity: in that case using fewer features amounts to using fewer DE genes. -->
+Another setting is `nfeat`, the number of genes Φ-Space selects to
+predict each phenotype. By default it uses all genes. Exercise 3 at the
+end of this module asks what changes when you use fewer.
 
 ## Exploring the Phenotype Space
 
@@ -316,7 +401,7 @@ draw(ht, heatmap_legend_side = "right")
 Two patterns should jump out:
 
 - Within the `age group` columns, the diagonal block structure tells you that Φ-Space has correctly recovered the developmental stage of each query cell without ever being told what stage it was from.
-- Within the `cell type` columns, the dominant column for most cells is `Cardiomyocyte`, as expected for a heart sample — but a subset of cells score high on `Fibroblast`, `Endothelial`, `Myeloid`, etc.
+- Within the `cell type` columns, the dominant column for most cells is one of the `Cardiomyocyte:` subtypes, as expected for a heart sample — but a subset of cells score high on `Fibroblast:` subtypes, `Endothelial`, `Myeloid`, etc.
 
 ### PCA biplot of the phenotype space
 
@@ -445,6 +530,177 @@ ggplot(cm_df, aes(age_phenotype, score, fill = group)) +
 ```
 
 Notice that even within a single query stage there is substantial spread along the age-group axis. A hard classifier hides this spread; the continuous scores are exactly what slingshot will exploit to trace a maturation trajectory.
+
+## Exercises: How Robust Are the Scores? (Optional)
+
+Each `PhiSpace()` run takes a few seconds, so you can try different
+settings and compare the scores with the ones above. The two helper
+functions below do the bookkeeping. Neither changes `query` or
+`phi_scores`, so the rest of the workshop is not affected.
+
+```{r exercise-helpers}
+# Run Φ-Space with the settings used above; return the score matrix.
+phi_run <- function(ref, qry, refAssay = "logcounts", queryAssay = NULL, ...) {
+    res <- PhiSpace(
+        reference         = ref,
+        query             = qry,
+        phenotypes        = c("cell_type_fine", "age_group"),
+        refAssay          = refAssay,
+        queryAssay        = queryAssay,
+        regMethod         = "PLS",
+        center            = TRUE,
+        scale             = FALSE,
+        cellTypeThreshold = 20,
+        ...
+    )
+    reducedDim(res, "PhiSpace")[, colnames(phi_scores)]
+}
+
+# Compare new scores with the original ones (`phi_scores`):
+# - median correlation of the cell-type and age-group score columns;
+# - % of cells that get the same broad and fine cell-type label.
+compare_scores <- function(new, old = phi_scores) {
+    ct <- setdiff(colnames(old), age_cols)
+    fine_new <- getLabels(new[, ct])
+    fine_old <- getLabels(old[, ct])
+    tibble(
+        cor_cell_type = median(diag(cor(new[, ct], old[, ct]))),
+        cor_age_group = median(diag(cor(new[, age_cols], old[, age_cols]))),
+        same_broad_label_pct = 100 * mean(sub(":.*$", "", fine_new) ==
+                                          sub(":.*$", "", fine_old)),
+        same_fine_label_pct  = 100 * mean(fine_new == fine_old)
+    ) |>
+        mutate(across(everything(), \(x) round(x, 2)))
+}
+
+compare_scores(phi_scores)  # sanity check: identical scores
+```
+
+### Exercise 2: Does matching normalisation matter?
+
+Φ-Space assumes reference and query are on the same numerical scale.
+Find out what happens when they are not. Run Φ-Space three times and
+compare each result with `compare_scores()`:
+
+a. Normalise the query with simple library-size normalisation instead of
+   scran: `logNormTransf(query, assayName = "counts", targetAssay = "lognorm")`,
+   then `phi_run(reference, query_ln, queryAssay = "lognorm")`.
+b. Forget to normalise the query: `phi_run(reference, query, queryAssay = "counts")`.
+   Read the warning.
+c. Replace both datasets with within-cell **ranks** (`RankTransf()`),
+   which do not depend on normalisation at all. Subset the reference to
+   the query's genes first, so that both rank the same genes.
+
+Which mismatch matters, and which doesn't? Then discuss:
+
+- The reference was normalised with Seurat's **SCTransform** and you
+  only have that, while the query uses scran. What would you do?
+- The query is **imaging-based spatial** data (a panel of a few hundred
+  genes). How would you normalise reference and query?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-normalisation}
+# a. library-size log-normalisation instead of scran
+query_ln <- logNormTransf(query, assayName = "counts", targetAssay = "lognorm")
+scores_ln <- phi_run(reference, query_ln, queryAssay = "lognorm")
+
+# b. raw counts in the query, log counts in the reference
+scores_counts <- phi_run(reference, query, queryAssay = "counts")
+
+# c. ranks for both, on the same genes
+ref_rank   <- RankTransf(reference[rownames(query), ], assayname = "logcounts")
+query_rank <- RankTransf(query, assayname = "counts")
+scores_rank <- phi_run(ref_rank, query_rank, refAssay = "rank")
+
+bind_rows(
+    "a. library-size log-normalisation" = compare_scores(scores_ln),
+    "b. raw counts"                     = compare_scores(scores_counts),
+    "c. ranks"                          = compare_scores(scores_rank),
+    .id = "query normalisation"
+)
+```
+
+- **(a) barely matters.** scran and library-size normalisation are both
+  log-normalisations of counts, so the scores hardly change.
+- **(b) matters a lot.** Raw counts are on a much larger scale than log
+  counts, the scores are distorted, and many cells change label.
+  Φ-Space warns about this.
+- **(c) keeps most of the signal.** Ranks give the same result whatever
+  normalisation each dataset had, because normalisation does not change
+  the order of genes within a cell. The price is resolution: broad cell
+  types are mostly kept, fine subtypes much less.
+
+For the discussion:
+
+- **SCTransform.** SCTransform's `data` layer holds log-transformed
+  corrected counts, close to an ordinary log-normalisation, so it can be
+  paired with a log-normalised query, as in (a). Its `scale.data` layer
+  holds Pearson residuals, which are centred and on a different scale:
+  mixing those with log counts is a mismatch like (b). Best is to
+  re-normalise both datasets the same way from raw counts; if the
+  reference's counts are not available, ranks (c) are a safe fallback.
+- **Spatial query.** Use only the genes on the panel, for both datasets,
+  and normalise both the same way after subsetting (library-size
+  normalisation on a small panel is driven by which genes are on it).
+  Ranks are robust here too, because sequencing and imaging detect genes
+  with very different efficiencies.
+
+</details>
+
+### Exercise 3: Fewer features
+
+By default, Φ-Space uses all genes. With `nfeat`, it uses only the genes
+that matter most for each phenotype, which is similar in spirit to using
+only marker (DE) genes. Run `phi_run(reference, query, nfeat = 100)` and
+compare the scores with the original ones. Which scores change, and
+which don't? Look in particular at the age-group scores of the
+cardiomyocytes: does the adult cardiomyocytes' best-matching reference
+age group change?
+
+<details>
+<summary>Solution</summary>
+
+```{r exercise-nfeat, fig.width=10, fig.height=5}
+scores_nf <- phi_run(reference, query, nfeat = 100)
+compare_scores(scores_nf)
+
+# Median age-group score of cardiomyocytes, by query stage
+is_cm <- query$PhiCellTypeBroad == "Cardiomyocyte"
+age_order <- c("fetal", "young", "middle", "old")
+age_medians <- function(scores) {
+    apply(scores[is_cm, age_order], 2, \(x) tapply(x, query$group[is_cm], median))
+}
+list(all_genes = round(age_medians(phi_scores), 2),
+     nfeat_100 = round(age_medians(scores_nf), 2))
+
+stage_split <- factor(query$group[is_cm], levels = c("fetal", "young", "adult"))
+age_heatmap <- function(scores, title) {
+    Heatmap(scores[is_cm, age_order], name = title, column_title = title,
+            row_split = stage_split, cluster_columns = FALSE,
+            cluster_row_slices = FALSE, show_row_names = FALSE,
+            show_row_dend = FALSE, row_title_rot = 0)
+}
+draw(age_heatmap(phi_scores, "All genes") +
+         age_heatmap(scores_nf, "nfeat = 100"))
+```
+
+- The **cell-type scores** and the **foetal** score change little: those
+  phenotypes differ in many genes, and the top 100 carry the signal.
+  Broad labels hardly change; about a fifth of cells change their fine
+  subtype label, the most sensitive part of the annotation.
+- The **post-natal age-group scores** (`young`, `middle`, `old`) change
+  the most. These groups differ in fewer genes, and using all genes
+  dilutes them. With 100 genes per phenotype, the adult donors'
+  cardiomyocytes move from `young` towards `middle`, closer to their
+  true age (35–42 years).
+
+Fewer features help when you need **specificity** between similar
+phenotypes. They cost robustness: with fewer genes, each gene's noise
+matters more.
+
+</details>
 
 ## Handing Off to Module 2
 

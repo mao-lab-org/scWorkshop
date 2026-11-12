@@ -9,9 +9,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Single Cell Workshop" />
+<meta name="author" content="Jiadong Mao (UniMelb), Yidi Deng (Florey), Belinda Phipson (WEHI), Melody Jin (WEHI)" />
 
-<meta name="date" content="2026-11-11" />
+<meta name="date" content="2026-11-12" />
 
 <title>Introduction: Continuous Cell States in the Maturing Human Heart</title>
 
@@ -284,8 +284,9 @@ div.tocify {
 
 <h1 class="title toc-ignore">Introduction: Continuous Cell States in the
 Maturing Human Heart</h1>
-<h4 class="author">Single Cell Workshop</h4>
-<h4 class="date">2026-11-11</h4>
+<h4 class="author">Jiadong Mao (UniMelb), Yidi Deng (Florey), Belinda
+Phipson (WEHI), Melody Jin (WEHI)</h4>
+<h4 class="date">2026-11-12</h4>
 
 </div>
 
@@ -331,53 +332,7 @@ developmental stage?</td>
 </tr>
 </tbody>
 </table>
-<p>Each module builds on the previous one:</p>
-<ul>
-<li><strong>Module 1</strong> scores every nucleus against a reference
-atlas.</li>
-<li><strong>Module 2</strong> uses those scores to order the
-cardiomyocytes from foetal-like to adult-like.</li>
-<li><strong>Module 3</strong> asks which gene networks change along that
-ordering.</li>
-</ul>
 <p>The data throughout is snRNA-seq of the developing human heart.</p>
-<div id="timetable" class="section level3" number="1.1">
-<h3><span class="header-section-number">1.1</span> Timetable</h3>
-<table>
-<thead>
-<tr class="header">
-<th>Time</th>
-<th>Session</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0:00–0:15</td>
-<td>Introduction (this page)</td>
-</tr>
-<tr class="even">
-<td>0:15–1:05</td>
-<td>Module 1: Continuous phenotyping with Φ-Space</td>
-</tr>
-<tr class="odd">
-<td>1:05–1:15</td>
-<td>Break</td>
-</tr>
-<tr class="even">
-<td>1:15–2:00</td>
-<td>Module 2: Pseudotime trajectory analysis</td>
-</tr>
-<tr class="odd">
-<td>2:00–2:50</td>
-<td>Module 3: Cell-specific co-expression networks</td>
-</tr>
-<tr class="even">
-<td>2:50–3:00</td>
-<td>Wrap-up and questions</td>
-</tr>
-</tbody>
-</table>
-</div>
 </div>
 <div id="the-biological-question" class="section level2" number="2">
 <h2><span class="header-section-number">2</span> The Biological
@@ -386,27 +341,14 @@ Question</h2>
 class="section level3" number="2.1">
 <h3><span class="header-section-number">2.1</span> How does the human
 heart mature after birth?</h3>
-<p>The heart keeps maturing long after it starts beating. Much is known
-about how the embryonic heart forms, but much less about the signals
-that turn the foetal heart into the adult one. The heart’s muscle cells,
-the <strong>cardiomyocytes</strong>, change in many ways along the
-way:</p>
-<!-- TODO(Jiadong): general background, not from Sim et al. 2021 - please check. -->
-<ul>
-<li><strong>They stop dividing.</strong> Foetal cardiomyocytes
-proliferate; after birth most of them stop dividing and grow in size
-instead.</li>
-<li><strong>Their energy source changes.</strong> Foetal cardiomyocytes
-rely largely on glycolysis; mature ones burn mostly fatty acids in their
-mitochondria.</li>
-<li><strong>Their contractile machinery matures.</strong> Sarcomere
-proteins switch to adult forms. For example, the foetal troponin I
-(<em>TNNI1</em>) is replaced by cardiac troponin I
-(<em>TNNI3</em>).</li>
-</ul>
-<p>None of these happens at a single moment. Maturation is a
-<strong>continuum</strong>, and cardiomyocytes from donors of similar
-age can sit at different points along it.</p>
+<p>The heart keeps maturing long after it starts beating. The heart’s
+muscle cells, the <strong>cardiomyocytes</strong>, change in many ways
+along the way. For example, foetal cardiomyocytes proliferate; after
+birth most of them stop dividing and grow in size instead. Foetal
+cardiomyocytes rely largely on glycolysis; mature ones burn mostly fatty
+acids in their mitochondria. None of these happens at a single moment.
+Maturation is a <strong>continuum</strong>, and cardiomyocytes from
+donors of similar age can sit at different points along it.</p>
 </div>
 <div id="the-study-sim-et-al.-2021" class="section level3" number="2.2">
 <h3><span class="header-section-number">2.2</span> The study: Sim et
@@ -418,19 +360,12 @@ human heart maturation by the progesterone receptor.</strong>
 <em>Circulation</em> 2021;143(16):1614–1628. <a
 href="https://doi.org/10.1161/CIRCULATIONAHA.120.051921">doi:10.1161/CIRCULATIONAHA.120.051921</a></p>
 </blockquote>
-<p>The authors profiled the human heart from foetal stages to
-adulthood:</p>
-<ul>
-<li><strong>Single-nucleus RNA-seq</strong> of 54,140 nuclei from 9
-donors: 3 foetal (19–20 weeks), 3 young (4–14 years) and 3 adult (35–42
-years). Nuclei rather than whole cells are sequenced because adult
-cardiomyocytes are too large to capture intact.</li>
-<li><strong>Bulk RNA-seq and ATAC-seq</strong> on purified cardiomyocyte
-nuclei from 21 donors, to confirm the transcriptional changes and map
-chromatin accessibility.</li>
-<li><strong>Functional tests</strong> of the sex hormones implicated in
-maturation, in stem-cell-derived human heart organoids and in mice.</li>
-</ul>
+<p>The authors profiled the human heart from foetal stages to adulthood.
+The data we’re going to look at today is their <strong>single-nucleus
+RNA-seq</strong> of 54,140 nuclei from 9 donors: 3 foetal (19–20 weeks),
+3 young (4–14 years) and 3 adult (35–42 years). Nuclei rather than whole
+cells are sequenced because adult cardiomyocytes are too large to
+capture intact.</p>
 <p>Their main finding: the <strong>progesterone receptor</strong> (gene
 <em>PGR</em>) drives sex-dependent programs of cardiomyocyte maturation,
 affecting both metabolism and contractile properties.</p>
@@ -580,25 +515,85 @@ ggplot(pct_df, aes(stage, percent, fill = stage)) +
     theme_bw(base_size = 12) +
     theme(legend.position = &quot;none&quot;)</code></pre>
 <p><img src="00_introduction_files/figure-html/maturation-genes-1.png" alt="" width="864" style="display: block; margin: auto;" /></p>
-<p>Three things stand out:</p>
+</div>
+<div id="exercise-what-does-the-plot-show-and-can-we-trust-it"
+class="section level3" number="4.3">
+<h3><span class="header-section-number">4.3</span> Exercise: What does
+the plot show, and can we trust it?</h3>
+<ol style="list-style-type: decimal">
+<li>Describe what happens to each gene from foetal to young to adult.
+Which changes fit what you know about cardiomyocyte maturation?</li>
+<li>The plot shows the <strong>percentage of nuclei in which a gene is
+detected</strong>. What can make that percentage change, other than the
+gene being switched on or off? Use the code below to check two things:
+whether nuclei from different stages were sequenced to the same depth
+(UMIs per nucleus), and whether the <em>expression level</em> of each
+gene, normalised for depth, tells the same story.</li>
+</ol>
+<pre class="r"><code># Sequencing depth (UMIs per nucleus) of the TTN+ nuclei, by stage
+tapply(seu$nCount_RNA[cm_like], stage, median)</code></pre>
+<pre><code>##   fetal   young   adult 
+## 11598.0  9917.0 14933.5</code></pre>
+<pre class="r"><code># Mean expression per 10,000 UMIs, by stage
+cp10k &lt;- t(t(as.matrix(counts[names(genes), cm_like])) /
+               seu$nCount_RNA[cm_like]) * 1e4
+round(sapply(stages, function(s) rowMeans(cp10k[, stage == s])), 2)</code></pre>
+<pre><code>##       fetal young adult
+## TNNI1  2.19  0.21  0.04
+## TNNI3  3.43  3.97  7.09
+## MKI67  0.20  0.07  0.02
+## NPPA   2.95  0.82  0.60
+## PGR    0.15  0.46  0.52</code></pre>
+<pre class="r"><code># Share of all nuclei in each stage that pass the TTN filter
+round(100 * table(stage) / table(factor(seu$group, levels = stages)), 1)</code></pre>
+<pre><code>## stage
+## fetal young adult 
+##  83.3  51.2  46.5</code></pre>
+<details>
+<summary>
+Solution
+</summary>
+<ol style="list-style-type: decimal">
+<li>Three things stand out:
 <ul>
 <li><strong>Foetal markers fade.</strong> <em>TNNI1</em> is detected in
-most foetal nuclei but in few young or adult ones. <em>TNNI3</em> stays
-common at all stages, so the switch shows up mainly as the loss of the
-foetal form. <em>NPPA</em> also declines.</li>
+most foetal nuclei but in few young or adult ones. <em>NPPA</em> also
+declines.</li>
 <li><strong>Division stops.</strong> <em>MKI67</em>, a marker of
 dividing cells, becomes rarer with age.</li>
 <li><strong>The progesterone receptor rises.</strong> <em>PGR</em>, the
 gene at the centre of the paper, is detected in a growing share of
 nuclei from foetal to adult.</li>
+</ul></li>
+<li>“Detected in a nucleus” means at least one UMI, and that depends on
+more than whether the gene is on:
+<ul>
+<li><strong>Sequencing depth.</strong> Adult nuclei have more UMIs than
+foetal or young ones, so any gene is more likely to be detected in them.
+A difference in depth can create or hide a difference in detection.</li>
+<li><strong>Saturation.</strong> A gene that is already detected in most
+nuclei has little room to rise in the plot, even if its expression goes
+up. <em>TNNI3</em> is detected in most nuclei at every stage and even
+looks slightly lower in adults, but its expression per 10,000 UMIs
+roughly doubles from foetal to adult: the troponin switch is a gain of
+<em>TNNI3</em> as well as a loss of <em>TNNI1</em>.</li>
+<li><strong>The filter.</strong> <em>TTN</em> &gt; 2 keeps most foetal
+nuclei but only about half of the young and adult ones, so the three
+groups were not selected in the same way. <em>TTN</em> is itself a gene
+whose detection depends on depth.</li>
 </ul>
+Detection rates are a quick first look. To compare stages properly,
+model expression with depth (and the donor) taken into account, as a
+differential expression analysis would.</li>
+</ol>
+</details>
 <p>These are averages over age groups. The rest of the workshop asks how
 such changes are distributed <strong>across individual nuclei</strong>,
 and whether nuclei within the same age group differ in how mature they
 are.</p>
 </div>
-<div id="the-reference" class="section level3" number="4.3">
-<h3><span class="header-section-number">4.3</span> The reference</h3>
+<div id="the-reference" class="section level3" number="4.4">
+<h3><span class="header-section-number">4.4</span> The reference</h3>
 <pre class="r"><code>reference</code></pre>
 <pre><code>## class: SingleCellExperiment 
 ## dim: 16115 6096 
@@ -632,38 +627,8 @@ That’s fine: Φ-Space will score every query nucleus against all four
 reference age groups.</p>
 </div>
 </div>
-<div id="how-this-session-runs" class="section level2" number="5">
-<h2><span class="header-section-number">5</span> How This Session
-Runs</h2>
-<ul>
-<li>Each module is an R Markdown file in <code>vignettes/</code>. Open
-it in RStudio and run the chunks in order (<strong>Ctrl/Cmd + Shift +
-Enter</strong> runs the current chunk).</li>
-<li>Some steps take minutes. Their results are saved in
-<code>results/</code>, and the modules load them instead of recomputing,
-so every chunk should finish in seconds. The code that would recompute
-them is still shown, so you can see what each step does.</li>
-<li>The modules hand results to each other through these saved files.
-You can start any module even if you did not finish the previous
-one.</li>
-</ul>
-</div>
-<div id="learning-outcomes" class="section level2" number="6">
-<h2><span class="header-section-number">6</span> Learning Outcomes</h2>
-<p>By the end of the workshop you should be able to:</p>
-<ul>
-<li>explain when a continuous view of cell state is more informative
-than discrete cluster labels;</li>
-<li>annotate cells with continuous phenotype scores from a reference
-atlas (Φ-Space), and turn them into labels when needed;</li>
-<li>infer and compare pseudotime orderings, and check them against known
-biology;</li>
-<li>build cell-specific co-expression networks and summarise them into
-meta-networks, without mistaking co-expression for regulation.</li>
-</ul>
-</div>
-<div id="references" class="section level2" number="7">
-<h2><span class="header-section-number">7</span> References</h2>
+<div id="references" class="section level2" number="5">
+<h2><span class="header-section-number">5</span> References</h2>
 <ul>
 <li>Sim CB, et al. Sex-specific control of human heart maturation by the
 progesterone receptor. <em>Circulation</em> 2021;143(16):1614–1628. <a
@@ -678,8 +643,8 @@ coexpression networks for granular regulatory pattern discovery with
 NeighbourNet. <em>Genome Research</em> 2026.</li>
 </ul>
 </div>
-<div id="session-info" class="section level2" number="8">
-<h2><span class="header-section-number">8</span> Session Info</h2>
+<div id="session-info" class="section level2" number="6">
+<h2><span class="header-section-number">6</span> Session Info</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.6.0 (2026-04-24)
 ## Platform: aarch64-apple-darwin23

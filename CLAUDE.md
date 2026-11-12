@@ -203,7 +203,14 @@ Notes for that work:
   Introduction section, and make "run the repo-download snippet" the first instruction on
   the opening slide. Before reusing the old slides' claims about results, check them
   against the current rendered modules.
-- Deferred (user's call): exercises with folded solutions for Modules 1 and 2; moving
+- 12 Nov: exercises with folded `<details>` solutions added (Intro 1, Module 1 three plus a
+  double-dipping simulation, Module 2 the optional clustering extension, Module 3 six). Module 2's
+  clustering pitfall now comes after the handoff save. Module 3 now uses
+  `meta.network$npca.loadings` as meta-network cell weights: `meta.network$pcs` is an
+  ordinary PCA whose first column is the negative of meta-network 1's weights.
+  Meta-network 1 = foetal pattern, 2 = post-natal pattern. Module 1 runs `PhiSpace()` live
+  (~2 s) instead of loading the cache.
+- Deferred (user's call): moving
   `pt_phi_score` from Module 2 into Module 1 (Module 3 reads it from Module 2's handoff
   file, so moving it means saving it in Module 1's handoff too).
 - Rehearse and fit the timing.
