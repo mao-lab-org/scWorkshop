@@ -65,9 +65,8 @@ Then open the files in `vignettes/` in RStudio and run the chunks in order.
 
 ## Acknowledgements
 
-Adapted from the afternoon session of the Phipson Lab
-[single-cell workshop](https://phipsonlab.github.io/single_cell_workshop/).
-Data from the Porrello and Hewitt laboratories (Sim et al. 2021).
+Adapted from the afternoon session of the Melbourne Integrative Genomics (MIG) [single-cell workshop](https://phipsonlab.github.io/single_cell_workshop/), 
+jointly developed by the Belinda Phipson Lab (WEHI) and Jiadong Mao Lab (MIG).
 
 <p style="color: #888; font-size: 0.9em; margin-top: 2em;">
 Site built `r format(Sys.Date(), "%d %B %Y")`.

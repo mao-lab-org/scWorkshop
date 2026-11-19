@@ -1,7 +1,8 @@
 # Modelling continuous cell states using scRNA-seq data
 
-BiocAsia 2026 workshop (3 h). It is adapted from the afternoon session of the
-Phipson Lab [single-cell workshop](https://phipsonlab.github.io/single_cell_workshop/).
+BiocAsia 2026 workshop (1–4.30pm 20 Nov 2026). It is adapted from the afternoon session of the
+Melbourne Integrative Genomics (MIG) [single-cell workshop](https://phipsonlab.github.io/single_cell_workshop/), 
+jointly developed by the Belinda Phipson Lab (WEHI) and Jiadong Mao Lab (MIG).
 
 **Website:** <https://mao-lab-org.github.io/scWorkshop/>, with the rendered
 Introduction and modules.
