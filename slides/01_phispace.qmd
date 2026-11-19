@@ -153,6 +153,29 @@ Cell B is **between** foetal and young: a hard label would hide that.
 
 
 
+## How Φ-Space works
+
+```{mermaid}
+%%| fig-width: 11
+flowchart LR
+  R["Reference<br/>expression X<br/>+ labels"] --> Y["Dummy matrix Y<br/>(one column per phenotype)"]
+  Y --> P["PLS regression<br/>X → Y"]
+  R --> P
+  Q["Query<br/>expression"] --> S
+  P --> S["Φ-Space scores<br/>cells × phenotypes"]
+  S --> L["getLabels()<br/>one label per cell"]
+  S --> D["Downstream:<br/>Modules 2 and 3"]
+```
+
+. . .
+
+The reference and the query are **different data**, so the annotation
+does not double-dip.
+
+::: aside
+Mao, Deng & Lê Cao 2025, *Genome Biology*
+:::
+
 ## Our reference: Gao et al. 2026 heart atlas {.smaller}
 
 ::: {.incremental}

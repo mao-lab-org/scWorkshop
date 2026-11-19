@@ -1,6 +1,6 @@
 ---
 title: "Module 2: Pseudotime trajectory analysis"
-subtitle: "Modelling continuous cell states using scRNA-seq data · BiocAsia 2026"
+subtitle: "Modelling continuous cell states using scRNA-seq data, BiocAsia 2026"
 author: "Jiadong Mao (UniMelb), Yidi Deng (Florey)"
 format:
   revealjs:
@@ -23,19 +23,15 @@ format:
 The rendered page is on the [workshop website](https://mao-lab-org.github.io/scWorkshop/02_pseudotime.html).
 :::
 
-| Block | Time | Where |
-|---|---|---|
-| What pseudotime is | 10 min | slides |
-| From PCA to two pseudotimes | 15 min | RStudio |
-| Do they agree? | 15 min | RStudio + slides |
-| Recap | 5 min | slides |
-| Extensions A and B | self-paced | RStudio |
+
+
+
 
 # What is pseudotime?
 
-## An ordering, not a clock
+## An ording
 
-Each donor gives **one** age label, but cardiomyocytes from the same
+Cardiomyocytes from the same
 donor can differ in how mature they are.
 
 . . .
@@ -46,11 +42,11 @@ process:
 ::: {.incremental}
 - cells close together in the process get close values;
 - the scale is arbitrary: **only the order matters**;
-- which end is "early" is a separate choice, and most methods need to be
-  told.
+- what the process is is open to interpretation;
+- which end is 'early' is a tuning parameter.
 :::
 
-## Two methods, one embedding
+## 
 
 ::: {.columns}
 ::: {.column width="50%"}
@@ -77,6 +73,9 @@ process:
 Both run on a **PCA of gene expression** (20 PCs). The UMAP is only for
 plotting.
 
+
+
+
 # Hands-on: from PCA to pseudotime
 
 ## The pipeline
@@ -98,6 +97,9 @@ flowchart LR
 Run from `load-module1` to `clusters`.
 :::
 
+
+
+
 ## Where does maturation start?
 
 ![](figs/docs/02_pseudotime_files/figure-html/fetal-score-1.png){.r-stretch}
@@ -108,10 +110,9 @@ Run from `load-module1` to `clusters`.
 - **Root cell** (DPT): the cell with the highest `fetal` score.
 :::
 
-::: {.notes}
-This is the only place Module 1's Φ-Space output enters the main path.
-The cached slingshot and DPT runs depend on this choice.
-:::
+
+
+
 
 ## Two function calls
 
@@ -133,54 +134,47 @@ dpt <- DPT(dm, tips = root_cell)
 The Rmd wraps both calls in cache helpers, so they load in seconds.
 :::
 
-::: {.notes}
-`dist.method = "simple"` avoids slingshot's default distance, which
-fails when some clusters are very small. One pseudotime per cell is the
-mean over slingshot's lineages.
-:::
+
+
+
+
+
 
 ## Slingshot finds a branching tree
 
-::: {.columns}
-::: {.column width="60%"}
+
 ![](figs/docs/02_pseudotime_files/figure-html/slingshot-umap-1.png){height="560"}
-:::
 
-::: {.column width="40%"}
-::: {.incremental}
-- **7 lineages**, all starting in cluster 7.
-- Four run to the post-natal clusters on the right.
-- Three are short branches into neighbouring clusters.
-:::
-:::
-:::
+**7 lineages**? are they real?
 
-::: {.notes}
-The curves are fitted in PCA space and redrawn on the UMAP, so they can
-look tangled.
-:::
+
 
 # Do the two pseudotimes agree?
 
 ## Three checks for any pseudotime
 
 There is no ground-truth ordering, and no method is best for every
-dataset.
+dataset. (I mean you all know this but I have to repeat it.)
 
 ::: {.incremental}
-1. **Look:** do they put the same cells early and late on one map?
-2. **Correlate:** do they agree on the order? (Spearman, ranks only)
+1. Do they put the same cells early and late on one map?
+2. Do they agree on the order? (Spearman, ranks only)
 3. **Compare with held-out information:** donor stage, which neither
    method saw.
 :::
 
-## Look and correlate
+
+
+
+
+
+
+##
 
 ![](figs/docs/02_pseudotime_files/figure-html/compare-umap-1.png){.r-stretch}
 
 ::: {.fragment}
-Spearman ρ = **0.85** between slingshot and DPT: they agree on the order
-although one uses clusters and the other does not.
+Spearman ρ = **0.85** between slingshot and DPT: they agree quite well on the order.
 :::
 
 ## Compare with donor stage
@@ -190,23 +184,21 @@ although one uses clusters and the other does not.
 ::: {.incremental}
 - Both put **foetal nuclei first**. Neither separates **young from
   adult** well.
-- DPT is nearly **all-or-nothing**. The foetal tail is mostly cluster 8,
-  a separate foetal island at the end of a branch.
+- DPT is nearly **all-or-nothing**.
 :::
 
-::: {.notes}
-Spearman ρ with stage: slingshot 0.72, DPT 0.75. Cluster 8 gets a median
-rescaled pseudotime of 0.52 (slingshot) and 0.34 (DPT): pseudotime
-measures distance from the root, so a distinct subtype at the end of a
-branch can look "late".
-:::
+
+
+
+
+
 
 ## Recap
 
 ::: {.incremental}
 - Pseudotime **orders** cells; it is not real time, and it needs a
   starting point.
-- Slingshot and DPT on PCA agree (ρ = 0.85) and put foetal nuclei first.
+- Slingshot and DPT on PCA agree (ρ = 0.85).
 - Neither separates young from adult donors: maturity varies **within**
   an age group.
 - With no ground truth, compare **several methods** with each other and
@@ -216,6 +208,12 @@ branch can look "late".
 . . .
 
 **Next, Module 3:** do gene **relationships** change along maturation?
+
+
+
+
+
+
 
 # Optional extensions
 

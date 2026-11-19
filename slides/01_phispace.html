@@ -387,6 +387,9 @@
       margin-right: 0; 
     }
   </style>
+  <script src="01_phispace_files/libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="01_phispace_files/libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="01_phispace_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 </head>
 <body class="quarto-light">
   <div class="reveal">
@@ -573,6 +576,34 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div></div>
 </section>
+<section id="how-φ-space-works" class="slide level2">
+<h2>How Φ-Space works</h2>
+<div class="cell" data-reveal="true" data-fig-width="11" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  R["Reference&lt;br/&gt;expression X&lt;br/&gt;+ labels"] --&gt; Y["Dummy matrix Y&lt;br/&gt;(one column per phenotype)"]
+  Y --&gt; P["PLS regression&lt;br/&gt;X → Y"]
+  R --&gt; P
+  Q["Query&lt;br/&gt;expression"] --&gt; S
+  P --&gt; S["Φ-Space scores&lt;br/&gt;cells × phenotypes"]
+  S --&gt; L["getLabels()&lt;br/&gt;one label per cell"]
+  S --&gt; D["Downstream:&lt;br/&gt;Modules 2 and 3"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
+<p>The reference and the query are <strong>different data</strong>, so the annotation does not double-dip.</p>
+
+</div>
+<aside><div>
+<p>Mao, Deng &amp; Lê Cao 2025, <em>Genome Biology</em></p>
+</div></aside></section>
 <section id="our-reference-gao-et-al.-2026-heart-atlas" class="slide level2 smaller">
 <h2>Our reference: Gao et al.&nbsp;2026 heart atlas</h2>
 <div>

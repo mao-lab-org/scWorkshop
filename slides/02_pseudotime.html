@@ -397,7 +397,7 @@
 
 <section id="title-slide" class="quarto-title-block center">
   <h1 class="title">Module 2: Pseudotime trajectory analysis</h1>
-  <p class="subtitle">Modelling continuous cell states using scRNA-seq data · BiocAsia 2026</p>
+  <p class="subtitle">Modelling continuous cell states using scRNA-seq data, BiocAsia 2026</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -424,64 +424,29 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div>
 </div>
-<table class="caption-top">
-<thead>
-<tr class="header">
-<th>Block</th>
-<th>Time</th>
-<th>Where</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>What pseudotime is</td>
-<td>10 min</td>
-<td>slides</td>
-</tr>
-<tr class="even">
-<td>From PCA to two pseudotimes</td>
-<td>15 min</td>
-<td>RStudio</td>
-</tr>
-<tr class="odd">
-<td>Do they agree?</td>
-<td>15 min</td>
-<td>RStudio + slides</td>
-</tr>
-<tr class="even">
-<td>Recap</td>
-<td>5 min</td>
-<td>slides</td>
-</tr>
-<tr class="odd">
-<td>Extensions A and B</td>
-<td>self-paced</td>
-<td>RStudio</td>
-</tr>
-</tbody>
-</table>
 </section>
 <section>
 <section id="what-is-pseudotime" class="title-slide slide level1 center">
 <h1>What is pseudotime?</h1>
 
 </section>
-<section id="an-ordering-not-a-clock" class="slide level2">
-<h2>An ordering, not a clock</h2>
-<p>Each donor gives <strong>one</strong> age label, but cardiomyocytes from the same donor can differ in how mature they are.</p>
+<section id="an-ording" class="slide level2">
+<h2>An ording</h2>
+<p>Cardiomyocytes from the same donor can differ in how mature they are.</p>
 <div class="fragment">
 <p><strong>Pseudotime</strong> gives each cell one number for its position along a process:</p>
 <div>
 <ul>
 <li class="fragment">cells close together in the process get close values;</li>
 <li class="fragment">the scale is arbitrary: <strong>only the order matters</strong>;</li>
-<li class="fragment">which end is “early” is a separate choice, and most methods need to be told.</li>
+<li class="fragment">what the process is is open to interpretation;</li>
+<li class="fragment">which end is ‘early’ is a tuning parameter.</li>
 </ul>
 </div>
 </div>
 </section>
-<section id="two-methods-one-embedding" class="slide level2">
-<h2>Two methods, one embedding</h2>
+<section id="section" class="slide level2">
+<h2></h2>
 <div class="columns">
 <div class="column" style="width:50%;">
 <h3 id="slingshot">Slingshot</h3>
@@ -553,19 +518,6 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <li class="fragment"><strong>Root cell</strong> (DPT): the cell with the highest <code>fetal</code> score.</li>
 </ul>
 </div>
-<aside class="notes">
-<p>This is the only place Module 1’s Φ-Space output enters the main path. The cached slingshot and DPT runs depend on this choice.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
 <section id="two-function-calls" class="slide level2">
 <h2>Two function calls</h2>
@@ -583,47 +535,11 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <div class="fragment">
 <p>The Rmd wraps both calls in cache helpers, so they load in seconds.</p>
 </div>
-<aside class="notes">
-<p><code>dist.method = "simple"</code> avoids slingshot’s default distance, which fails when some clusters are very small. One pseudotime per cell is the mean over slingshot’s lineages.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
 <section id="slingshot-finds-a-branching-tree" class="slide level2">
 <h2>Slingshot finds a branching tree</h2>
-<div class="columns">
-<div class="column" style="width:60%;">
 <p><img data-src="figs/docs/02_pseudotime_files/figure-html/slingshot-umap-1.png" height="560"></p>
-</div><div class="column" style="width:40%;">
-<div>
-<ul>
-<li class="fragment"><strong>7 lineages</strong>, all starting in cluster 7.</li>
-<li class="fragment">Four run to the post-natal clusters on the right.</li>
-<li class="fragment">Three are short branches into neighbouring clusters.</li>
-</ul>
-</div>
-</div></div>
-<aside class="notes">
-<p>The curves are fitted in PCA space and redrawn on the UMAP, so they can look tangled.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
+<p><strong>7 lineages</strong>? are they real?</p>
 </section></section>
 <section>
 <section id="do-the-two-pseudotimes-agree" class="title-slide slide level1 center">
@@ -632,20 +548,20 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </section>
 <section id="three-checks-for-any-pseudotime" class="slide level2">
 <h2>Three checks for any pseudotime</h2>
-<p>There is no ground-truth ordering, and no method is best for every dataset.</p>
+<p>There is no ground-truth ordering, and no method is best for every dataset. (I mean you all know this but I have to repeat it.)</p>
 <div>
 <ol type="1">
-<li class="fragment"><strong>Look:</strong> do they put the same cells early and late on one map?</li>
-<li class="fragment"><strong>Correlate:</strong> do they agree on the order? (Spearman, ranks only)</li>
+<li class="fragment">Do they put the same cells early and late on one map?</li>
+<li class="fragment">Do they agree on the order? (Spearman, ranks only)</li>
 <li class="fragment"><strong>Compare with held-out information:</strong> donor stage, which neither method saw.</li>
 </ol>
 </div>
 </section>
-<section id="look-and-correlate" class="slide level2">
-<h2>Look and correlate</h2>
+<section id="section-1" class="slide level2">
+<h2></h2>
 <img data-src="figs/docs/02_pseudotime_files/figure-html/compare-umap-1.png" class="r-stretch">
 <div class="fragment">
-<p>Spearman ρ = <strong>0.85</strong> between slingshot and DPT: they agree on the order although one uses clusters and the other does not.</p>
+<p>Spearman ρ = <strong>0.85</strong> between slingshot and DPT: they agree quite well on the order.</p>
 </div>
 </section>
 <section id="compare-with-donor-stage" class="slide level2">
@@ -654,29 +570,16 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <div>
 <ul>
 <li class="fragment">Both put <strong>foetal nuclei first</strong>. Neither separates <strong>young from adult</strong> well.</li>
-<li class="fragment">DPT is nearly <strong>all-or-nothing</strong>. The foetal tail is mostly cluster 8, a separate foetal island at the end of a branch.</li>
+<li class="fragment">DPT is nearly <strong>all-or-nothing</strong>.</li>
 </ul>
 </div>
-<aside class="notes">
-<p>Spearman ρ with stage: slingshot 0.72, DPT 0.75. Cluster 8 gets a median rescaled pseudotime of 0.52 (slingshot) and 0.34 (DPT): pseudotime measures distance from the root, so a distinct subtype at the end of a branch can look “late”.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
 <section id="recap" class="slide level2">
 <h2>Recap</h2>
 <div>
 <ul>
 <li class="fragment">Pseudotime <strong>orders</strong> cells; it is not real time, and it needs a starting point.</li>
-<li class="fragment">Slingshot and DPT on PCA agree (ρ = 0.85) and put foetal nuclei first.</li>
+<li class="fragment">Slingshot and DPT on PCA agree (ρ = 0.85).</li>
 <li class="fragment">Neither separates young from adult donors: maturity varies <strong>within</strong> an age group.</li>
 <li class="fragment">With no ground truth, compare <strong>several methods</strong> with each other and with information they <strong>did not use</strong>.</li>
 </ul>
