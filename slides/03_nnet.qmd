@@ -30,7 +30,7 @@ The rendered page is on the [workshop website](https://mao-lab-org.github.io/scW
 | Read the networks | 25 min | RStudio + slides |
 | Recap and workshop wrap-up | 5 min | slides |
 
-# NeighbourNet {background-color="#1b4f5c" background-image="../figs/methods/NNet.png" background-size="contain" background-position="right"}
+# NeighbourNet {background-color="#1b4f5c" background-image="figs/methods/NNet.png" background-size="contain" background-position="right"}
 
 From gene levels to gene relationships
 
@@ -58,7 +58,7 @@ The edges are hypotheses, not proof.
 
 ::: {.columns}
 ::: {.column width="45%"}
-![](../figs/nnet_cell-specific.png){fig-align="center"}
+![](figs/nnet_cell-specific.png){fig-align="center"}
 :::
 
 ::: {.column width="55%"}
@@ -79,7 +79,7 @@ Deng, Mao, Choi & Lê Cao 2026, *Genome Research* 36:785–801
 
 ::: {.columns}
 ::: {.column width="50%"}
-![](../figs/nnet_metanetwork.png){height="500"}
+![](figs/nnet_metanetwork.png){height="500"}
 :::
 
 ::: {.column width="50%"}
@@ -147,7 +147,7 @@ Run to `inspect-nnet`. The result is cached, so it loads in seconds.
 
 ## Meta-network weights track maturation
 
-![](../docs/03_nnet_files/figure-html/umap-meta-scores-1.png){.r-stretch}
+![](figs/docs/03_nnet_files/figure-html/umap-meta-scores-1.png){.r-stretch}
 
 ::: {.fragment}
 Meta-network 1 is the **foetal** pattern (ρ = −0.72 with the maturation
@@ -158,7 +158,7 @@ score); meta-network 2 the **post-natal** pattern (ρ = +0.62).
 
 ::: {.columns}
 ::: {.column width="65%"}
-![](../docs/03_nnet_files/figure-html/visualise-meta-networks-1.png)
+![](figs/docs/03_nnet_files/figure-html/visualise-meta-networks-1.png)
 :::
 
 ::: {.column width="35%"}
@@ -203,7 +203,7 @@ nnet_vis(tabs)
 
 ## Does an edge change as cells mature?
 
-![](../docs/03_nnet_files/figure-html/edge-along-maturation-1.png){.r-stretch}
+![](figs/docs/03_nnet_files/figure-html/edge-along-maturation-1.png){.r-stretch}
 
 ::: {.fragment}
 NR3C2–*PDE3A*, the strongest edge of meta-network 1, is strong in

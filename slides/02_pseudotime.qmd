@@ -100,7 +100,7 @@ Run from `load-module1` to `clusters`.
 
 ## Where does maturation start?
 
-![](../docs/02_pseudotime_files/figure-html/fetal-score-1.png){.r-stretch}
+![](figs/docs/02_pseudotime_files/figure-html/fetal-score-1.png){.r-stretch}
 
 ::: {.incremental}
 - **Start cluster** (slingshot): the cluster with the highest mean `fetal`
@@ -143,7 +143,7 @@ mean over slingshot's lineages.
 
 ::: {.columns}
 ::: {.column width="60%"}
-![](../docs/02_pseudotime_files/figure-html/slingshot-umap-1.png)
+![](figs/docs/02_pseudotime_files/figure-html/slingshot-umap-1.png){height="560"}
 :::
 
 ::: {.column width="40%"}
@@ -176,7 +176,7 @@ dataset.
 
 ## Look and correlate
 
-![](../docs/02_pseudotime_files/figure-html/compare-umap-1.png){.r-stretch}
+![](figs/docs/02_pseudotime_files/figure-html/compare-umap-1.png){.r-stretch}
 
 ::: {.fragment}
 Spearman ρ = **0.85** between slingshot and DPT: they agree on the order
@@ -185,7 +185,7 @@ although one uses clusters and the other does not.
 
 ## Compare with donor stage
 
-![](../docs/02_pseudotime_files/figure-html/compare-stage-1.png){.r-stretch}
+![](figs/docs/02_pseudotime_files/figure-html/compare-stage-1.png){.r-stretch}
 
 ::: {.incremental}
 - Both put **foetal nuclei first**. Neither separates **young from
@@ -228,7 +228,7 @@ of 12 Louvain clusters. How will the **number of branches** change? Will
 the **agreement with donor stage** change as much?
 :::
 
-![](../docs/02_pseudotime_files/figure-html/sensitivity-figure-1.png){.r-stretch .fragment}
+![](figs/docs/02_pseudotime_files/figure-html/sensitivity-figure-1.png){.fragment height="320"}
 
 ::: {.fragment}
 **3** lineages instead of 7, but ρ with stage barely moves (0.73 vs
@@ -239,7 +239,7 @@ the **agreement with donor stage** change as much?
 
 ::: {.columns}
 ::: {.column width="50%"}
-![](../docs/02_pseudotime_files/figure-html/umap-pt-plots-1.png)
+![](figs/docs/02_pseudotime_files/figure-html/umap-pt-plots-1.png)
 :::
 
 ::: {.column width="50%"}

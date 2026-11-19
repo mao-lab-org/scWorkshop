@@ -1,0 +1,5 @@
+project:
+  type: default
+  # Copies the figures each deck uses from ../docs and ../figs into figs/,
+  # because Quarto preview serves only this folder.
+  pre-render: sync_figs.R

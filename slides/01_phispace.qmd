@@ -1,6 +1,6 @@
 ---
 title: "Module 1: Continuous phenotyping with Φ-Space"
-subtitle: "Modelling continuous cell states using scRNA-seq data · BiocAsia 2026"
+subtitle: "Modelling continuous cell states using scRNA-seq data, BiocAsia 2026"
 author: "Jiadong Mao (UniMelb), Yidi Deng (Florey)"
 format:
   revealjs:
@@ -23,12 +23,7 @@ format:
 The rendered page is on the [workshop website](https://mao-lab-org.github.io/scWorkshop/01_phispace_annotation.html).
 :::
 
-| Block | Time | Where |
-|---|---|---|
-| Why continuous scores | 10 min | slides |
-| Run Φ-Space | 15 min | RStudio |
-| Read the scores | 20 min | RStudio + slides |
-| Recap | 5 min | slides |
+
 
 ::: {.notes}
 Participants should have run the repo-download snippet at the start of
@@ -53,13 +48,18 @@ It assumes:
 . . .
 
 Our data span **foetal, young and adult** hearts. Cardiomyocytes mature
-gradually, so assumption 2 throws away the gradient we want to study.
+gradually.
+
+
+
+
+
 
 ## A second problem: double-dipping {.smaller}
 
 Simulated cells from **one** population, so no gene truly differs.
 
-![](../docs/01_phispace_annotation_files/figure-html/double-dipping-1.png){.r-stretch}
+![](figs/docs/01_phispace_annotation_files/figure-html/double-dipping-1.png){.r-stretch}
 
 ::: {.columns}
 ::: {.column width="60%"}
@@ -84,7 +84,7 @@ point is the shape of the left histogram. Two papers on double-dipping
 are linked from the module page.
 :::
 
-# Φ-Space {background-color="black" background-image="../figs/methods/PhiSpaceST_cover_art_preview.jpg" background-size="contain" background-position="right"}
+# Φ-Space {background-color="black" background-image="figs/methods/PhiSpaceST_cover_art_preview.jpg" background-size="contain" background-position="right"}
 
 From labels to scores
 
@@ -208,7 +208,7 @@ assay, the model settings, the rare-phenotype filter. Runs in about
 
 ## Scores recover the donor stage {.smaller}
 
-![](../docs/01_phispace_annotation_files/figure-html/heatmap-scores-1.png){.r-stretch}
+![](figs/docs/01_phispace_annotation_files/figure-html/heatmap-scores-1.png){.r-stretch}
 
 ::: {.fragment}
 Rows: query cells by donor stage. In the **age-group** block (left),
@@ -218,7 +218,7 @@ foetal and young cells score highest on their own age group, although
 
 ## The phenotype space in two dimensions
 
-![](../docs/01_phispace_annotation_files/figure-html/biplot-1.png){.r-stretch}
+![](figs/docs/01_phispace_annotation_files/figure-html/biplot-1.png){.r-stretch}
 
 ::: {.fragment}
 Most foetal cells (left) sit at high PC1, where the `fetal` arrow
@@ -247,7 +247,7 @@ post-natal age groups: the hard label hides that spread.
 
 ## Cardiomyocytes vary within a stage
 
-![](../docs/01_phispace_annotation_files/figure-html/cm-score-distribution-1.png){.r-stretch}
+![](figs/docs/01_phispace_annotation_files/figure-html/cm-score-distribution-1.png){.r-stretch}
 
 . . .
 
