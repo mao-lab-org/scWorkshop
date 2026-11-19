@@ -16,7 +16,7 @@ snRNA-seq (foetal / young / adult), with the Gao et al. 2026 left-ventricle atla
 |---|---|---|
 | Intro | `vignettes/00_introduction.Rmd` | Sim et al. 2021, why continuous states, data tour (Seurat only) |
 | 1 | `vignettes/01_phispace_annotation.Rmd` | PhiSpace soft annotation (cell type + age group) |
-| 2 | `vignettes/02_pseudotime.Rmd` | slingshot, destiny DPT on PCA vs Φ-Space embeddings |
+| 2 | `vignettes/02_pseudotime.Rmd` | slingshot, destiny DPT on PCA (Φ-Space embedding optional) |
 | 3 | `vignettes/03_nnet.Rmd` | NeighbourNet cell-specific co-expression networks |
 
 ## The participant-VM constraint (read first)
@@ -190,13 +190,17 @@ Notes for that work:
 - Text must describe what the rendered output actually shows. Two claims inherited from
   the original workshop were wrong and have been rewritten (Module 2). Check numbers in
   the rendered HTML before writing about them.
-- Module 2 is trimmed: the main path has the Φ-Space score, one slingshot run and one DPT run
-  (all on Φ-Space), compared with each other and with donor stage, then the
-  clustering-sensitivity figure. PCA runs and the method × embedding comparison are in
-  "Going Further (Optional)" after the handoff save, so they never change
-  `06_cm_pseudotime.rds`. Findings the text relies on: all pseudotimes put foetal first but
-  don't separate young from adult; the slingshot runs differ in lineage count (6–7
-  unsupervised vs 2–3 Φ-Space cell types) yet agree with stage about equally (ρ ≈ 0.73).
+- Module 2 was simplified on 19 Nov: the main path is a standard expression pipeline. It runs
+  PCA, Louvain clusters (12), slingshot (7 lineages) and DPT, all on PCA, and compares the two
+  with each other and with donor stage. Φ-Space is used only to choose the start (slingshot's
+  start cluster = highest mean `fetal` score; DPT root = highest `fetal` score; the cached
+  runs depend on this, so don't change it without new cache names). After the handoff save:
+  Extension A (Louvain vs Φ-Space cell types on PCA) and Extension B (Φ-Space score;
+  slingshot and DPT on Φ-Space with the same Louvain clusters). Findings the text relies on:
+  slingshot vs DPT ρ = 0.85; both put foetal first but don't separate young from adult;
+  DPT is all-or-nothing; cluster 8 (a foetal island) gets mid pseudotime on PCA but is early
+  with DPT on Φ-Space; all five orderings agree with stage at ρ = 0.72–0.75; lineages 7 vs 3
+  in Extension A.
 - **Slides:** adapt the old `afternoon_30min_xaringan.Rmd` from the original repo
   (`~/Documents/GitHub/single_cell_workshop/`). Follow the slide conventions referenced in
   the user's global CLAUDE.md (read that SKILL.md first). Renumber to Modules 1–3, add an
@@ -210,9 +214,8 @@ Notes for that work:
   ordinary PCA whose first column is the negative of meta-network 1's weights.
   Meta-network 1 = foetal pattern, 2 = post-natal pattern. Module 1 runs `PhiSpace()` live
   (~2 s) instead of loading the cache.
-- Deferred (user's call): moving
-  `pt_phi_score` from Module 2 into Module 1 (Module 3 reads it from Module 2's handoff
-  file, so moving it means saving it in Module 1's handoff too).
+- Module 3 computes `pt_phi_score` itself from `reducedDim(cm, "PhiSpace")`, so it does
+  not depend on which pseudotimes Module 2 saves.
 - Rehearse and fit the timing.
 - Later: switching the site to a Quarto website with "freeze" (nicer site, smaller
   diffs) was discussed and postponed until after the workshop.

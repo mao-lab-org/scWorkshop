@@ -46,41 +46,39 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-In Module 1 we gave each nucleus a continuous score for every reference
-phenotype. Within cardiomyocytes, those scores already *hint* at a
-foetal→adult gradient. Module 2 turns that hint into a single number per
-cell: **pseudotime**.
+The Sim et al. donors span foetal, young and adult hearts, but each
+donor gives only one age label. Within one age group, cardiomyocytes can
+still differ in how mature they are. Module 2 gives each cardiomyocyte a
+single number for its position along maturation: **pseudotime**.
 
 Pseudotime orders cells so that cells close together in a biological
 process get close values. It is not real time, and its scale is
 arbitrary: only the *ordering* matters. Which end counts as "early" is a
-separate choice, and for some methods it has to be supplied. Here the
-Φ-Space `fetal` score tells us where maturation starts.
+separate choice, and for many methods it has to be supplied.
 
+### Two ways to order cardiomyocytes
 
+We use a standard workflow: a PCA of gene expression, then two
+trajectory methods on that PCA.
 
-### Three ways to order cardiomyocytes
-
-We compute three pseudotimes, all from the Φ-Space scores:
-
-1. **Φ-Space pseudotime:** the adult-like score minus the foetal score.
-   No trajectory model at all; this is our baseline.
-2. **Slingshot,** a *principal-curve* method. It clusters cells, links
+1. **Slingshot,** a *principal-curve* method. It clusters cells, links
    the cluster centres into a tree, fits a smooth curve through it, and
    projects every cell onto the curve. Pseudotime is the distance along
    the curve.
-3. **Diffusion pseudotime (DPT)** with the destiny package. It builds a
+2. **Diffusion pseudotime (DPT)** with the destiny package. It builds a
    graph of similar cells and measures how far a random walk travels
    from a root cell.
 
-We then check them against each other and against the donors' ages,
-which none of the methods sees.
+Both methods need to be told where maturation starts. We use one number
+from Module 1 for that: each cell's Φ-Space `fetal` score. We then check
+the two pseudotimes against each other and against the donors' ages,
+which neither method sees.
 
-Two optional sections follow the handoff to Module 3: an **extension** on
-a common pitfall (slingshot's answer depends on how you cluster the
-cells), and a **Going further** section that repeats the analysis on a
-PCA embedding of gene expression instead of Φ-Space. Going further uses
-results from the extension, so run the extension first.
+Two optional sections follow the handoff to Module 3. **Extension A**
+shows a common pitfall: slingshot's answer depends on how you cluster
+the cells. **Extension B** repeats the analysis on the Φ-Space scores
+from Module 1 instead of PCA, and adds a pseudotime computed from the
+Φ-Space scores alone.
 
 
 ## Load Libraries and Module 1 Output
@@ -121,25 +119,19 @@ dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
 
 Cardiomyocytes carry the foetal→adult maturation signal we want to
 trace. Running pseudotime on all cell types at once would mix several
-biological processes into one trajectory.
+biological processes into one trajectory. We select them with the broad
+cell-type labels from Module 1.
 
 ```{r subset-cm}
 cm <- query[, query$PhiCellTypeBroad == "Cardiomyocyte"]
 cat("Cardiomyocytes:", ncol(cm), "\n")
 print(table(cm$group))
-print(sort(table(cm$PhiCellType), decreasing = TRUE))
 ```
 
-The fine Φ-Space labels (`Cardiomyocyte:Fetal_enriched_*`,
-`:Metabolic`, `:Stressed`, …) split the cardiomyocytes into
-biologically meaningful subtypes. We'll use them as slingshot's clusters.
+## PCA, and a UMAP for Plotting
 
-## A Map for Plotting: PCA and UMAP
-
-To display pseudotimes we need a 2D map of the cells. We compute a
-standard pipeline on the logcounts: highly variable genes, then PCA,
-then UMAP. None of the pseudotime methods below uses the UMAP; it is
-only for plotting, so that every method is drawn on the same layout.
+Both trajectory methods work on a **PCA** of gene expression: we select
+highly variable genes and keep the first 20 principal components.
 
 ```{r pca-expression}
 pca_cache <- file.path(results_dir, "06_cm_pca.rds")
@@ -160,12 +152,12 @@ if (file.exists(pca_cache)) {
     saveRDS(cm, pca_cache)
 }
 
-cat("PCA dims:      ", paste(dim(reducedDim(cm, "PCA")), collapse = " x "), "\n")
-cat("PhiSpace dims: ", paste(dim(reducedDim(cm, "PhiSpace")),
-                             collapse = " x "), "\n")
+cat("PCA dims:", paste(dim(reducedDim(cm, "PCA")), collapse = " x "), "\n")
 ```
 
-We keep the first 20 principal components.
+To display pseudotimes we also need a 2D map of the cells. We compute a
+UMAP from the PCA. Neither pseudotime method uses the UMAP; it is only
+for plotting, so that every result is drawn on the same layout.
 
 `n_neighbors = 15` and `min_dist = 0.5` were chosen by trying several
 settings: smaller `n_neighbors` broke the cardiomyocyte continuum into
@@ -244,24 +236,50 @@ lineage_pt <- function(sds) rowMeans(slingPseudotime(sds), na.rm = TRUE)
 `dist.method = "simple"` is needed because slingshot's default distance
 fails when some clusters are very small.
 
-## Pseudotime 1: the Φ-Space Score
+## Cluster the Cardiomyocytes
 
-The simplest ordering needs no trajectory model. The reference has four
-age groups (`fetal`, `young`, `middle`, `old`). We average the three
-post-natal scores into an "adult" score and subtract the `fetal` score:
+Slingshot builds its tree on clusters, so we first cluster the cells.
+We use the standard graph-based approach: a shared-nearest-neighbour
+(SNN) graph on the PCA, split into communities with the Louvain
+algorithm.
 
-$$\text{Φ-Space pseudotime} = \text{mean}(\text{young}, \text{middle}, \text{old}) - \text{fetal}$$
+```{r clusters, fig.width=7, fig.height=5.5}
+cluster_cache <- file.path(results_dir, "06_cm_clusters.rds")
+if (file.exists(cluster_cache)) {
+    cm$cluster <- readRDS(cluster_cache)
+    message("Loaded cached clusters")
+} else {
+    set.seed(42)
+    snn <- scran::buildSNNGraph(cm, use.dimred = "PCA", k = 20)
+    cm$cluster <- factor(igraph::cluster_louvain(snn)$membership)
+    saveRDS(cm$cluster, cluster_cache)
+}
+print(table(cm$cluster))
 
-The raw difference has long tails, which squash the colour scale, so for
-display we also show a cube-root version (`sign(x) · |x|^(1/3)`). It
-compresses the tails without changing the order of cells.
+clust_levels <- levels(cm$cluster)
+clust_pal <- c(brewer.pal(9, "Set1"), brewer.pal(8, "Dark2"),
+               brewer.pal(8, "Set2"))[seq_along(clust_levels)]
+names(clust_pal) <- clust_levels
 
-```{r phi-pseudotime, fig.width=13, fig.height=11}
-phi_scores     <- reducedDim(cm, "PhiSpace")
-adult_score    <- rowMeans(phi_scores[, c("young", "middle", "old")])
-cm$fetal_score <- phi_scores[, "fetal"]
-cm$pt_phi_score    <- adult_score - cm$fetal_score
-cm$pt_phi_score_cr <- sign(cm$pt_phi_score) * abs(cm$pt_phi_score)^(1/3)
+ggplot(cbind(umap_df, cluster = cm$cluster),
+       aes(UMAP1, UMAP2, colour = cluster)) +
+    geom_point(size = 0.4, alpha = 0.7) +
+    scale_colour_manual(values = clust_pal) +
+    theme_bw(base_size = 11) +
+    theme(aspect.ratio = 1) +
+    guides(colour = guide_legend(override.aes = list(size = 2))) +
+    labs(title = "Louvain clusters (SNN graph on PCA)")
+```
+
+## Where Does Maturation Start?
+
+Both methods need a starting point: slingshot a **starting cluster**,
+DPT a **root cell**. We could pick it by eye from marker genes. Here we
+use Module 1's Φ-Space `fetal` score, which says how much each cell
+looks like foetal reference cells.
+
+```{r fetal-score, fig.width=13, fig.height=5.5}
+cm$fetal_score <- reducedDim(cm, "PhiSpace")[, "fetal"]
 
 p_group <- ggplot(cbind(umap_df, group = cm$group),
                   aes(UMAP1, UMAP2, colour = group)) +
@@ -278,25 +296,13 @@ p_fetal <- ggplot(cbind(umap_df, fetal = cm$fetal_score),
     theme_bw(base_size = 11) + theme(aspect.ratio = 1) +
     labs(title = "Φ-Space fetal score", colour = "fetal")
 
-p_phi    <- umap_base(cm$pt_phi_score) +
-    labs(title = "Φ-Space pseudotime (adult − fetal)")
-p_phi_cr <- umap_base(cm$pt_phi_score_cr) +
-    labs(title = "Φ-Space pseudotime (cube-root, for display)")
-
-(p_group | p_fetal) / (p_phi | p_phi_cr)
+p_group | p_fetal
 ```
 
-The gradient from foetal to adult donors (top left) is matched by the
-Φ-Space pseudotime (bottom row). This is the baseline the fitted methods
-should reproduce: if they don't, something has gone wrong.
+The starting cluster is the cluster with the highest mean `fetal` score.
+The root cell is the cell with the highest `fetal` score.
 
-## Pseudotime 2: Slingshot
-
-Slingshot needs a **starting cluster**. We pick the cardiomyocyte subtype
-with the highest mean `fetal` score: Φ-Space sets the direction, and the
-clusters define the units the tree is built from.
-
-```{r pick-anchor}
+```{r pick-start}
 mean_fetal_by <- function(cluster_vec) {
     tibble(cluster = cluster_vec, fetal = cm$fetal_score) |>
         group_by(cluster) |>
@@ -304,64 +310,64 @@ mean_fetal_by <- function(cluster_vec) {
         arrange(desc(mean_fetal))
 }
 
-anchor_phict_tbl <- mean_fetal_by(cm$PhiCellType)
-anchor_phict_tbl
-start_cluster_phict <- as.character(anchor_phict_tbl$cluster[1])
-cat("start.clus:", start_cluster_phict, "\n")
-```
-
-```{r slingshot-phi}
-sling_phi_phict <- run_slingshot("06_slingshot_phi_phict.rds",
-                                 "PhiSpace", cm$PhiCellType,
-                                 start_cluster_phict)
-cm$pt_sling_phi_phict <- lineage_pt(sling_phi_phict)
-cat("Lineages found:", length(slingLineages(sling_phi_phict)), "\n")
-```
-
-`slingPseudotime()` returns one column per lineage; we average them to
-get one pseudotime per cell.
-
-```{r slingshot-umap, fig.width=7, fig.height=6}
-curves_phi_phict_df <- embed_curves_df(sling_phi_phict, "phi_phict")
-with_curves(umap_base(rescale01(cm$pt_sling_phi_phict)),
-            curves_phi_phict_df) +
-    labs(title = "Slingshot pseudotime, with its principal curve")
-```
-
-## Pseudotime 3: Diffusion Pseudotime (DPT)
-
-DPT needs a single **root cell**. We take the cell with the highest
-`fetal` score.
-
-```{r root-cell}
-root_cell <- which.max(cm$fetal_score)
+anchor_tbl <- mean_fetal_by(cm$cluster)
+anchor_tbl
+start_cluster <- as.character(anchor_tbl$cluster[1])
+root_cell     <- which.max(cm$fetal_score)
+cat("start.clus:", start_cluster, "\n")
 cat("Root cell index:", root_cell,
     " (fetal score =", round(cm$fetal_score[root_cell], 3), ")\n")
 ```
 
-```{r destiny-dpt-phi}
-dpt_phi_cache <- file.path(results_dir, "06_dpt_phispace.rds")
+## Pseudotime 1: Slingshot
 
-if (file.exists(dpt_phi_cache)) {
-    dpt_phi <- readRDS(dpt_phi_cache)
-    message("Loaded cached DPT/PhiSpace result")
+```{r slingshot}
+sling <- run_slingshot("06_slingshot_pca_unsup.rds",
+                       "PCA", cm$cluster, start_cluster)
+cm$pt_slingshot <- lineage_pt(sling)
+cat("Lineages found:", length(slingLineages(sling)), "\n")
+slingLineages(sling)
+```
+
+Each lineage is a path through the cluster tree, from the starting
+cluster to one end point. `slingPseudotime()` returns one column per
+lineage; we average them to get one pseudotime per cell.
+
+```{r slingshot-umap, fig.width=7, fig.height=6}
+curves_df <- embed_curves_df(sling, "sling")
+with_curves(umap_base(rescale01(cm$pt_slingshot)), curves_df) +
+    labs(title = "Slingshot pseudotime, with its principal curves")
+```
+
+All seven lineages start in cluster 7. Four run through clusters 3 and
+4 to the clusters on the right of the UMAP, where the post-natal nuclei
+are. The other three are short branches into neighbouring clusters. The
+curves are fitted in PCA space and only re-fitted in UMAP space for
+display, so they can look tangled on the UMAP.
+
+## Pseudotime 2: Diffusion Pseudotime (DPT)
+
+```{r destiny-dpt}
+dpt_cache <- file.path(results_dir, "06_dpt_pca.rds")
+
+if (file.exists(dpt_cache)) {
+    dpt <- readRDS(dpt_cache)
+    message("Loaded cached DPT result")
 } else {
-    dm_phi <- DiffusionMap(as.matrix(reducedDim(cm, "PhiSpace")),
-                           n_eigs = 20, sigma = "local",
-                           verbose = FALSE)
-    dpt_phi <- DPT(dm_phi, tips = root_cell)
-    saveRDS(dpt_phi, dpt_phi_cache)
+    dm  <- DiffusionMap(as.matrix(reducedDim(cm, "PCA")),
+                        n_eigs = 20, sigma = "local", verbose = FALSE)
+    dpt <- DPT(dm, tips = root_cell)
+    saveRDS(dpt, dpt_cache)
 }
 
-cm$pt_dpt_phi <- dpt_phi$dpt
-summary(cm$pt_dpt_phi)
+cm$pt_dpt <- dpt$dpt
+summary(cm$pt_dpt)
 ```
 
 Without `tips`, destiny would pick end points itself. We set the root
-explicitly so that DPT starts from the same place as the other two
-pseudotimes.
+explicitly so that DPT starts from the same place as slingshot.
 
-## Do the Three Pseudotimes Agree?
+## Do the Two Pseudotimes Agree?
 
 With real data there is no ground-truth ordering to check against, and
 no single pseudotime method is best for every dataset. In practice you
@@ -376,17 +382,15 @@ three simple checks that work for any set of pseudotimes:
 
 ### On the UMAP
 
-```{r compare-umap, fig.width=15, fig.height=5.5}
-cm$pt_phi_score_01       <- rescale01(cm$pt_phi_score_cr)
-cm$pt_sling_phi_phict_01 <- rescale01(cm$pt_sling_phi_phict)
-cm$pt_dpt_phi_01         <- rescale01(cm$pt_dpt_phi)
+```{r compare-umap, fig.width=12, fig.height=5.5}
+cm$pt_slingshot_01 <- rescale01(cm$pt_slingshot)
+cm$pt_dpt_01       <- rescale01(cm$pt_dpt)
 
-# `+` binds tighter than `|` and `/`, so wrap the whole layout before
-# adding plot_layout(); otherwise it applies to the last panel only.
-((umap_base(cm$pt_phi_score_01) + labs(title = "Φ-Space score")) |
-    (with_curves(umap_base(cm$pt_sling_phi_phict_01), curves_phi_phict_df) +
-         labs(title = "Slingshot")) |
-    (umap_base(cm$pt_dpt_phi_01) + labs(title = "DPT"))) +
+# `+` binds tighter than `|`, so wrap the whole layout before adding
+# plot_layout(); otherwise it applies to the last panel only.
+((with_curves(umap_base(cm$pt_slingshot_01), curves_df) +
+      labs(title = "Slingshot")) |
+    (umap_base(cm$pt_dpt_01) + labs(title = "DPT"))) +
     plot_layout(guides = "collect")
 ```
 
@@ -397,16 +401,15 @@ we compare them with Spearman (rank) correlation.
 
 ```{r compare-cor}
 pt_mat <- data.frame(
-    `Φ-Space score` = cm$pt_phi_score,
-    Slingshot       = cm$pt_sling_phi_phict,
-    DPT             = cm$pt_dpt_phi,
-    check.names = FALSE
+    Slingshot = cm$pt_slingshot,
+    DPT       = cm$pt_dpt
 )
 round(cor(pt_mat, use = "complete.obs", method = "spearman"), 3)
 ```
 
-The correlations are positive but well below 1: the three methods agree
-on the broad order, not on the details.
+The two pseudotimes agree closely on the order of cells (ρ = 0.85),
+although one fits curves through clusters and the other uses no
+clusters at all.
 
 ### Against donor stage
 
@@ -414,7 +417,7 @@ The donors' stage is **held-out information**: no method saw it. If a
 pseudotime captures maturation, its values should rise from foetal to
 young to adult donors.
 
-```{r compare-stage, fig.width=11, fig.height=4}
+```{r compare-stage, fig.width=8, fig.height=4}
 stage_df <- pt_mat |>
     mutate(group = factor(cm$group, levels = c("fetal", "young", "adult"))) |>
     tidyr::pivot_longer(-group, names_to = "method", values_to = "pseudotime") |>
@@ -435,14 +438,19 @@ ggplot(stage_df, aes(group, pseudotime, fill = group)) +
 
 What the plot shows:
 
-- **All three put foetal nuclei clearly first.** The biggest change in
-  this data is between the foetal and the post-natal heart.
-- **None separates young from adult donors well.** Within the post-natal
-  heart, maturity varies about as much within an age group as between
-  them.
+- **Both put foetal nuclei clearly first.** The biggest change in this
+  data is between the foetal and the post-natal heart.
+- **Neither separates young from adult donors well.** With slingshot,
+  adult nuclei sit only slightly later than young ones, and the two
+  distributions overlap. Within the post-natal heart, maturity varies
+  about as much within an age group as between them.
 - **DPT is nearly all-or-nothing:** foetal nuclei sit near 0 and almost
-  all post-natal nuclei near 1. It orders the foetal-to-post-natal
+  all post-natal nuclei near 0.9. It orders the foetal-to-post-natal
   transition but says little about differences after birth.
+- **Some foetal nuclei get a mid-range pseudotime.** Most of them are in
+  cluster 8, the separate island of foetal nuclei at the bottom of the
+  UMAP. Pseudotime measures distance from the root, so a distinct
+  foetal subtype at the end of a branch can look "late".
 
 The spread *within* each stage shows how much nuclei from donors of the
 same age differ, which is exactly what a single age label hides.
@@ -461,16 +469,28 @@ cat("Annotated CM object at", final_cache, "\n")
 In addition to everything Module 1 handed over, the object carries:
 
 - `reducedDim(cm, "PCA")` and `reducedDim(cm, "UMAP")`;
-- `pt_phi_score`, the Φ-Space pseudotime (`adult − fetal`);
-- `pt_sling_phi_phict` and `pt_dpt_phi`, the slingshot and DPT
-  pseudotimes on Φ-Space;
-- `*_01` columns: pseudotimes rescaled to `[0, 1]`.
+- `cluster`, the Louvain clusters, and `fetal_score`;
+- `pt_slingshot` and `pt_dpt`, the two pseudotimes, and their
+  `*_01` versions rescaled to `[0, 1]`.
 
-Module 3 uses `pt_phi_score` to pick genes associated with maturation:
-it needs no trajectory model, so Module 3 does not depend on the
-slingshot or DPT choices above.
+## Summary
 
-## Extension (Optional): Slingshot Depends on the Clustering
+- Pseudotime orders cells along a process. It is not real time, and
+  most methods need to be told where the process starts.
+- We ordered the cardiomyocytes with slingshot (principal curves through
+  a cluster tree) and DPT (diffusion from a root cell), both on a PCA of
+  gene expression. They agree with each other (ρ = 0.85) and put foetal
+  nuclei first; neither separates young from adult donors well.
+- With no ground truth, compare several methods with each other and with
+  information they did not use.
+- (Extension A) The clustering given to slingshot changes the shape of
+  the trajectory (how many branches), even when its agreement with donor
+  age barely changes.
+- (Extension B) Building the trajectories on Module 1's Φ-Space scores
+  instead of PCA gives the same agreement with donor age, but a
+  different ordering in the details.
+
+## Extension A (Optional): Slingshot Depends on the Clustering
 
 This section is optional: Module 3 does not need it, and we may skip it
 in the live session if time is short.
@@ -478,10 +498,11 @@ in the live session if time is short.
 Slingshot builds its tree on **cluster centres**: the clustering you give
 it is a modelling choice, not a preprocessing detail.
 
-**Think first.** Above, slingshot used the Φ-Space cell types as its
-clusters: only a few, each a biologically defined group. Suppose we give
-it standard unsupervised clusters instead, which are more numerous and
-know nothing about the reference.
+**Think first.** Above, slingshot used `r if (data_ok) nlevels(cm$cluster) else "the"`
+unsupervised Louvain clusters, which know nothing about cell biology.
+Suppose we give it the fine Φ-Space cell types from Module 1 instead
+(`Cardiomyocyte:Fetal_enriched_metabolic`, `:Metabolic`, `:Stressed`,
+…): fewer groups, each defined by a reference atlas.
 
 1. How do you expect the *shape* of the trajectory (the number of
    branches) to change?
@@ -492,75 +513,35 @@ Write down your guesses, then run the code below.
 <details>
 <summary>What we found</summary>
 
-1. With more clusters, slingshot has more cluster centres to connect,
-   so the tree gets more branches (lineages). The table below shows how
-   many.
-2. The agreement with donor stage barely changes. A single summary check
-   can look fine even when the trajectories themselves differ, which is
-   why it is worth looking at the trajectory, not only at one number.
+1. With fewer clusters, slingshot has fewer cluster centres to connect,
+   so the tree gets fewer branches (lineages): 3 instead of 7. The
+   curves, and therefore what "pseudotime" means for a given cell,
+   change visibly.
+2. The agreement with donor stage barely changes (ρ = 0.73 instead of
+   0.72). A single summary check can look fine even when the
+   trajectories themselves differ, which is why it is worth looking at
+   the trajectory, not only at one number.
 
 </details>
 
-To see how much the clustering matters, we rerun slingshot with:
+```{r sensitivity-run}
+print(sort(table(cm$PhiCellType), decreasing = TRUE))
 
-- a different **clustering:** standard unsupervised (Louvain) clusters
-  on the PCA embedding, which know nothing about the reference;
-- a different **embedding:** PCA of gene expression instead of the
-  Φ-Space scores.
-
-That gives four slingshot runs (2 clusterings × 2 embeddings), all
-started from the most foetal cluster.
-
-```{r sensitivity-runs}
-# Unsupervised clustering: SNN graph on the PCA embedding, Louvain
-cluster_cache <- file.path(results_dir, "06_cm_clusters.rds")
-if (file.exists(cluster_cache)) {
-    cm$cluster <- readRDS(cluster_cache)
-    message("Loaded cached clusters")
-} else {
-    set.seed(42)
-    snn <- scran::buildSNNGraph(cm, use.dimred = "PCA", k = 20)
-    cm$cluster <- factor(igraph::cluster_louvain(snn)$membership)
-    saveRDS(cm$cluster, cluster_cache)
-}
-start_cluster_unsup <- as.character(mean_fetal_by(cm$cluster)$cluster[1])
-
-sling_phi_unsup <- run_slingshot("06_slingshot_phi_unsup.rds",
-                                 "PhiSpace", cm$cluster, start_cluster_unsup)
-sling_pca_unsup <- run_slingshot("06_slingshot_pca_unsup.rds",
-                                 "PCA",      cm$cluster, start_cluster_unsup)
-sling_pca_phict <- run_slingshot("06_slingshot_pca_phict.rds",
-                                 "PCA",      cm$PhiCellType, start_cluster_phict)
-
-cm$pt_sling_phi_unsup <- lineage_pt(sling_phi_unsup)
-cm$pt_sling_pca_unsup <- lineage_pt(sling_pca_unsup)
-cm$pt_sling_pca_phict <- lineage_pt(sling_pca_phict)
+start_cluster_phict <- as.character(mean_fetal_by(cm$PhiCellType)$cluster[1])
+sling_phict <- run_slingshot("06_slingshot_pca_phict.rds",
+                             "PCA", cm$PhiCellType, start_cluster_phict)
+cm$pt_sling_phict <- lineage_pt(sling_phict)
 ```
 
-```{r sensitivity-figure, fig.width=12, fig.height=10}
-curves_phi_unsup_df <- embed_curves_df(sling_phi_unsup, "phi_unsup")
-curves_pca_unsup_df <- embed_curves_df(sling_pca_unsup, "pca_unsup")
-curves_pca_phict_df <- embed_curves_df(sling_pca_phict, "pca_phict")
+```{r sensitivity-figure, fig.width=12, fig.height=5.5}
+curves_phict_df <- embed_curves_df(sling_phict, "phict")
 
-p_phi_unsup <- with_curves(umap_base(rescale01(cm$pt_sling_phi_unsup)),
-                           curves_phi_unsup_df) +
-    labs(title = "Φ-Space / unsupervised clusters")
-p_pca_unsup <- with_curves(umap_base(rescale01(cm$pt_sling_pca_unsup)),
-                           curves_pca_unsup_df) +
-    labs(title = "PCA / unsupervised clusters")
-p_phi_phict <- with_curves(umap_base(cm$pt_sling_phi_phict_01),
-                           curves_phi_phict_df) +
-    labs(title = "Φ-Space / Φ-Space cell types (used above)")
-p_pca_phict <- with_curves(umap_base(rescale01(cm$pt_sling_pca_phict)),
-                           curves_pca_phict_df) +
-    labs(title = "PCA / Φ-Space cell types")
-
-((p_phi_unsup | p_pca_unsup) / (p_phi_phict | p_pca_phict)) +
+((with_curves(umap_base(cm$pt_slingshot_01), curves_df) +
+      labs(title = "Louvain clusters (main analysis)")) |
+    (with_curves(umap_base(rescale01(cm$pt_sling_phict)), curves_phict_df) +
+         labs(title = "Φ-Space cell types"))) +
     plot_layout(guides = "collect") +
-    plot_annotation(
-        title    = "Slingshot with two clusterings × two embeddings",
-        subtitle = "Top: unsupervised Louvain clusters. Bottom: Φ-Space cell types from Module 1."
-    )
+    plot_annotation(title = "Slingshot on PCA with two clusterings")
 ```
 
 Two numbers per run make the comparison concrete: how many lineages
@@ -570,90 +551,88 @@ stage.
 ```{r sensitivity-table}
 stage_num <- as.numeric(factor(cm$group, levels = c("fetal", "young", "adult")))
 sling_runs <- list(
-    "Φ-Space / unsupervised"       = sling_phi_unsup,
-    "PCA / unsupervised"           = sling_pca_unsup,
-    "Φ-Space / Φ-Space cell types" = sling_phi_phict,
-    "PCA / Φ-Space cell types"     = sling_pca_phict
+    "Louvain clusters"   = sling,
+    "Φ-Space cell types" = sling_phict
 )
 tibble(
-    run       = names(sling_runs),
+    clusters  = names(sling_runs),
     lineages  = vapply(sling_runs, function(s) length(slingLineages(s)), integer(1)),
     spearman_vs_stage = vapply(sling_runs, function(s)
         round(cor(lineage_pt(s), stage_num, method = "spearman"), 2), numeric(1))
 )
 ```
 
-Reading the figure and the table:
-
-- **The clustering changes the shape of the trajectory.** With the
-  unsupervised clusters, slingshot builds a branching tree with many
-  lineages; with the Φ-Space cell types, it finds only a few. The curves,
-  and therefore what "pseudotime" means for a given cell, differ visibly.
-- **Yet all four runs agree with donor stage about equally.** A single
-  summary check like this can look fine even when the trajectories
-  disagree.
-
 The lesson: **don't trust one trajectory or one check.** Look at the
 structure of the trajectory itself, compare it with independent
 information such as donor age, and compare it with a method that does not
 need a clustering, such as DPT.
 
-## Summary
+## Extension B (Optional): Pseudotime from Φ-Space
 
-- Pseudotime orders cells along a process. It is not real time, and
-  some methods need to be told where the process starts.
-- We built three orderings of the cardiomyocytes: the Φ-Space score (no
-  model), slingshot (principal curve) and DPT (diffusion). All three put
-  foetal nuclei first; none separates young from adult donors well.
-- With no ground truth, compare several methods with each other and with
-  information they did not use.
-- (Extension) The clustering given to slingshot changes the shape of the trajectory
-  (how many branches), even when its agreement with donor age barely
-  changes. Look at the trajectory itself, and compare it with independent
-  information and with a different method.
+This section is not needed for Module 3. It asks whether Module 1's
+Φ-Space scores can replace PCA as the space a trajectory is built in.
 
-## Going Further (Optional)
+### The Φ-Space score as a pseudotime
 
-This section is not needed for Module 3. It repeats the comparison with
-a second embedding: **PCA of gene expression** instead of the Φ-Space
-scores. Crossing two methods (slingshot, DPT) with two embeddings
-(Φ-Space, PCA) separates the effect of the method from the effect of the
-embedding.
+The simplest ordering needs no trajectory model. The reference has four
+age groups (`fetal`, `young`, `middle`, `old`). We average the three
+post-natal scores into an "adult" score and subtract the `fetal` score:
 
-### DPT on PCA
+$$\text{Φ-Space score} = \text{mean}(\text{young}, \text{middle}, \text{old}) - \text{fetal}$$
 
-Same settings and root cell as before; only the embedding changes.
+Module 3 uses this score to pick genes associated with maturation.
 
-```{r destiny-dpt-pca}
-dpt_cache <- file.path(results_dir, "06_dpt_pca.rds")
+The raw difference has long tails, which squash the colour scale, so for
+display we also show a cube-root version (`sign(x) · |x|^(1/3)`). It
+compresses the tails without changing the order of cells.
 
-if (file.exists(dpt_cache)) {
-    dpt <- readRDS(dpt_cache)
-    message("Loaded cached DPT/PCA result")
-} else {
-    dm  <- DiffusionMap(as.matrix(reducedDim(cm, "PCA")),
-                        n_eigs = 20, sigma = "local", verbose = FALSE)
-    dpt <- DPT(dm, tips = root_cell)
-    saveRDS(dpt, dpt_cache)
-}
+```{r phi-score, fig.width=13, fig.height=5.5}
+phi_scores  <- reducedDim(cm, "PhiSpace")
+adult_score <- rowMeans(phi_scores[, c("young", "middle", "old")])
+cm$pt_phi_score    <- adult_score - cm$fetal_score
+cm$pt_phi_score_cr <- sign(cm$pt_phi_score) * abs(cm$pt_phi_score)^(1/3)
 
-cm$pt_dpt_pca <- dpt$dpt
-summary(cm$pt_dpt_pca)
+(umap_base(cm$pt_phi_score) + labs(title = "Φ-Space score (adult − fetal)")) |
+    (umap_base(cm$pt_phi_score_cr) +
+         labs(title = "Φ-Space score (cube-root, for display)"))
 ```
 
-### Two methods × two embeddings
+### Slingshot and DPT on Φ-Space
+
+We rerun both methods with the Φ-Space scores as the embedding. Everything
+else stays the same: the Louvain clusters, the starting cluster and the
+root cell. Only the embedding changes.
+
+```{r phi-runs}
+sling_phi <- run_slingshot("06_slingshot_phi_unsup.rds",
+                           "PhiSpace", cm$cluster, start_cluster)
+cm$pt_sling_phi <- lineage_pt(sling_phi)
+
+dpt_phi_cache <- file.path(results_dir, "06_dpt_phispace.rds")
+if (file.exists(dpt_phi_cache)) {
+    dpt_phi <- readRDS(dpt_phi_cache)
+    message("Loaded cached DPT/PhiSpace result")
+} else {
+    dm_phi <- DiffusionMap(as.matrix(reducedDim(cm, "PhiSpace")),
+                           n_eigs = 20, sigma = "local", verbose = FALSE)
+    dpt_phi <- DPT(dm_phi, tips = root_cell)
+    saveRDS(dpt_phi, dpt_phi_cache)
+}
+cm$pt_dpt_phi <- dpt_phi$dpt
+```
 
 ```{r umap-pt-plots, fig.width=12, fig.height=10}
-p_sling_phi <- with_curves(umap_base(cm$pt_sling_phi_phict_01),
-                           curves_phi_phict_df) +
-    labs(title = "slingshot / Φ-Space")
-p_sling_pca <- with_curves(umap_base(rescale01(cm$pt_sling_pca_phict)),
-                           curves_pca_phict_df) +
-    labs(title = "slingshot / PCA")
-p_dpt_phi <- umap_base(cm$pt_dpt_phi_01) + labs(title = "DPT / Φ-Space")
-p_dpt_pca <- umap_base(rescale01(cm$pt_dpt_pca)) + labs(title = "DPT / PCA")
+curves_phi_df <- embed_curves_df(sling_phi, "phi")
 
-((p_sling_phi | p_sling_pca) / (p_dpt_phi | p_dpt_pca)) +
+p_sling_pca <- with_curves(umap_base(cm$pt_slingshot_01), curves_df) +
+    labs(title = "slingshot / PCA")
+p_sling_phi <- with_curves(umap_base(rescale01(cm$pt_sling_phi)),
+                           curves_phi_df) +
+    labs(title = "slingshot / Φ-Space")
+p_dpt_pca <- umap_base(cm$pt_dpt_01) + labs(title = "DPT / PCA")
+p_dpt_phi <- umap_base(rescale01(cm$pt_dpt_phi)) + labs(title = "DPT / Φ-Space")
+
+((p_sling_pca | p_sling_phi) / (p_dpt_pca | p_dpt_phi)) +
     plot_layout(guides = "collect") +
     plot_annotation(title = "Pseudotime on UMAP: two methods × two embeddings")
 ```
@@ -661,71 +640,45 @@ p_dpt_pca <- umap_base(rescale01(cm$pt_dpt_pca)) + labs(title = "DPT / PCA")
 If all four panels show the same blue → red gradient over the same UMAP
 regions, the trajectory is robust. If the two slingshot panels agree
 with each other but not with the DPT panels, that is a *method* effect;
-if the two Φ-Space panels agree but the two PCA panels do not, it is an
+if the two PCA panels agree but the two Φ-Space panels do not, it is an
 *embedding* effect.
 
-### Correlations and pairwise agreement
+### Correlations and agreement with donor stage
 
 ```{r pt-cor}
-pt_mat4 <- data.frame(
-    `slingshot/PhiSpace` = cm$pt_sling_phi_phict,
-    `slingshot/PCA`      = cm$pt_sling_pca_phict,
+pt_mat5 <- data.frame(
+    `slingshot/PCA`      = cm$pt_slingshot,
+    `slingshot/PhiSpace` = cm$pt_sling_phi,
+    `DPT/PCA`            = cm$pt_dpt,
     `DPT/PhiSpace`       = cm$pt_dpt_phi,
-    `DPT/PCA`            = cm$pt_dpt_pca,
+    `Φ-Space score`      = cm$pt_phi_score,
     check.names = FALSE
 )
-round(cor(pt_mat4, use = "complete.obs", method = "spearman"), 3)
+round(cor(pt_mat5, use = "complete.obs", method = "spearman"), 3)
+round(sapply(pt_mat5, cor, y = stage_num, method = "spearman"), 2)
 ```
 
-```{r pt-pairs, fig.width=10, fig.height=7}
-pt_long <- as.data.frame(lapply(pt_mat4, rescale01), check.names = FALSE) |>
-    mutate(group = cm$group)
+The second line is each pseudotime's Spearman correlation with donor
+stage (foetal = 1, young = 2, adult = 3).
 
-make_pair <- function(x, y) {
-    ggplot(pt_long, aes(.data[[x]], .data[[y]], colour = group)) +
-        geom_point(size = 0.4, alpha = 0.5) +
-        geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.5) +
-        scale_colour_brewer(palette = "Set1") +
-        theme_bw(base_size = 11) +
-        theme(legend.position = "none") +
-        labs(x = x, y = y)
-}
+What the numbers show:
 
-pairs <- lapply(combn(colnames(pt_mat4), 2, simplify = FALSE),
-                function(p) make_pair(p[1], p[2]))
-wrap_plots(pairs, ncol = 3) +
-    plot_annotation(title = "Pairwise agreement between pseudotimes (coloured by donor stage)")
-```
+- **The embedding changes the order more than the method does.** On
+  PCA, slingshot and DPT agree closely (ρ = 0.85). The same method on
+  the two embeddings agrees less (ρ = 0.62 for both slingshot and DPT).
+- **All five orderings agree with donor stage about equally**
+  (ρ = 0.72–0.75). As in Extension A, this one check cannot tell them
+  apart.
+- **The Φ-Space score agrees well with the main analysis** (ρ = 0.79
+  with slingshot and 0.78 with DPT on PCA). Module 3 uses this score
+  because it needs no trajectory model, clusters or root cell.
 
-How to read the pairs:
-
-- **Same method, different embedding** (slingshot/PhiSpace vs
-  slingshot/PCA; DPT/PhiSpace vs DPT/PCA): the embedding effect.
-- **Same embedding, different method** (slingshot vs DPT on Φ-Space; on
-  PCA): the method effect.
-- **Both different** (slingshot/PhiSpace vs DPT/PCA; slingshot/PCA vs
-  DPT/PhiSpace): agreement here is the strongest evidence that the
-  ordering is not an artefact of either choice.
-
-### The unsupervised clusters
-
-The Louvain clusters used in the sensitivity figure, for reference:
-
-```{r umap-clusters, fig.width=7, fig.height=5.5}
-clust_levels <- levels(cm$cluster)
-clust_pal <- c(brewer.pal(9, "Set1"), brewer.pal(8, "Dark2"),
-               brewer.pal(8, "Set2"))[seq_along(clust_levels)]
-names(clust_pal) <- clust_levels
-
-ggplot(cbind(umap_df, cluster = cm$cluster),
-       aes(UMAP1, UMAP2, colour = cluster)) +
-    geom_point(size = 0.4, alpha = 0.7) +
-    scale_colour_manual(values = clust_pal) +
-    theme_bw(base_size = 11) +
-    theme(aspect.ratio = 1) +
-    guides(colour = guide_legend(override.aes = list(size = 2))) +
-    labs(title = "Unsupervised Louvain clusters (SNN on PCA)")
-```
+The figure shows one difference that the correlations hide. DPT on
+Φ-Space places cluster 8, the separate island of foetal nuclei, at the
+start with the other foetal nuclei; DPT on PCA places it midway. A
+likely reason is that Φ-Space describes each cell by its similarity to
+the reference age groups, so a foetal subtype with a distinct expression
+profile still looks foetal.
 
 ## Session Info
 

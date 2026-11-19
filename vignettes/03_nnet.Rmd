@@ -84,11 +84,18 @@ library(RColorBrewer)
 ```
 
 Module 2 saved the cardiomyocyte subset with expression, Φ-Space scores,
-UMAP coordinates, the slingshot and DPT pseudotimes, and the
-trajectory-free `pt_phi_score`.
+UMAP coordinates and the slingshot and DPT pseudotimes.
+
+As the maturation axis we use a score that needs no trajectory model:
+the mean of Module 1's three post-natal Φ-Space age scores minus the
+`fetal` score. Module 2's Extension B shows that this score agrees well
+with its slingshot and DPT pseudotimes (ρ ≈ 0.8).
 
 ```{r load-module6}
 cm <- readRDS(file.path(results_dir, "06_cm_pseudotime.rds"))
+phi_scores <- reducedDim(cm, "PhiSpace")
+cm$pt_phi_score <- rowMeans(phi_scores[, c("young", "middle", "old")]) -
+    phi_scores[, "fetal"]
 
 cat("Assays:      ", paste(assayNames(cm), collapse = ", "), "\n")
 cat("reducedDims: ", paste(reducedDimNames(cm), collapse = ", "), "\n")
