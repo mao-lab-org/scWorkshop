@@ -1,0 +1,255 @@
+---
+title: "Module 2: Pseudotime trajectory analysis"
+subtitle: "Modelling continuous cell states using scRNA-seq data · BiocAsia 2026"
+author: "Jiadong Mao (UniMelb), Yidi Deng (Florey)"
+format:
+  revealjs:
+    width: 1280
+    height: 720
+    slide-number: true
+    footer: "Module 2 · Pseudotime · [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
+    chalkboard: true
+    preview-links: auto
+    code-line-numbers: true
+    highlight-style: github
+---
+
+## How this module runs {.smaller}
+
+::: {.callout-tip}
+## Open in RStudio
+`vignettes/02_pseudotime.Rmd`
+
+The rendered page is on the [workshop website](https://mao-lab-org.github.io/scWorkshop/02_pseudotime.html).
+:::
+
+| Block | Time | Where |
+|---|---|---|
+| What pseudotime is | 10 min | slides |
+| From PCA to two pseudotimes | 15 min | RStudio |
+| Do they agree? | 15 min | RStudio + slides |
+| Recap | 5 min | slides |
+| Extensions A and B | self-paced | RStudio |
+
+# What is pseudotime?
+
+## An ordering, not a clock
+
+Each donor gives **one** age label, but cardiomyocytes from the same
+donor can differ in how mature they are.
+
+. . .
+
+**Pseudotime** gives each cell one number for its position along a
+process:
+
+::: {.incremental}
+- cells close together in the process get close values;
+- the scale is arbitrary: **only the order matters**;
+- which end is "early" is a separate choice, and most methods need to be
+  told.
+:::
+
+## Two methods, one embedding
+
+::: {.columns}
+::: {.column width="50%"}
+### Slingshot
+
+1. Cluster the cells
+2. Link cluster centres into a tree from a **starting cluster**
+3. Fit smooth **principal curves**
+4. Pseudotime = distance along the curve
+:::
+
+::: {.column width="50%"}
+### Diffusion pseudotime (DPT)
+
+1. Build a graph of similar cells
+2. Diffuse from a **root cell**
+3. Pseudotime = diffusion distance from the root
+4. No clusters needed
+:::
+:::
+
+. . .
+
+Both run on a **PCA of gene expression** (20 PCs). The UMAP is only for
+plotting.
+
+# Hands-on: from PCA to pseudotime
+
+## The pipeline
+
+```{mermaid}
+%%| fig-width: 11
+flowchart LR
+  M["Module 1 output<br/>cardiomyocytes only<br/>(5,411 nuclei)"] --> P["PCA<br/>20 PCs"]
+  P --> C["Louvain clusters<br/>(12)"]
+  C --> S["Slingshot"]
+  P --> D["DPT"]
+  F["Φ-Space fetal score<br/>(Module 1)"] -. "start cluster" .-> S
+  F -. "root cell" .-> D
+  P --> U["UMAP<br/>(plotting only)"]
+```
+
+::: {.callout-note}
+## In RStudio
+Run from `load-module1` to `clusters`.
+:::
+
+## Where does maturation start?
+
+![](../docs/02_pseudotime_files/figure-html/fetal-score-1.png){.r-stretch}
+
+::: {.incremental}
+- **Start cluster** (slingshot): the cluster with the highest mean `fetal`
+  score.
+- **Root cell** (DPT): the cell with the highest `fetal` score.
+:::
+
+::: {.notes}
+This is the only place Module 1's Φ-Space output enters the main path.
+The cached slingshot and DPT runs depend on this choice.
+:::
+
+## Two function calls
+
+```{.r code-line-numbers="|1-6|3|4|5|7|9-11|11"}
+sling <- slingshot(
+    reducedDim(cm, "PCA"),
+    clusterLabels = cm$cluster,
+    start.clus    = start_cluster,
+    dist.method   = "simple"
+)
+cm$pt_slingshot <- rowMeans(slingPseudotime(sling), na.rm = TRUE)
+
+dm  <- DiffusionMap(as.matrix(reducedDim(cm, "PCA")),
+                    n_eigs = 20, sigma = "local")
+dpt <- DPT(dm, tips = root_cell)
+```
+
+::: {.fragment}
+The Rmd wraps both calls in cache helpers, so they load in seconds.
+:::
+
+::: {.notes}
+`dist.method = "simple"` avoids slingshot's default distance, which
+fails when some clusters are very small. One pseudotime per cell is the
+mean over slingshot's lineages.
+:::
+
+## Slingshot finds a branching tree
+
+::: {.columns}
+::: {.column width="60%"}
+![](../docs/02_pseudotime_files/figure-html/slingshot-umap-1.png)
+:::
+
+::: {.column width="40%"}
+::: {.incremental}
+- **7 lineages**, all starting in cluster 7.
+- Four run to the post-natal clusters on the right.
+- Three are short branches into neighbouring clusters.
+:::
+:::
+:::
+
+::: {.notes}
+The curves are fitted in PCA space and redrawn on the UMAP, so they can
+look tangled.
+:::
+
+# Do the two pseudotimes agree?
+
+## Three checks for any pseudotime
+
+There is no ground-truth ordering, and no method is best for every
+dataset.
+
+::: {.incremental}
+1. **Look:** do they put the same cells early and late on one map?
+2. **Correlate:** do they agree on the order? (Spearman, ranks only)
+3. **Compare with held-out information:** donor stage, which neither
+   method saw.
+:::
+
+## Look and correlate
+
+![](../docs/02_pseudotime_files/figure-html/compare-umap-1.png){.r-stretch}
+
+::: {.fragment}
+Spearman ρ = **0.85** between slingshot and DPT: they agree on the order
+although one uses clusters and the other does not.
+:::
+
+## Compare with donor stage
+
+![](../docs/02_pseudotime_files/figure-html/compare-stage-1.png){.r-stretch}
+
+::: {.incremental}
+- Both put **foetal nuclei first**. Neither separates **young from
+  adult** well.
+- DPT is nearly **all-or-nothing**. The foetal tail is mostly cluster 8,
+  a separate foetal island at the end of a branch.
+:::
+
+::: {.notes}
+Spearman ρ with stage: slingshot 0.72, DPT 0.75. Cluster 8 gets a median
+rescaled pseudotime of 0.52 (slingshot) and 0.34 (DPT): pseudotime
+measures distance from the root, so a distinct subtype at the end of a
+branch can look "late".
+:::
+
+## Recap
+
+::: {.incremental}
+- Pseudotime **orders** cells; it is not real time, and it needs a
+  starting point.
+- Slingshot and DPT on PCA agree (ρ = 0.85) and put foetal nuclei first.
+- Neither separates young from adult donors: maturity varies **within**
+  an age group.
+- With no ground truth, compare **several methods** with each other and
+  with information they **did not use**.
+:::
+
+. . .
+
+**Next, Module 3:** do gene **relationships** change along maturation?
+
+# Optional extensions
+
+## A: slingshot depends on the clustering {.smaller}
+
+::: {.callout-note}
+## Think first
+Give slingshot the Φ-Space cell types (fewer, reference-defined) instead
+of 12 Louvain clusters. How will the **number of branches** change? Will
+the **agreement with donor stage** change as much?
+:::
+
+![](../docs/02_pseudotime_files/figure-html/sensitivity-figure-1.png){.r-stretch .fragment}
+
+::: {.fragment}
+**3** lineages instead of 7, but ρ with stage barely moves (0.73 vs
+0.72). One summary number can hide very different trajectories.
+:::
+
+## B: pseudotime from Φ-Space {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+![](../docs/02_pseudotime_files/figure-html/umap-pt-plots-1.png)
+:::
+
+::: {.column width="50%"}
+::: {.incremental}
+- The **embedding** changes the order more than the method: same method,
+  PCA vs Φ-Space, ρ = 0.62; slingshot vs DPT on PCA, ρ = 0.85.
+- All five orderings agree with donor stage about equally
+  (ρ = 0.72–0.75).
+- The Φ-Space score (adult − fetal) agrees well with the PCA pseudotimes
+  (ρ ≈ 0.8). **Module 3 uses this score.**
+:::
+:::
+:::
