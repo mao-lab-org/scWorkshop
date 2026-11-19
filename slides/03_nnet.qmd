@@ -1,6 +1,6 @@
 ---
 title: "Module 3: Cell-specific co-expression networks"
-subtitle: "Modelling continuous cell states using scRNA-seq data · BiocAsia 2026"
+subtitle: "Modelling continuous cell states using scRNA-seq data, BiocAsia 2026"
 author: "Jiadong Mao (UniMelb), Yidi Deng (Florey)"
 format:
   revealjs:
@@ -23,12 +23,10 @@ format:
 The rendered page is on the [workshop website](https://mao-lab-org.github.io/scWorkshop/03_nnet.html).
 :::
 
-| Block | Time | Where |
-|---|---|---|
-| From gene levels to gene relationships | 10 min | slides |
-| Choose genes, run NeighbourNet | 10 min | RStudio |
-| Read the networks | 25 min | RStudio + slides |
-| Recap and workshop wrap-up | 5 min | slides |
+
+
+
+
 
 # NeighbourNet {background-color="#1b4f5c" background-image="figs/methods/NNet.png" background-size="contain" background-position="right"}
 
@@ -39,20 +37,25 @@ From gene levels to gene relationships
 Modules 1 and 2 described **where** each cardiomyocyte is along
 maturation.
 
-. . .
+
 
 Module 3 asks: as cardiomyocytes mature, do the **relationships between
 genes** change?
 
-. . .
+
 
 ::: {.callout-warning}
-## Co-expression is not regulation
+## Why we (Yidi) didn't call it gene regulation
 A gene regulatory network (GRN) claims that one factor *causes* changes
-in another. Single-cell RNA-seq alone cannot show that. We build
+in another. Single-cell RNA-seq alone cannot show that. We can only build
 **co-expression networks**: TFs and target genes that vary together.
-The edges are hypotheses, not proof.
+The edges are hypotheses.
 :::
+
+
+
+
+
 
 ## One network per cell
 
@@ -74,6 +77,12 @@ The edges are hypotheses, not proof.
 ::: aside
 Deng, Mao, Choi & Lê Cao 2026, *Genome Research* 36:785–801
 :::
+
+
+
+
+
+
 
 ## Meta-networks: recurring patterns
 
@@ -104,7 +113,7 @@ PCA of the cell-specific networks.
 ## Focus on maturation {.smaller}
 
 Maturation axis: the **Φ-Space score** = mean(young, middle, old) −
-fetal, from Module 1. It needs no trajectory model and agrees with
+fetal, from Module 1. It agrees with
 Module 2's pseudotimes (ρ ≈ 0.8).
 
 ::: {.incremental}
@@ -284,5 +293,4 @@ NeighbourNet cell-cycle vignette.
 
 . . .
 
-All three keep the **gradient** that a single cluster label would throw
-away.
+All three keep the **gradient**.

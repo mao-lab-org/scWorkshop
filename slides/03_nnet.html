@@ -394,7 +394,7 @@
 
 <section id="title-slide" class="quarto-title-block center">
   <h1 class="title">Module 3: Cell-specific co-expression networks</h1>
-  <p class="subtitle">Modelling continuous cell states using scRNA-seq data · BiocAsia 2026</p>
+  <p class="subtitle">Modelling continuous cell states using scRNA-seq data, BiocAsia 2026</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -421,37 +421,6 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div>
 </div>
-<table class="caption-top">
-<thead>
-<tr class="header">
-<th>Block</th>
-<th>Time</th>
-<th>Where</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>From gene levels to gene relationships</td>
-<td>10 min</td>
-<td>slides</td>
-</tr>
-<tr class="even">
-<td>Choose genes, run NeighbourNet</td>
-<td>10 min</td>
-<td>RStudio</td>
-</tr>
-<tr class="odd">
-<td>Read the networks</td>
-<td>25 min</td>
-<td>RStudio + slides</td>
-</tr>
-<tr class="even">
-<td>Recap and workshop wrap-up</td>
-<td>5 min</td>
-<td>slides</td>
-</tr>
-</tbody>
-</table>
 </section>
 <section>
 <section id="neighbournet" class="title-slide slide level1 center" data-background-color="#1b4f5c" data-background-image="figs/methods/NNet.png" data-background-size="contain" data-background-position="right">
@@ -461,21 +430,17 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <section id="the-question" class="slide level2">
 <h2>The question</h2>
 <p>Modules 1 and 2 described <strong>where</strong> each cardiomyocyte is along maturation.</p>
-<div class="fragment">
 <p>Module 3 asks: as cardiomyocytes mature, do the <strong>relationships between genes</strong> change?</p>
-</div>
-<div class="fragment">
 <div class="callout callout-warning callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Co-expression is not regulation</strong></p>
+<p><strong>Why we (Yidi) didn’t call it gene regulation</strong></p>
 </div>
 <div class="callout-content">
-<p>A gene regulatory network (GRN) claims that one factor <em>causes</em> changes in another. Single-cell RNA-seq alone cannot show that. We build <strong>co-expression networks</strong>: TFs and target genes that vary together. The edges are hypotheses, not proof.</p>
-</div>
+<p>A gene regulatory network (GRN) claims that one factor <em>causes</em> changes in another. Single-cell RNA-seq alone cannot show that. We can only build <strong>co-expression networks</strong>: TFs and target genes that vary together. The edges are hypotheses.</p>
 </div>
 </div>
 </div>
@@ -537,7 +502,7 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </section>
 <section id="focus-on-maturation" class="slide level2 smaller">
 <h2>Focus on maturation</h2>
-<p>Maturation axis: the <strong>Φ-Space score</strong> = mean(young, middle, old) − fetal, from Module 1. It needs no trajectory model and agrees with Module 2’s pseudotimes (ρ ≈ 0.8).</p>
+<p>Maturation axis: the <strong>Φ-Space score</strong> = mean(young, middle, old) − fetal, from Module 1. It agrees with Module 2’s pseudotimes (ρ ≈ 0.8).</p>
 <div>
 <ul>
 <li class="fragment">Rank genes by association with the score (<code>PhiSpace::rankFeatures()</code>); keep the <strong>top 10</strong>.</li>
@@ -809,7 +774,7 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </tbody>
 </table>
 <div class="fragment">
-<p>All three keep the <strong>gradient</strong> that a single cluster label would throw away.</p>
+<p>All three keep the <strong>gradient</strong>.</p>
 <div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 <p>Module 3 · NeighbourNet · <a href="https://mao-lab-org.github.io/scWorkshop/">workshop website</a></p>
