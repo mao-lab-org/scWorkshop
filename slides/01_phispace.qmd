@@ -57,16 +57,16 @@ gradually.
 
 ## A second problem: double-dipping {.smaller}
 
-Simulated cells from **one** population, so no gene truly differs.
+Simulate 1,000 cells from **one** population: no 'subtypes'.
 
-![](figs/docs/01_phispace_annotation_files/figure-html/double-dipping-1.png){.r-stretch}
+![](figs/docs/01_phispace_annotation_files/figure-html/double-dipping-1.png){fig-align="center" height="340"}
 
 ::: {.columns}
 ::: {.column width="60%"}
 ::: {.incremental}
-- **Random groups:** p-values spread evenly, as they should.
-- **Two clusters:** about 4× as many genes with p < 0.05. Clustering
-  splits cells along noise; the test then rediscovers that noise.
+- One round cloud, as expected, but clustering still **cuts it roughly
+  in two**.
+- Random groups are mixed all over the cloud.
 :::
 :::
 
@@ -78,25 +78,53 @@ Run chunk `double-dipping`.
 :::
 :::
 
-::: {.notes}
-Don't quote exact counts: they change with the Seurat version. The
-point is the shape of the left histogram. Two papers on double-dipping
-are linked from the module page.
+## Phantom markers {.smaller}
+
+
+![](figs/docs/01_phispace_annotation_files/figure-html/double-dipping-test-1.png){.r-stretch}
+
+::: {.columns}
+::: {.column width="60%"}
+::: {.incremental}
+- **Random split:** p-values spread evenly.
+- **Two clusters:** about 4× as many genes with p < 0.05.
+- How should we read this? Cautious about 'fine cell types'.
 :::
+:::
+
+::: {.column width="40%"}
+::: {.callout-note}
+## In RStudio
+Run chunk `double-dipping-test`.
+:::
+:::
+:::
+
+
+
+
+
+
+
 
 # Φ-Space {background-color="black" background-image="figs/methods/PhiSpaceST_cover_art_preview.jpg" background-size="contain" background-position="right"}
 
 From labels to scores
 
-## Ask a different question {.smaller}
+
+
+
+
+
+
+## A different question {.smaller}
 
 ::: {.columns}
 ::: {.column width="50%"}
-Not *"which cell type is this cell?"* but
+Reference-based cell annotation asks:
 
 > **How much does this cell resemble each reference phenotype?**
 
-. . .
 
 - One score per **cell × phenotype**
 - Several phenotype layers at once: cell type **and** age group
@@ -118,28 +146,12 @@ Cell B is **between** foetal and young: a hard label would hide that.
 :::
 :::
 
-## How Φ-Space works
 
-```{mermaid}
-%%| fig-width: 11
-flowchart LR
-  R["Reference<br/>expression X<br/>+ labels"] --> Y["Dummy matrix Y<br/>(one column per phenotype)"]
-  Y --> P["PLS regression<br/>X → Y"]
-  R --> P
-  Q["Query<br/>expression"] --> S
-  P --> S["Φ-Space scores<br/>cells × phenotypes"]
-  S --> L["getLabels()<br/>one label per cell"]
-  S --> D["Downstream:<br/>Modules 2 and 3"]
-```
 
-. . .
 
-The reference and the query are **different data**, so the annotation
-does not double-dip.
 
-::: aside
-Mao, Deng & Lê Cao 2025, *Genome Biology*
-:::
+
+
 
 ## Our reference: Gao et al. 2026 heart atlas {.smaller}
 
@@ -195,14 +207,12 @@ query <- PhiSpace(
 
 ::: {.fragment}
 Scores land in `reducedDim(query, "PhiSpace")`: **10,000 cells × 28
-phenotypes**, each column scaled to median 0 and maximum |score| 1.
+phenotypes**, each column scaled to median 0 and maximum absolute score 1.
 :::
 
-::: {.notes}
-Step through the highlights: inputs, the two phenotype layers, the
-assay, the model settings, the rare-phenotype filter. Runs in about
-2 seconds.
-:::
+
+
+
 
 # What the scores show
 
@@ -210,11 +220,11 @@ assay, the model settings, the rare-phenotype filter. Runs in about
 
 ![](figs/docs/01_phispace_annotation_files/figure-html/heatmap-scores-1.png){.r-stretch}
 
-::: {.fragment}
-Rows: query cells by donor stage. In the **age-group** block (left),
-foetal and young cells score highest on their own age group, although
-Φ-Space never saw the donor stage.
-:::
+
+
+
+
+
 
 ## The phenotype space in two dimensions
 
@@ -222,14 +232,16 @@ foetal and young cells score highest on their own age group, although
 
 ::: {.fragment}
 Most foetal cells (left) sit at high PC1, where the `fetal` arrow
-(right) points. Read the two panels together.
+(right) points.
 :::
 
-::: {.notes}
-PC1 explains 37.6% and PC2 16.4% of the variance in the score matrix.
-:::
 
-## Scores collapse to labels, not the other way
+
+
+
+
+
+## Scores collapse to labels
 
 `getLabels()` picks the highest score. Donor stage (rows) vs. best
 reference age group (columns):
@@ -243,7 +255,13 @@ reference age group (columns):
 . . .
 
 Foetal cells are clearly foetal. Post-natal cells **spread** over the
-post-natal age groups: the hard label hides that spread.
+post-natal age groups.
+
+
+
+
+
+
 
 ## Cardiomyocytes vary within a stage
 
@@ -251,8 +269,13 @@ post-natal age groups: the hard label hides that spread.
 
 . . .
 
-Each donor stage covers a **range** of scores. Module 2 orders
-cardiomyocytes along this range.
+Each donor stage covers a **range** of scores. 
+
+
+
+
+
+
 
 # Wrap-up
 
@@ -276,16 +299,16 @@ cardiomyocytes move to a different age group?
 :::
 :::
 
-Solutions are folded under each exercise in the Rmd and on the website.
+
+
+
 
 ## Recap
 
 ::: {.incremental}
-- Φ-Space gives each cell a **score for every reference phenotype**, not
-  one label.
+- Φ-Space gives each cell a **score for every reference phenotype**.
 - Reference and query are different data: **no double-dipping**.
-- Scores can always become labels (`getLabels()`); labels cannot become
-  scores.
+- Scores can always become labels (`getLabels()`).
 - Module 1 saves the annotated query for Module 2:
   `results/05_phispace_query.rds`.
 :::

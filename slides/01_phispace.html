@@ -387,9 +387,6 @@
       margin-right: 0; 
     }
   </style>
-  <script src="01_phispace_files/libs/quarto-diagram/mermaid.min.js"></script>
-  <script src="01_phispace_files/libs/quarto-diagram/mermaid-init.js"></script>
-  <link href="01_phispace_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 </head>
 <body class="quarto-light">
   <div class="reveal">
@@ -459,14 +456,18 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </section>
 <section id="a-second-problem-double-dipping" class="slide level2 smaller">
 <h2>A second problem: double-dipping</h2>
-<p>Simulated cells from <strong>one</strong> population, so no gene truly differs.</p>
-<img data-src="figs/docs/01_phispace_annotation_files/figure-html/double-dipping-1.png" class="r-stretch">
+<p>Simulate 1,000 cells from <strong>one</strong> population: no ‘subtypes’.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img data-src="figs/docs/01_phispace_annotation_files/figure-html/double-dipping-1.png" class="quarto-figure quarto-figure-center" height="340"></p>
+</figure>
+</div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div>
 <ul>
-<li class="fragment"><strong>Random groups:</strong> p-values spread evenly, as they should.</li>
-<li class="fragment"><strong>Two clusters:</strong> about 4× as many genes with p &lt; 0.05. Clustering splits cells along noise; the test then rediscovers that noise.</li>
+<li class="fragment">One round cloud, as expected, but clustering still <strong>cuts it roughly in two</strong>.</li>
+<li class="fragment">Random groups are mixed all over the cloud.</li>
 </ul>
 </div>
 </div><div class="column" style="width:40%;">
@@ -484,34 +485,48 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div>
 </div></div>
-<aside class="notes">
-<p>Don’t quote exact counts: they change with the Seurat version. The point is the shape of the left histogram. Two papers on double-dipping are linked from the module page.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
+</section>
+<section id="phantom-markers" class="slide level2 smaller">
+<h2>Phantom markers</h2>
+<img data-src="figs/docs/01_phispace_annotation_files/figure-html/double-dipping-test-1.png" class="r-stretch">
+<div class="columns">
+<div class="column" style="width:60%;">
+<div>
+<ul>
+<li class="fragment"><strong>Random split:</strong> p-values spread evenly.</li>
+<li class="fragment"><strong>Two clusters:</strong> about 4× as many genes with p &lt; 0.05.</li>
+<li class="fragment">How should we read this? Cautious about ‘fine cell types’.</li>
+</ul>
+</div>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>In RStudio</strong></p>
+</div>
+<div class="callout-content">
+<p>Run chunk <code>double-dipping-test</code>.</p>
+</div>
+</div>
+</div>
+</div></div>
 </section></section>
 <section>
 <section id="φ-space" class="title-slide slide level1 center" data-background-color="black" data-background-image="figs/methods/PhiSpaceST_cover_art_preview.jpg" data-background-size="contain" data-background-position="right">
 <h1>Φ-Space</h1>
 <p>From labels to scores</p>
 </section>
-<section id="ask-a-different-question" class="slide level2 smaller">
-<h2>Ask a different question</h2>
+<section id="a-different-question" class="slide level2 smaller">
+<h2>A different question</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
-<p>Not <em>“which cell type is this cell?”</em> but</p>
+<p>Reference-based cell annotation asks:</p>
 <blockquote>
 <p><strong>How much does this cell resemble each reference phenotype?</strong></p>
 </blockquote>
-<p>. . .</p>
 <ul>
 <li>One score per <strong>cell × phenotype</strong></li>
 <li>Several phenotype layers at once: cell type <strong>and</strong> age group</li>
@@ -558,34 +573,6 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div></div>
 </section>
-<section id="how-φ-space-works" class="slide level2">
-<h2>How Φ-Space works</h2>
-<div class="cell" data-reveal="true" data-fig-width="11" data-layout-align="default">
-<div class="cell-output-display">
-<div>
-<p></p><figure class=""><p></p>
-<div>
-<pre class="mermaid mermaid-js">flowchart LR
-  R["Reference&lt;br/&gt;expression X&lt;br/&gt;+ labels"] --&gt; Y["Dummy matrix Y&lt;br/&gt;(one column per phenotype)"]
-  Y --&gt; P["PLS regression&lt;br/&gt;X → Y"]
-  R --&gt; P
-  Q["Query&lt;br/&gt;expression"] --&gt; S
-  P --&gt; S["Φ-Space scores&lt;br/&gt;cells × phenotypes"]
-  S --&gt; L["getLabels()&lt;br/&gt;one label per cell"]
-  S --&gt; D["Downstream:&lt;br/&gt;Modules 2 and 3"]
-</pre>
-</div>
-<p></p></figure><p></p>
-</div>
-</div>
-</div>
-<div class="fragment">
-<p>The reference and the query are <strong>different data</strong>, so the annotation does not double-dip.</p>
-
-</div>
-<aside><div>
-<p>Mao, Deng &amp; Lê Cao 2025, <em>Genome Biology</em></p>
-</div></aside></section>
 <section id="our-reference-gao-et-al.-2026-heart-atlas" class="slide level2 smaller">
 <h2>Our reference: Gao et al.&nbsp;2026 heart atlas</h2>
 <div>
@@ -654,21 +641,8 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <span id="cb1-9"><a href=""></a>    <span class="at">cellTypeThreshold =</span> <span class="dv">20</span></span>
 <span id="cb1-10"><a href=""></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
-<p>Scores land in <code>reducedDim(query, "PhiSpace")</code>: <strong>10,000 cells × 28 phenotypes</strong>, each column scaled to median 0 and maximum |score| 1.</p>
+<p>Scores land in <code>reducedDim(query, "PhiSpace")</code>: <strong>10,000 cells × 28 phenotypes</strong>, each column scaled to median 0 and maximum absolute score 1.</p>
 </div>
-<aside class="notes">
-<p>Step through the highlights: inputs, the two phenotype layers, the assay, the model settings, the rare-phenotype filter. Runs in about 2 seconds.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section></section>
 <section>
 <section id="what-the-scores-show" class="title-slide slide level1 center">
@@ -678,32 +652,16 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <section id="scores-recover-the-donor-stage" class="slide level2 smaller">
 <h2>Scores recover the donor stage</h2>
 <img data-src="figs/docs/01_phispace_annotation_files/figure-html/heatmap-scores-1.png" class="r-stretch">
-<div class="fragment">
-<p>Rows: query cells by donor stage. In the <strong>age-group</strong> block (left), foetal and young cells score highest on their own age group, although Φ-Space never saw the donor stage.</p>
-</div>
 </section>
 <section id="the-phenotype-space-in-two-dimensions" class="slide level2">
 <h2>The phenotype space in two dimensions</h2>
 <img data-src="figs/docs/01_phispace_annotation_files/figure-html/biplot-1.png" class="r-stretch">
 <div class="fragment">
-<p>Most foetal cells (left) sit at high PC1, where the <code>fetal</code> arrow (right) points. Read the two panels together.</p>
+<p>Most foetal cells (left) sit at high PC1, where the <code>fetal</code> arrow (right) points.</p>
 </div>
-<aside class="notes">
-<p>PC1 explains 37.6% and PC2 16.4% of the variance in the score matrix.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
-<section id="scores-collapse-to-labels-not-the-other-way" class="slide level2">
-<h2>Scores collapse to labels, not the other way</h2>
+<section id="scores-collapse-to-labels" class="slide level2">
+<h2>Scores collapse to labels</h2>
 <p><code>getLabels()</code> picks the highest score. Donor stage (rows) vs.&nbsp;best reference age group (columns):</p>
 <table class="caption-top">
 <colgroup>
@@ -747,14 +705,14 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </tbody>
 </table>
 <div class="fragment">
-<p>Foetal cells are clearly foetal. Post-natal cells <strong>spread</strong> over the post-natal age groups: the hard label hides that spread.</p>
+<p>Foetal cells are clearly foetal. Post-natal cells <strong>spread</strong> over the post-natal age groups.</p>
 </div>
 </section>
 <section id="cardiomyocytes-vary-within-a-stage" class="slide level2">
 <h2>Cardiomyocytes vary within a stage</h2>
 <img data-src="figs/docs/01_phispace_annotation_files/figure-html/cm-score-distribution-1.png" class="r-stretch">
 <div class="fragment">
-<p>Each donor stage covers a <strong>range</strong> of scores. Module 2 orders cardiomyocytes along this range.</p>
+<p>Each donor stage covers a <strong>range</strong> of scores.</p>
 </div>
 </section></section>
 <section>
@@ -794,15 +752,14 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div>
 </div></div>
-<p>Solutions are folded under each exercise in the Rmd and on the website.</p>
 </section>
 <section id="recap" class="slide level2">
 <h2>Recap</h2>
 <div>
 <ul>
-<li class="fragment">Φ-Space gives each cell a <strong>score for every reference phenotype</strong>, not one label.</li>
+<li class="fragment">Φ-Space gives each cell a <strong>score for every reference phenotype</strong>.</li>
 <li class="fragment">Reference and query are different data: <strong>no double-dipping</strong>.</li>
-<li class="fragment">Scores can always become labels (<code>getLabels()</code>); labels cannot become scores.</li>
+<li class="fragment">Scores can always become labels (<code>getLabels()</code>).</li>
 <li class="fragment">Module 1 saves the annotated query for Module 2: <code>results/05_phispace_query.rds</code>.</li>
 </ul>
 </div>

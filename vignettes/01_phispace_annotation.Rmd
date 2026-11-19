@@ -65,8 +65,9 @@ Seurat workflow (cluster, then test for marker genes between clusters).
 For comparison, we also test between two groups chosen at random, which
 is what a valid test of "no difference" looks like.
 
-```{r double-dipping, fig.width=10, fig.height=4}
+```{r double-dipping, fig.width=8, fig.height=4.5}
 library(Seurat)
+library(patchwork)
 library(ggplot2)
 
 set.seed(2026)
@@ -88,11 +89,44 @@ sim <- CreateSeuratObject(as(sim_counts, "dgCMatrix")) |>
     FindClusters(resolution = 0.5, verbose = FALSE)
 table(Idents(sim))
 
+# For comparison: two groups chosen at random
+sim$random_group <- sample(c("A", "B"), n_cells, replace = TRUE)
+
+# UMAP for plotting only (it resets the random seed, so it runs last)
+sim <- RunUMAP(sim, dims = 1:10, verbose = FALSE)
+
+okabe_ito <- c("#E69F00", "#0072B2", "#009E73", "#CC79A7",
+               "#56B4E9", "#D55E00", "#F0E442", "#000000")
+plot_cells <- function(group, title, legend) {
+    data.frame(Embeddings(sim, "umap"), group = group) |>
+        ggplot(aes(umap_1, umap_2, colour = group)) +
+        geom_point(size = 0.8) +
+        scale_colour_manual(values = okabe_ito, name = legend) +
+        coord_equal() +
+        labs(x = "UMAP 1", y = "UMAP 2", title = title) +
+        theme_bw(base_size = 12) +
+        theme(legend.position = "bottom") +
+        guides(colour = guide_legend(override.aes = list(size = 3)))
+}
+plot_cells(Idents(sim), "Louvain clusters", "Cluster") +
+    plot_cells(sim$random_group, "Random groups", "Group")
+```
+
+All 1,000 cells form one round cloud, as they should: they come from a
+single population. The clustering still returns two clusters, by cutting
+the cloud roughly in two (cluster 0 mostly top left, cluster 1 mostly
+bottom right; the edge between them looks blurred because the UMAP squeezes
+the 10 PCs used for clustering into 2 dimensions). The random groups are
+mixed all over the cloud.
+
+Now test every gene for a difference between the two clusters, and between
+the two random groups.
+
+```{r double-dipping-test, fig.width=10, fig.height=4}
 # Clusters 0 vs 1: clustering and testing on the same data
 de_clusters <- FindMarkers(sim, ident.1 = "0", ident.2 = "1",
                            logfc.threshold = 0, min.pct = 0)
 # Two random groups: a valid test
-sim$random_group <- sample(c("A", "B"), n_cells, replace = TRUE)
 de_random <- FindMarkers(sim, ident.1 = "A", ident.2 = "B",
                          group.by = "random_group",
                          logfc.threshold = 0, min.pct = 0)
