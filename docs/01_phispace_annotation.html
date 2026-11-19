@@ -895,11 +895,11 @@ expected for a heart sample — but a subset of cells score high on
 number="6.2">
 <h3><span class="header-section-number">6.2</span> PCA biplot of the
 phenotype space</h3>
-<p>The phenotype-space embedding is 17-dimensional. To get a
-two-dimensional view that still reflects the geometry of the embedding,
-we apply PCA to the score matrix. Φ-Space ships a <code>getPC()</code>
-helper that returns scores, loadings and variance-explained in one
-call.</p>
+<p>The phenotype-space embedding has 28 dimensions, one per phenotype
+column. To get a two-dimensional view that still reflects the geometry
+of the embedding, we apply PCA to the score matrix. Φ-Space ships a
+<code>getPC()</code> helper that returns scores, loadings and
+variance-explained in one call.</p>
 <pre class="r"><code>pc_res &lt;- getPC(phi_scores, ncomp = 5, center = TRUE, scale = FALSE)
 round(pc_res$props * 100, 1)</code></pre>
 <pre><code>## [1] 37.6 16.4  8.9  8.1  5.6</code></pre>
@@ -952,8 +952,9 @@ it like this:</p>
 <li><strong>Query cells cluster by stage.</strong> The three stage
 colours should separate along the PC that is loaded most heavily by
 <code>fetal</code>, <code>young</code>, <code>middle</code>,
-<code>old</code> — that is the maturation axis we will hand off to
-slingshot in Module 2.</li>
+<code>old</code> — that is the maturation axis. In Module 2, the
+<code>fetal</code> score tells the trajectory methods where maturation
+starts.</li>
 <li><strong>Cell-type phenotypes point to where each lineage
 lives.</strong> A query cell near a <code>Cardiomyocyte:*</code> arrow
 is a cardiomyocyte; one near a <code>Fibroblast:*</code> arrow is a
@@ -1095,9 +1096,9 @@ ggplot(cm_df, aes(age_phenotype, score, fill = group)) +
     theme_bw(base_size = 13)</code></pre>
 <p><img src="01_phispace_annotation_files/figure-html/cm-score-distribution-1.png" alt="" width="960" style="display: block; margin: auto;" /></p>
 <p>Notice that even within a single query stage there is substantial
-spread along the age-group axis. A hard classifier hides this spread;
-the continuous scores are exactly what slingshot will exploit to trace a
-maturation trajectory.</p>
+spread along the age-group axis. A hard classifier hides this spread.
+Module 2 orders the cardiomyocytes along maturation, and the continuous
+<code>fetal</code> score tells it where maturation starts.</p>
 </div>
 <div id="exercises-how-robust-are-the-scores-optional"
 class="section level2" number="8">
@@ -1328,10 +1329,13 @@ label.</li>
 </ul>
 <p>In Module 2 we will <strong>subset this object to
 cardiomyocytes</strong> (using
-<code>PhiCellTypeBroad == "Cardiomyocyte"</code>) and apply
-<strong>slingshot</strong> to the PhiSpace score matrix. The continuous
-age-group scores will act as the biological anchor that tells slingshot
-which end of the trajectory is foetal and which end is adult.</p>
+<code>PhiCellTypeBroad == "Cardiomyocyte"</code>) and order them along
+maturation with <strong>slingshot</strong> and <strong>diffusion
+pseudotime</strong>, both run on a PCA of gene expression. The
+continuous <code>fetal</code> score acts as the biological anchor that
+tells both methods which end of the trajectory is foetal. An optional
+extension in Module 2 runs the same methods on the Φ-Space score matrix
+instead.</p>
 </div>
 <div id="summary" class="section level2" number="10">
 <h2><span class="header-section-number">10</span> Summary</h2>
@@ -1348,8 +1352,9 @@ scores.</li>
 scores for any downstream analysis that benefits from soft assignments
 (trajectory inference, co-phenotype analysis, gradient
 visualisation).</li>
-<li>The phenotype-space embedding we saved is the input to Module 2
-(pseudotime) and Module 3 (cell-specific co-expression networks).</li>
+<li>The annotated query we saved (scores and labels) is the input to
+Module 2 (pseudotime) and Module 3 (cell-specific co-expression
+networks).</li>
 </ul>
 </div>
 <div id="session-info" class="section level2" number="11">
