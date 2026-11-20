@@ -7,7 +7,7 @@ format:
     width: 1280
     height: 720
     slide-number: true
-    footer: "Module 1 · Φ-Space · [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
+    footer: "Module 1 Φ-Space, [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
     chalkboard: true
     preview-links: auto
     code-line-numbers: true
@@ -25,12 +25,12 @@ The rendered page is on the [workshop website](https://mao-lab-org.github.io/scW
 
 
 
-::: {.notes}
-Participants should have run the repo-download snippet at the start of
-the day. Check that everyone can open the Rmd before going on.
-:::
 
-# Why not one label per cluster?
+
+
+
+
+# Why not discrete labels?
 
 ## Two assumptions behind cluster labels
 
@@ -55,6 +55,10 @@ gradually.
 
 
 
+
+
+
+
 ## A second problem: double-dipping {.smaller}
 
 Simulate 1,000 cells from **one** population: no 'subtypes'.
@@ -64,9 +68,9 @@ Simulate 1,000 cells from **one** population: no 'subtypes'.
 ::: {.columns}
 ::: {.column width="60%"}
 ::: {.incremental}
-- One round cloud, as expected, but clustering still **cuts it roughly
-  in two**.
-- Random groups are mixed all over the cloud.
+- One round data cloud, but clustering still cuts it roughly
+  in two.
+- Random groups (resulting from a random split).
 :::
 :::
 
@@ -77,6 +81,11 @@ Run chunk `double-dipping`.
 :::
 :::
 :::
+
+
+
+
+
 
 ## Phantom markers {.smaller}
 
@@ -176,6 +185,11 @@ does not double-dip.
 Mao, Deng & Lê Cao 2025, *Genome Biology*
 :::
 
+
+
+
+
+
 ## Our reference: Gao et al. 2026 heart atlas {.smaller}
 
 ::: {.incremental}
@@ -196,6 +210,12 @@ Result: **28** phenotype columns = 24 cell types + 4 age groups.
 Could a whole-*cell* reference annotate our *nuclei*? What could go
 wrong?
 :::
+
+
+
+
+
+
 
 # Hands-on: run Φ-Space
 
@@ -229,8 +249,8 @@ query <- PhiSpace(
 ```
 
 ::: {.fragment}
-Scores land in `reducedDim(query, "PhiSpace")`: **10,000 cells × 28
-phenotypes**, each column scaled to median 0 and maximum absolute score 1.
+Scores in `reducedDim(query, "PhiSpace")`: **10,000 cells × 28
+phenotypes**.
 :::
 
 

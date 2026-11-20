@@ -424,23 +424,10 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 </div>
 </div>
 </div>
-<aside class="notes">
-<p>Participants should have run the repo-download snippet at the start of the day. Check that everyone can open the Rmd before going on.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
 <section>
-<section id="why-not-one-label-per-cluster" class="title-slide slide level1 center">
-<h1>Why not one label per cluster?</h1>
+<section id="why-not-discrete-labels" class="title-slide slide level1 center">
+<h1>Why not discrete labels?</h1>
 
 </section>
 <section id="two-assumptions-behind-cluster-labels" class="slide level2">
@@ -469,8 +456,8 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <div class="column" style="width:60%;">
 <div>
 <ul>
-<li class="fragment">One round cloud, as expected, but clustering still <strong>cuts it roughly in two</strong>.</li>
-<li class="fragment">Random groups are mixed all over the cloud.</li>
+<li class="fragment">One round data cloud, but clustering still cuts it roughly in two.</li>
+<li class="fragment">Random groups (resulting from a random split).</li>
 </ul>
 </div>
 </div><div class="column" style="width:40%;">
@@ -672,7 +659,7 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <span id="cb1-9"><a href=""></a>    <span class="at">cellTypeThreshold =</span> <span class="dv">20</span></span>
 <span id="cb1-10"><a href=""></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
-<p>Scores land in <code>reducedDim(query, "PhiSpace")</code>: <strong>10,000 cells × 28 phenotypes</strong>, each column scaled to median 0 and maximum absolute score 1.</p>
+<p>Scores in <code>reducedDim(query, "PhiSpace")</code>: <strong>10,000 cells × 28 phenotypes</strong>.</p>
 </div>
 </section></section>
 <section>
@@ -798,7 +785,7 @@ Jiadong Mao (UniMelb), Yidi Deng (Florey)
 <p><strong>Next, Module 2:</strong> order the cardiomyocytes along maturation (pseudotime). The <code>fetal</code> score tells us where maturation starts.</p>
 <div class="quarto-auto-generated-content">
 <div class="footer footer-default">
-<p>Module 1 · Φ-Space · <a href="https://mao-lab-org.github.io/scWorkshop/">workshop website</a></p>
+<p>Module 1 Φ-Space, <a href="https://mao-lab-org.github.io/scWorkshop/">workshop website</a></p>
 </div>
 </div>
 </div>
