@@ -7,7 +7,7 @@ format:
     width: 1280
     height: 720
     slide-number: true
-    footer: "Module 3 · NeighbourNet · [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
+    footer: "Module 3  NeighbourNet, [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
     chalkboard: true
     preview-links: auto
     code-line-numbers: true
@@ -180,6 +180,9 @@ score); meta-network 2 the **post-natal** pattern (ρ = +0.62).
 :::
 :::
 
+
+
+
 ## Explore interactively {.smaller}
 
 ::: {.columns}
@@ -209,6 +212,11 @@ nnet_vis(tabs)
 :::
 :::
 :::
+
+Update: the newest version of NeighbourNet has incroporated interactive plots.
+
+
+
 
 ## Does an edge change as cells mature?
 
