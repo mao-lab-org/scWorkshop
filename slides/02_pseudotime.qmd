@@ -7,7 +7,7 @@ format:
     width: 1280
     height: 720
     slide-number: true
-    footer: "Module 2 · Pseudotime · [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
+    footer: "Module 2 Pseudotime, [workshop website](https://mao-lab-org.github.io/scWorkshop/)"
     chalkboard: true
     preview-links: auto
     code-line-numbers: true
@@ -130,9 +130,7 @@ dm  <- DiffusionMap(as.matrix(reducedDim(cm, "PCA")),
 dpt <- DPT(dm, tips = root_cell)
 ```
 
-::: {.fragment}
-The Rmd wraps both calls in cache helpers, so they load in seconds.
-:::
+
 
 
 
